@@ -20,38 +20,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.'''
 __author__ = 'Yu, Xiongwei(Sean Yu)'
+
 __doc__ = '''
-unit test of lib/echo.py
+created 5/9/2017
 '''
-from lib.echo import echo
+from lib.dut import dut
 import unittest
 init_file_name = 'ut_echo.json'
-class ut_echo(unittest.TestCase):
+class ut_dut(unittest.TestCase):
     def setUp(self):
-        self.echo = echo(init_file_name)
-    def test_init(self):
-        print(self.echo)
-        io_data = ''.join([x.strip() for x in open(init_file_name).readlines()])
-        import json
-        io_json = json.loads(io_data)
-        for k in io_json.keys():
-            self.assertEquals(self.echo.io_map, io_json )
-        import pprint
-        pprint.pprint(io_json, indent=4)
-
-    def test_single_line_respone(self):
-        self.assertEquals(self.echo.cmd('cmd1'),'result1')
-    def test_repeat_same_command(self):
-        self.assertEquals(self.echo.cmd('cmd2'),'result2')
-        self.assertEquals(self.echo.cmd('cmd2'),'result3')
-        self.assertEquals(self.echo.cmd('cmd2'),'')
-        #self.assertEquals(self.echo.cmd('cmd2'),'None')
-
+        self.echo = dut('test_dut', type='echo', host= './ut_dut.json', login_step='./ut_session_login_step.csv')
+    def test_login(self):
+        self.echo.login()
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(ut_echo.test_init())
-    suite.addTest(ut_echo.test_single_line_respone())
-    suite.addTest(ut_echo.test_repeat_same_command())
+    suite.addTest(ut_dut.test_login())
+    # suite.addTest(ut_dut.test_single_line_respone())
+    # suite.addTest(ut_dut.test_repeat_same_command())
 
     return suite
 
