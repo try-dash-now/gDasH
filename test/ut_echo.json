@@ -1,0 +1,8 @@
+{
+  "cmd1":"result1",
+  "cmd2":
+    [
+      "result2",
+      "result3"
+      ]
+}
