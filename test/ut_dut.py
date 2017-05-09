@@ -32,6 +32,9 @@ class ut_dut(unittest.TestCase):
         self.echo = dut('test_dut', type='echo', host= './ut_dut.json', login_step='./ut_session_login_step.csv')
     def test_login(self):
         self.echo.login()
+    def test_step(self):
+        self.echo.step('', '')
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(ut_dut.test_login())

@@ -5,5 +5,7 @@
             "password",
             ">"
           ],
-  "hello world": "welcome to DasH world!"
+  "hello world": "welcome to DasH world!",
+  "get expect": "you got me",
+  "find in buffer nowait": ""
 }

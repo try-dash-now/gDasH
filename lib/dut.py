@@ -30,7 +30,8 @@ provide functions
     enter a command and wait for a respone
     when interacting with real device, record the steps to a json file
 '''
-#todo
+#todo: function_step completion, add stream_buffer, search_index, to support search in buffer
+#todo: function_step defines the output format:
 from pprint import pprint
 from traceback import format_exc
 class dut(object):
@@ -42,8 +43,11 @@ class dut(object):
     new_line=None
     new_line_during_login =None
     alive_counter =0 # if it keeps change, the session should be alive, otherwise, end itself
+
     login_steps= None
     session =None
+    command_respone_json = None # a dict to record the interaction procedure
+
 
     def __init__(self, name ,type='telnet', host='127.0.0.1', port=23, login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
@@ -64,7 +68,7 @@ class dut(object):
         else:
             self.login(login_step)
 
-    def step(self,command, expect, time_out, total_try =1, ctrl=False, no=False):
+    def step(self,command, expect, time_out, total_try =1, ctrl=False, no=False,no_wait = False):
         error_info = None
         total_try= int(total_try)
         while total_try:
