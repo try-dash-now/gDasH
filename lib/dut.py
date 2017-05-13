@@ -34,6 +34,7 @@ provide functions
 #todo: function_step defines the output format:
 from pprint import pprint
 from traceback import format_exc
+import time,datetime, re, math
 class dut(object):
     name=None
     session_type= None
@@ -48,7 +49,8 @@ class dut(object):
     session =None
     command_respone_json = None # a dict to record the interaction procedure
 
-
+    stream_in=None
+    search_index = None
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.login_steps = login_step
@@ -59,6 +61,9 @@ class dut(object):
         self.log_path = log_path
         self.new_line = new_line
 
+        self.search_index = 0
+        self.stream_in = ''
+
         self.new_line_during_login = new_line_during_login
         if type == 'echo':
             from lib.echo import echo
@@ -68,17 +73,46 @@ class dut(object):
         else:
             self.login(login_step)
 
-    def step(self,command, expect='.*', time_out=30, total_try =1, ctrl=False, no=False,no_wait = False):
+    def step(self,command, expect='.*', time_out=30, total_try =1, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.I|re.M):
         error_info = None
         total_try= int(total_try)
+        match, buffer = None, ''
         while total_try:
             total_try -= 1
             try:
+                if no_wait:
+                    self.wait_for(expect, time_out,flags,not_want_to_find)
                 resp = self.session.cmd(command)
+
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
                     pprint(format_exc())
                     raise(e)
+
+    def match_in_buffer(self, pattern, flags=re.I|re.M):
+        buffer = self.stream_in[self.search_index:]
+        match = re.search(pattern,buffer,flags=flags)
+        return match, buffer
+
+    def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
+        poll_interval = 0.5# default polling interval, 0.5 second
+        poll_interval = min(poll_interval,time_out)
+        import datetime
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(seconds=int(time_out), microseconds=time_out-int(time_out))
+        pat =re.compile(pattern=pattern,flags=flags)
+        match = None
+        buffer =''
+        while(end_time> datetime.datetime.now()):
+            match, buffer = self.match_in_buffer(pat,flags)
+            if match:
+                if not_want_to_find:
+                    continue
+                else:
+                    break
+        return  match,buffer
+
+
 
 
     def login(self, login_step_file=None, retry=1):
