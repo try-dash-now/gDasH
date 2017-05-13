@@ -20,41 +20,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.'''
 __author__ = 'Yu, Xiongwei(Sean Yu)'
+
 __doc__ = '''
-unit test of lib/echo.py
+created 5/13/2017
 '''
-from lib.echo import echo
 import unittest
-init_file_name = 'ut_echo.json'
-class ut_echo(unittest.TestCase):
-    def setUp(self):
-        self.echo = echo(init_file_name)
-    def test_init(self):
-        print(self.echo)
-        io_data = ''.join([x.strip() for x in open(init_file_name).readlines()])
-        import json
-        io_json = json.loads(io_data)
-        for k in io_json.keys():
-            self.assertEquals(self.echo.io_map, io_json )
-        #import pprint
-        #pprint.pprint(io_json, indent=4)
+from unittest import TestSuite
+def load_tests(loader, tests, pattern):
+    ''' Discover and load all unit tests in all files named ``ut_*.py`` in ``./``
+    '''
 
-    def test_single_line_respone(self):
-        self.assertEquals(self.echo.cmd('cmd1'),'result1')
-    def test_repeat_same_command(self):
-        self.assertEquals(self.echo.cmd('cmd2'),'result2')
-        self.assertEquals(self.echo.cmd('cmd2'),'result3')
-        self.assertEquals(self.echo.cmd('cmd2'),'')
-        #self.assertEquals(self.echo.cmd('cmd2'),'None')
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(ut_echo.test_init())
-    suite.addTest(ut_echo.test_single_line_respone())
-    suite.addTest(ut_echo.test_repeat_same_command())
-
+    suite = TestSuite()
+    for all_test_suite in unittest.defaultTestLoader.discover('./', pattern='ut_*.py'):
+        for test_suite in all_test_suite:
+            suite.addTests(test_suite)
     return suite
 
 if __name__ == '__main__':
+    loader = unittest.TestLoader()
+    tests = unittest.suite.TestSuite([])
+    suite = load_tests(loader, tests, pattern='ut_*.py')
+    result = unittest.TestResult()
+    suite.run(result)
+    from pprint import pprint
+    pprint(result)
+    for fail in result.errors:
+        pprint(fail[0])
+        for line in fail[1].split('\n')[1:]:
+            print('\t\t{}'.format(line))
+       # pprint('{},\n\t{}'.format(fail[0], fail[1]))
 
-    unittest.main()
+    pprint(result)

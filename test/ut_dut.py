@@ -33,7 +33,7 @@ class ut_dut(unittest.TestCase):
     def test_login(self):
         self.echo.login()
     def test_step(self):
-        self.echo.step('', '')
+        self.echo.step('','')
 
 def suite():
     suite = unittest.TestSuite()

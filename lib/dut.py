@@ -68,7 +68,7 @@ class dut(object):
         else:
             self.login(login_step)
 
-    def step(self,command, expect, time_out, total_try =1, ctrl=False, no=False,no_wait = False):
+    def step(self,command, expect='.*', time_out=30, total_try =1, ctrl=False, no=False,no_wait = False):
         error_info = None
         total_try= int(total_try)
         while total_try:
