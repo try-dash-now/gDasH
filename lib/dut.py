@@ -49,7 +49,7 @@ class dut(object):
     command_respone_json = None # a dict to record the interaction procedure
 
 
-    def __init__(self, name ,type='telnet', host='127.0.0.1', port=23, login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.login_steps = login_step
         self.session_type = type
@@ -76,9 +76,9 @@ class dut(object):
             try:
                 resp = self.session.cmd(command)
             except Exception as e:
-                if total_try ==0:
+                if total_try ==0:#no more chance to try again, the last chance
                     pprint(format_exc())
-                    raise e
+                    raise(e)
 
 
     def login(self, login_step_file=None, retry=1):

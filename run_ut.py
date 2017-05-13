@@ -26,28 +26,29 @@ created 5/13/2017
 '''
 import unittest
 from unittest import TestSuite
-def load_tests(loader, tests, pattern):
+def load_tests(loader, pattern, path):
     ''' Discover and load all unit tests in all files named ``ut_*.py`` in ``./``
     '''
 
     suite = TestSuite()
-    for all_test_suite in unittest.defaultTestLoader.discover('./', pattern='ut_*.py'):
+    for all_test_suite in unittest.defaultTestLoader.discover(path, pattern=pattern):
         for test_suite in all_test_suite:
             suite.addTests(test_suite)
     return suite
 
 if __name__ == '__main__':
     loader = unittest.TestLoader()
-    tests = unittest.suite.TestSuite([])
-    suite = load_tests(loader, tests, pattern='ut_*.py')
+    path= './test'
+    import os
+    suite = load_tests(loader, pattern='ut_*.py', path=path)
     result = unittest.TestResult()
+    os.chdir(path)
     suite.run(result)
     from pprint import pprint
-    pprint(result)
     for fail in result.errors:
         pprint(fail[0])
         for line in fail[1].split('\n')[1:]:
             print('\t\t{}'.format(line))
-       # pprint('{},\n\t{}'.format(fail[0], fail[1]))
-
+    print('*'*80+'\nut summary:')
     pprint(result)
+    print('*'*80)
