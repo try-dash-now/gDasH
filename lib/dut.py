@@ -96,24 +96,28 @@ class dut(object):
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
-        poll_interval = min(poll_interval,time_out)
+        #poll_interval = min(poll_interval,time_out)
         import datetime
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=int(time_out), microseconds=time_out-int(time_out))
         pat =re.compile(pattern=pattern,flags=flags)
         match = None
-        buffer =''
+        buffer = ''
+        success= False
         while(end_time> datetime.datetime.now()):
+
             match, buffer = self.match_in_buffer(pat,flags)
             if match:
                 if not_want_to_find:
-                    continue
+                    success = False
                 else:
-                    break
-        return  match,buffer
-
-
-
+                    success = True
+                break #quit the while
+            else: #not find the pattern
+                now = datetime.datetime.now()
+                remain_time = end_time - now
+                time.sleep(min(remain_time.total_seconds(), poll_interval))
+        return success,match,buffer
 
     def login(self, login_step_file=None, retry=1):
         import csv
