@@ -25,15 +25,29 @@ __doc__ = '''
 created 5/9/2017
 '''
 from lib.dut import dut
+import lib.common
 import unittest
 init_file_name = 'ut_echo.json'
 class ut_dut(unittest.TestCase):
     def setUp(self):
-        self.echo = dut('test_dut', type='echo', host= './ut_dut.json', login_step='./ut_session_login_step.csv')
+        self.my_dut = dut('test_dut', type='echo', host= './ut_dut.json', login_step='./ut_session_login_step.csv')
+    def tearDown(self):
+        self.my_dut.session.close_session()
     def test_login(self):
-        self.echo.login()
+        self.my_dut.login()
     def test_step(self):
-        self.echo.step('','')
+        lib.common.debug=True
+        self.my_dut.step('','')
+    def test_wait_for(self):
+        #no wait, search in buffer, find the expected pattern
+        success,match, buffer = self.my_dut.wait_for('pattern_found',1)
+        self.assertEquals(success, True)
+
+        #no wait, search in buffer, expect pattern not being found
+        success,match, buffer = self.my_dut.wait_for('abc', 1,not_want_to_find=True)
+
+
+
 
 def suite():
     suite = unittest.TestSuite()

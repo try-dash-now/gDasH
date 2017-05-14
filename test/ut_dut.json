@@ -3,9 +3,11 @@
   "sean":
           [
             "password",
-            ">"
+            ">\npattern_found"
           ],
   "hello world": "welcome to DasH world!",
   "get expect": "you got me",
-  "find in buffer nowait": ""
+  "find in buffer nowait": "",
+  "step_cmd_pattern": "test_wait_for: pattern_found",
+  "step_cmd_no_pattern": "test_wait_for: no_pattern"
 }

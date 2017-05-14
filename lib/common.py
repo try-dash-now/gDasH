@@ -22,33 +22,25 @@ THE SOFTWARE.'''
 __author__ = 'Yu, Xiongwei(Sean Yu)'
 
 __doc__ = '''
-created 5/13/2017
+created 5/14/2017
 '''
-import unittest
-from unittest import TestSuite
-def load_tests(loader, pattern, path):
-    ''' Discover and load all unit tests in all files named ``ut_*.py`` in ``./``
-    '''
-
-    suite = TestSuite()
-    for all_test_suite in unittest.defaultTestLoader.discover(path, pattern=pattern):
-        for test_suite in all_test_suite:
-            suite.addTests(test_suite)
-    return suite
-
-if __name__ == '__main__':
-    loader = unittest.TestLoader()
-    path= './test'
-    import os
-    suite = load_tests(loader, pattern='ut_*.py', path=path)
-    result = unittest.TestResult()
-    os.chdir(path)
-    suite.run(result)
-    from pprint import pprint
-    for fail in result.errors+result.failures:
-        pprint(fail[0])
-        for line in fail[1].split('\n')[1:]:
-            print('\t\t{}'.format(line))
-    print('*'*80+'\nut summary:')
-    pprint(result)
-    print('*'*80)
+from functools import wraps
+import  traceback
+debug = False
+def dut_exception_handler(function_name):
+    @wraps(function_name)
+    def wrapped(*args, **kwargs):
+        try:
+            dut_instance=None
+            if len(args):
+                dut_instance= args[0]
+            r = function_name(*args, **kwargs)
+        except Exception as e:
+            if dut_instance:
+                if debug:
+                    pass
+                else:
+                    dut_instance.session.close_session()
+            raise
+        return r
+    return wrapped

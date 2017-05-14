@@ -35,6 +35,9 @@ provide functions
 from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
+import threading
+from common import dut_exception_handler
+
 class dut(object):
     name=None
     session_type= None
@@ -43,14 +46,13 @@ class dut(object):
     log_path=None
     new_line=None
     new_line_during_login =None
-    alive_counter =0 # if it keeps change, the session should be alive, otherwise, end itself
-
     login_steps= None
     session =None
     command_respone_json = None # a dict to record the interaction procedure
+    def __del__(self):
+        if self.session:
+            self.session.close_session()
 
-    stream_in=None
-    search_index = None
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.login_steps = login_step
@@ -61,9 +63,6 @@ class dut(object):
         self.log_path = log_path
         self.new_line = new_line
 
-        self.search_index = 0
-        self.stream_in = ''
-
         self.new_line_during_login = new_line_during_login
         if type == 'echo':
             from lib.echo import echo
@@ -73,6 +72,7 @@ class dut(object):
         else:
             self.login(login_step)
 
+
     def step(self,command, expect='.*', time_out=30, total_try =1, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.I|re.M):
         error_info = None
         total_try= int(total_try)
@@ -80,31 +80,53 @@ class dut(object):
         while total_try:
             total_try -= 1
             try:
-                if no_wait:
-                    self.wait_for(expect, time_out,flags,not_want_to_find)
                 resp = self.session.cmd(command)
+                if not no_wait:
+                    pass
+                else:
+                    self.session.reset_search_buffer()
+                success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
 
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
                     pprint(format_exc())
-                    raise(e)
+                    e.message='{dut_name}.step: command={cmd}, time_out={time_out}, total_try={total_try},ctrl={ctrl}, not_want_to_find={not_want}, no_wait={no_wait},flags={flags}\n{msg}'.format(
+                        dut_name = self.name,
+                        cmd = command,
+                        time_out = time_out,
+                        total_try = total_try,
+                        ctrl = ctrl,
+                        not_want = not_want_to_find,
+                        no_wait = no_wait,
+                        flags = flags,
+                        msg= e.message
+                    )
+                    pprint( e.message)
+                    raise
 
-    def match_in_buffer(self, pattern, flags=re.I|re.M):
-        buffer = self.stream_in[self.search_index:]
-        match = re.search(pattern,buffer,flags=flags)
+    def match_in_buffer(self, pattern):
+        buffer = self.session.search_buffer
+        match = re.search(pattern,buffer)
         return match, buffer
+    def sleep(self, sleep_time):
+        if self.session_type == 'echo':
+            pass
+        else:
+            time.sleep(sleep_time)
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
+        if self.session_type == 'echo':
+            time_out = 0.
+        time_out=float(time_out)
         start_time = datetime.datetime.now()
-        end_time = start_time + datetime.timedelta(seconds=int(time_out), microseconds=1000*(time_out-int(time_out)))
+        end_time = start_time + datetime.timedelta(seconds=math.ceil(time_out))
         pat =re.compile(pattern=pattern,flags=flags)
         match = None
         buffer = ''
         success= False
-        while(end_time> datetime.datetime.now()):
-
-            match, buffer = self.match_in_buffer(pat,flags)
+        while True:
+            match, buffer = self.match_in_buffer(pat)
             if match:
                 if not_want_to_find:
                     success = False
@@ -114,9 +136,17 @@ class dut(object):
             else: #not find the pattern
                 now = datetime.datetime.now()
                 remain_time = end_time - now
-                time.sleep(min(remain_time.total_seconds(), poll_interval))
-        return success,match,buffer
+                remain_seconds = remain_time.total_seconds()
+                remain_seconds = remain_time if remain_seconds> 0 else 0
+                self.sleep(min(remain_seconds, poll_interval))
 
+            now = datetime.datetime.now()
+            if end_time > now:
+                continue
+            else:
+                break
+        return success,match,buffer
+    @dut_exception_handler
     def login(self, login_step_file=None, retry=1):
         import csv
         if login_step_file !=None:
