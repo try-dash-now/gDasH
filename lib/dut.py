@@ -34,7 +34,7 @@ provide functions
 #todo: function_step defines the output format:
 from pprint import pprint
 from traceback import format_exc
-import time,datetime, re, math
+import time,datetime, re, math, datetime
 class dut(object):
     name=None
     session_type= None
@@ -96,10 +96,8 @@ class dut(object):
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
-        #poll_interval = min(poll_interval,time_out)
-        import datetime
         start_time = datetime.datetime.now()
-        end_time = start_time + datetime.timedelta(seconds=int(time_out), microseconds=time_out-int(time_out))
+        end_time = start_time + datetime.timedelta(seconds=int(time_out), microseconds=1000*(time_out-int(time_out)))
         pat =re.compile(pattern=pattern,flags=flags)
         match = None
         buffer = ''
