@@ -25,35 +25,18 @@ it's simulator of an equipment, it is simple to get input 'command', match to an
 '''
 import  time, datetime
 import threading
-import common
+
 class echo (object):
     io_map = None
-    search_buffer =None
-    buffer_locker =None
-    session_status = None
-    max_heart_beat_lost_counter = 10
     name = None
     def __init__(self, io_data_file):
         self.name = io_data_file
-        self.session_status = True
         self.load(io_data_file)
-        self.search_buffer = ''
-        self.buffer_locker=  threading.Lock()
-        th =threading.Thread(target=self.read_data)
-        th.start()
-
     def load(self, io_data_file):
         import json
         json_data = ''.join([x.strip() for x in open(io_data_file).readlines()])
         self.io_map =json.loads(json_data)
-    def add_data_to_search_buffer(self,data):
-        self.buffer_locker.acquire()
-        self.search_buffer+='{}'.format(data)
-        self.buffer_locker.release()
-    def reset_search_buffer(self):
-        self.buffer_locker.acquire()
-        self.search_buffer=''
-        self.buffer_locker.release()
+
     def cmd(self,input_cmd):
         response = ''
         if self.io_map.has_key(input_cmd):
@@ -64,13 +47,6 @@ class echo (object):
                 if len(data)>0:
                     response = data[0]
                     self.io_map[input_cmd].pop(0)
-        self.add_data_to_search_buffer(response)
+
         return  '{}'.format(response)
-    def close_session(self):
-        self.session_status=False
-        time.sleep(0.001)
-    def read_data(self):
-        while self.session_status:
-            if common.debug:
-                print('session {name} alive'.format(name =self.name))
-            time.sleep(0.001)
+

@@ -30,7 +30,7 @@ class ut_echo(unittest.TestCase):
     def setUp(self):
         self.echo = echo(init_file_name)
     def tearDown(self):
-        self.echo.close_session()
+        pass
     def test_init(self):
         print(self.echo)
         io_data = ''.join([x.strip() for x in open(init_file_name).readlines()])

@@ -37,7 +37,7 @@ from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
 from common import dut_exception_handler
-
+import common
 class dut(object):
     name=None
     session_type= None
@@ -49,9 +49,12 @@ class dut(object):
     login_steps= None
     session =None
     command_respone_json = None # a dict to record the interaction procedure
+    search_buffer =None
+    buffer_locker =None
+    session_status = None
     def __del__(self):
         if self.session:
-            self.session.close_session()
+            self.close_session()
 
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
@@ -62,7 +65,12 @@ class dut(object):
         self.port = port
         self.log_path = log_path
         self.new_line = new_line
+        self.session_status = True
+        self.search_buffer = ''
+        self.buffer_locker=  threading.Lock()
 
+        th =threading.Thread(target=self.read_data)
+        th.start()
         self.new_line_during_login = new_line_during_login
         if type == 'echo':
             from lib.echo import echo
@@ -81,10 +89,11 @@ class dut(object):
             total_try -= 1
             try:
                 resp = self.session.cmd(command)
+                self.add_data_to_search_buffer(resp)
                 if not no_wait:
                     pass
                 else:
-                    self.session.reset_search_buffer()
+                    self.reset_search_buffer()
                 success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
 
             except Exception as e:
@@ -105,7 +114,7 @@ class dut(object):
                     raise
 
     def match_in_buffer(self, pattern):
-        buffer = self.session.search_buffer
+        buffer = self.search_buffer
         match = re.search(pattern,buffer)
         return match, buffer
     def sleep(self, sleep_time):
@@ -164,4 +173,19 @@ class dut(object):
                         cmd,expect, time_out, total_try =row[:4]
                     self.step(cmd,expect, time_out,total_try)
 
-
+    def close_session(self):
+        self.session_status=False
+        time.sleep(0.001)
+    def add_data_to_search_buffer(self,data):
+        self.buffer_locker.acquire()
+        self.search_buffer+='{}'.format(data)
+        self.buffer_locker.release()
+    def reset_search_buffer(self):
+        self.buffer_locker.acquire()
+        self.search_buffer=''
+        self.buffer_locker.release()
+    def read_data(self):
+        while self.session_status:
+            if common.debug:
+                print('session {name} alive'.format(name =self.name))
+            time.sleep(0.001)

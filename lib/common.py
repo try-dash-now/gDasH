@@ -40,7 +40,7 @@ def dut_exception_handler(function_name):
                 if debug:
                     pass
                 else:
-                    dut_instance.session.close_session()
+                    dut_instance.close_session()
             raise
         return r
     return wrapped

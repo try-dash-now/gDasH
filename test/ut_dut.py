@@ -32,7 +32,7 @@ class ut_dut(unittest.TestCase):
     def setUp(self):
         self.my_dut = dut('test_dut', type='echo', host= './ut_dut.json', login_step='./ut_session_login_step.csv')
     def tearDown(self):
-        self.my_dut.session.close_session()
+        self.my_dut.close_session()
     def test_login(self):
         self.my_dut.login()
     def test_step(self):
