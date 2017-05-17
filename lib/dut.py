@@ -52,6 +52,9 @@ class dut(object):
     search_buffer =None
     buffer_locker =None
     session_status = None
+    login_done =False
+    write_locker = None
+
     def __del__(self):
         if self.session:
             self.close_session()
@@ -68,7 +71,7 @@ class dut(object):
         self.session_status = True
         self.search_buffer = ''
         self.buffer_locker=  threading.Lock()
-
+        self.write_locker=  threading.Lock()
         th =threading.Thread(target=self.read_data)
         th.start()
         self.new_line_during_login = new_line_during_login
@@ -88,7 +91,7 @@ class dut(object):
         while total_try:
             total_try -= 1
             try:
-                resp = self.session.cmd(command)
+                resp = self.write(command)
                 self.add_data_to_search_buffer(resp)
                 if not no_wait:
                     pass
@@ -146,7 +149,7 @@ class dut(object):
                 now = datetime.datetime.now()
                 remain_time = end_time - now
                 remain_seconds = remain_time.total_seconds()
-                remain_seconds = remain_time if remain_seconds> 0 else 0
+                remain_seconds = remain_seconds if remain_seconds> 0 else 0
                 self.sleep(min(remain_seconds, poll_interval))
 
             now = datetime.datetime.now()
@@ -172,20 +175,46 @@ class dut(object):
                     elif len(row) >3:
                         cmd,expect, time_out, total_try =row[:4]
                     self.step(cmd,expect, time_out,total_try)
+        self.login_done =True
 
     def close_session(self):
         self.session_status=False
         time.sleep(0.001)
     def add_data_to_search_buffer(self,data):
-        self.buffer_locker.acquire()
-        self.search_buffer+='{}'.format(data)
-        self.buffer_locker.release()
+        if len(data):
+            self.buffer_locker.acquire()
+            self.search_buffer+='{}'.format(data)
+            self.buffer_locker.release()
     def reset_search_buffer(self):
         self.buffer_locker.acquire()
         self.search_buffer=''
         self.buffer_locker.release()
     def read_data(self):
+        max_idle_time = 60
+        last_update_time = datetime.datetime.now()
         while self.session_status:
+            current_time = datetime.datetime.now()
             if common.debug:
                 print('session {name} alive'.format(name =self.name))
+            if (current_time-last_update_time).total_seconds()> max_idle_time:
+                last_update_time = current_time
+                self.write()
+
+            self.add_data_to_search_buffer(self.read())
+
             time.sleep(0.001)
+    def write(self, cmd=''):
+        resp = ''
+        if self.session:
+            new_line =self.new_line
+            if not self.login_done:
+                new_line = self.new_line_during_login
+            self.write_locker.acquire()
+            resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
+            self.write_locker.release()
+        return  resp
+    def read(self):
+        resp =''
+        if self.session:
+            resp =self.session.read()
+        return  resp

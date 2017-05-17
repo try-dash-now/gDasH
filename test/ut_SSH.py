@@ -20,41 +20,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.'''
 __author__ = 'Yu, Xiongwei(Sean Yu)'
+
 __doc__ = '''
-unit test of lib/echo.py
+created 5/17/2017
 '''
-from lib.echo import echo
+from lib.dut import dut
+import lib.common
 import unittest
 init_file_name = 'ut_echo.json'
-class ut_echo(unittest.TestCase):
+class ut_dut(unittest.TestCase):
     def setUp(self):
-        self.echo = echo(init_file_name)
+        self.my_dut = dut('test_ssh', type='ssh', host= 'localhost' )#,login_step='./ut_SSH_login_step.csv'
     def tearDown(self):
-        pass
-    def test_init(self):
-        print(self.echo)
-        io_data = ''.join([x.strip() for x in open(init_file_name).readlines()])
-        import json
-        io_json = json.loads(io_data)
-        for k in io_json.keys():
-            self.assertEquals(self.echo.io_map, io_json )
-        #import pprint
-        #pprint.pprint(io_json, indent=4)
+        self.my_dut.close_session()
+    def test_login(self):
+        self.my_dut.login()
+    def test_step(self):
+        lib.common.debug=True
+        self.my_dut.step('','')
+    def test_wait_for(self):
+        #no wait, search in buffer, find the expected pattern
+        success,match, buffer = self.my_dut.wait_for('pattern_found',1)
+        self.assertEquals(success, True)
 
-    def test_single_line_respone(self):
-        self.assertEquals(self.echo.write('cmd1'),'result1')
-    def test_repeat_same_command(self):
-        self.assertEquals(self.echo.write('cmd2'),'result2')
-        self.assertEquals(self.echo.write('cmd2'),'result3')
-        self.assertEquals(self.echo.write('cmd2'),'')
-        #self.assertEquals(self.echo.cmd('cmd2'),'None')
+        #no wait, search in buffer, expect pattern not being found
+        success,match, buffer = self.my_dut.wait_for('abc', 1,not_want_to_find=True)
+
+
+
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(ut_echo.test_init())
-    suite.addTest(ut_echo.test_single_line_respone())
-    suite.addTest(ut_echo.test_repeat_same_command())
-
+    suite.addTest(ut_dut.test_login())
     return suite
 
 if __name__ == '__main__':

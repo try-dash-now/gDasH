@@ -37,10 +37,10 @@ class echo (object):
         json_data = ''.join([x.strip() for x in open(io_data_file).readlines()])
         self.io_map =json.loads(json_data)
 
-    def cmd(self,input_cmd):
+    def write(self,input_cmd):
         response = ''
         if self.io_map.has_key(input_cmd):
-            data = self.io_map[input_cmd]
+            data = self.io_map[input_cmd.strip()]
             if type(data) ==type(u''):
                 response = data
             elif type([]) == type(data):
@@ -49,4 +49,6 @@ class echo (object):
                     self.io_map[input_cmd].pop(0)
 
         return  '{}'.format(response)
+    def read(self):
+        return ''
 
