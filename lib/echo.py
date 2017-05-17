@@ -25,12 +25,14 @@ it's simulator of an equipment, it is simple to get input 'command', match to an
 '''
 import  time, datetime
 import threading
-
+import Queue
 class echo (object):
     io_map = None
     name = None
+    last_command = None
     def __init__(self, io_data_file):
         self.name = io_data_file
+        self.last_command = Queue.Queue()
         self.load(io_data_file)
     def load(self, io_data_file):
         import json
@@ -38,17 +40,27 @@ class echo (object):
         self.io_map =json.loads(json_data)
 
     def write(self,input_cmd):
+        self.last_command.put(input_cmd)
+        return ''
+    def read(self):
         response = ''
+        input_cmd = self.last_command.get()
+        pure_cmd = input_cmd.strip()
+        cmd = pure_cmd
         if self.io_map.has_key(input_cmd):
-            data = self.io_map[input_cmd.strip()]
+            cmd = input_cmd
+        elif self.io_map.has_key(pure_cmd):
+            pass
+
+        if self.io_map.has_key(cmd):
+            data = self.io_map[cmd]
             if type(data) ==type(u''):
                 response = data
             elif type([]) == type(data):
                 if len(data)>0:
                     response = data[0]
-                    self.io_map[input_cmd].pop(0)
+                    self.io_map[cmd].pop(0)
 
         return  '{}'.format(response)
-    def read(self):
-        return ''
+
 

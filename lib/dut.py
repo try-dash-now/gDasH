@@ -162,6 +162,7 @@ class dut(object):
     def login(self, login_step_file=None, retry=1):
         import csv
         if login_step_file !=None:
+            time.sleep(0.001)
             with open(login_step_file, 'rb') as csvfile:
                 self.login_steps = csv.reader(csvfile, delimiter=',', quotechar='|')
                 for row in self.login_steps:
