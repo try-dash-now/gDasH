@@ -38,13 +38,7 @@ class ut_dut(unittest.TestCase):
     def test_step(self):
         lib.common.debug=True
         self.my_dut.step('','')
-    def test_wait_for(self):
-        #no wait, search in buffer, find the expected pattern
-        success,match, buffer = self.my_dut.wait_for('pattern_found',1)
-        self.assertEquals(success, True)
 
-        #no wait, search in buffer, expect pattern not being found
-        success,match, buffer = self.my_dut.wait_for('abc', 1,not_want_to_find=True)
 
 
 

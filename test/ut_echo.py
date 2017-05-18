@@ -42,11 +42,15 @@ class ut_echo(unittest.TestCase):
         #pprint.pprint(io_json, indent=4)
 
     def test_single_line_respone(self):
-        self.assertEquals(self.echo.write('cmd1'),'result1')
+        self.echo.write('cmd1')
+        self.assertEquals(self.echo.read(),'result1')
     def test_repeat_same_command(self):
-        self.assertEquals(self.echo.write('cmd2'),'result2')
-        self.assertEquals(self.echo.write('cmd2'),'result3')
-        self.assertEquals(self.echo.write('cmd2'),'')
+        self.echo.write('cmd2')
+        self.assertEquals(self.echo.read(),'result2')
+        self.echo.write('cmd2')
+        self.assertEquals(self.echo.read(),'result3')
+        self.echo.write('cmd2')
+        self.assertEquals(self.echo.read(),'')
         #self.assertEquals(self.echo.cmd('cmd2'),'None')
 
 def suite():
