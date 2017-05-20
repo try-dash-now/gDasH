@@ -86,18 +86,50 @@ class dut(object):
 
     def step(self,command, expect='.*', time_out=30, total_try =1, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.I|re.M):
         error_info = None
+        init_total_try = total_try
         total_try= int(total_try)
         match, buffer = None, ''
         while total_try:
             total_try -= 1
             try:
-                resp = self.write(command)
+
+                resp = self.write(command, ctrl)
+                time.sleep(0.001)
                 self.add_data_to_search_buffer(resp)
                 if not no_wait:
                     pass
                 else:
                     self.reset_search_buffer()
                 success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
+                if not success :
+                    if not_want_to_find:
+                        pass
+                    else:
+                        error_message="""
+    {dut_name}.step:
+    command =>{cmd},
+    expect  =>{exp},
+    time_out         : {time_out},
+    total_try        : {total_try},
+    ctrl             : {ctrl},
+    not_want_to_find : {not_want},
+    no_wait          : {no_wait},
+    flags            :{flags}
+buffer:
+{buffer}
+    """.format(
+                        dut_name = self.name,
+                        cmd = command,
+                        exp = expect,
+                        time_out = time_out,
+                        total_try = init_total_try,
+                        ctrl = ctrl,
+                        not_want = not_want_to_find,
+                        no_wait = no_wait,
+                        flags = flags,
+                        buffer = buffer
+                    )
+                        raise Exception(error_message)
 
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
@@ -122,14 +154,14 @@ class dut(object):
         return match, buffer
     def sleep(self, sleep_time):
         if self.session_type == 'echo':
-            pass
+            time.sleep(0.001)
         else:
             time.sleep(sleep_time)
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
         if self.session_type == 'echo':
-            time_out = 0.
+            time_out = 0.01
         time_out=float(time_out)
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=math.ceil(time_out))
@@ -157,6 +189,12 @@ class dut(object):
                 continue
             else:
                 break
+        if success:
+            if not_want_to_find:
+                success = False
+        else:
+            if not_want_to_find:
+                success = True
         return success,match,buffer
     @dut_exception_handler
     def login(self, login_step_file=None, retry=1):
@@ -180,6 +218,7 @@ class dut(object):
 
     def close_session(self):
         self.session_status=False
+        print('session {}: Close!!!'.format(self.name))
         time.sleep(0.001)
     def add_data_to_search_buffer(self,data):
         if len(data):
@@ -189,6 +228,8 @@ class dut(object):
     def reset_search_buffer(self):
         self.buffer_locker.acquire()
         self.search_buffer=''
+        if common.debug:
+            print('{}:reset search buffer'.format(self.name))
         self.buffer_locker.release()
     def read_data(self):
         max_idle_time = 60
@@ -196,7 +237,8 @@ class dut(object):
         while self.session_status:
             current_time = datetime.datetime.now()
             if common.debug:
-                print('session {name} alive'.format(name =self.name))
+                pass
+            print('session {name} alive'.format(name =self.name))
             if (current_time-last_update_time).total_seconds()> max_idle_time:
                 last_update_time = current_time
                 self.write()
@@ -204,18 +246,27 @@ class dut(object):
             self.add_data_to_search_buffer(self.read())
 
             time.sleep(0.001)
-    def write(self, cmd=''):
+    def write(self, cmd='', ctrl=False):
         resp = ''
         if self.session:
             new_line =self.new_line
             if not self.login_done:
                 new_line = self.new_line_during_login
             self.write_locker.acquire()
-            resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
+            if ctrl:
+                ascii = ord(cmd[0]) & 0x1f
+                cmd = chr(ascii)
+                resp = self.session.write(cmd, ctrl=ctrl)
+                resp +=self.session.write(new_line)
+            else:
+                resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line), ctrl=ctrl)
+            self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
             self.write_locker.release()
         return  resp
     def read(self):
         resp =''
         if self.session:
             resp =self.session.read()
+            if len(resp):
+                print('{}'.format(resp))
         return  resp

@@ -23,8 +23,7 @@ __author__ = 'Yu, Xiongwei(Sean Yu)'
 __doc__ = '''
 it's simulator of an equipment, it is simple to get input 'command', match to an output, and response the matched output to the caller
 '''
-import  time, datetime
-import threading
+
 import Queue
 class echo (object):
     io_map = None
@@ -39,7 +38,11 @@ class echo (object):
         json_data = ''.join([x.strip() for x in open(io_data_file).readlines()])
         self.io_map =json.loads(json_data)
 
-    def write(self,input_cmd):
+    def write(self,input_cmd, ctrl=False):
+
+        #print('{}:{}'.format(self.name,input_cmd))
+        if ctrl:
+            input_cmd='^{}'.format(chr(64+ord(input_cmd[0])))
         self.last_command.put(input_cmd)
         return ''
     def read(self):
@@ -60,7 +63,7 @@ class echo (object):
                 if len(data)>0:
                     response = data[0]
                     self.io_map[cmd].pop(0)
-
+        #print('{}'.format(response))
         return  '{}'.format(response)
 
 

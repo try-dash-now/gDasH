@@ -33,18 +33,26 @@ class ut_dut(unittest.TestCase):
         self.my_dut = dut('test_dut', type='echo', host= './ut_dut.json', login_step='./ut_session_login_step.csv')
     def tearDown(self):
         self.my_dut.close_session()
-    def test_login(self):
-        self.my_dut.login()
     def test_step(self):
         lib.common.debug=True
+        self.my_dut.login()
         self.my_dut.step('','')
-    def test_wait_for(self):
-        #no wait, search in buffer, find the expected pattern
-        success,match, buffer = self.my_dut.wait_for('pattern_found',1)
-        self.assertEquals(success, True)
-
-        #no wait, search in buffer, expect pattern not being found
-        success,match, buffer = self.my_dut.wait_for('abc', 1,not_want_to_find=True)
+        self.my_dut.step('step_cmd_pattern','test_wait_for: pattern_found')
+        self.my_dut.step('step_cmd_no_pattern','test_wait_for: No_this_pattern',not_want_to_find=True)
+        self.my_dut.step('c','control \^C',ctrl=True)
+    # def test_wait_for(self):
+    #     #no wait, search in buffer, find the expected pattern
+    #     self.my_dut = dut('test_dut', type='echo', host= './ut_dut.json', login_step='./ut_session_login_step.csv')
+    #     self.my_dut.login()
+    #     self.my_dut.write('sean')
+    #     success,match, buffer = self.my_dut.wait_for('pattern_found',1)
+    #     #print('buffer: {}'.format(buffer))
+    #     self.assertEquals(success, True)
+    #
+    #     #no wait, search in buffer, expect pattern not being found
+    #     success,match, buffer = self.my_dut.wait_for('abc', 1,not_want_to_find=True)
+    #     self.assertEquals(success, True)
+    #     self.my_dut.close_session()
 
 
 
