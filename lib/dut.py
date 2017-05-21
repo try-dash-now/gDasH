@@ -217,9 +217,12 @@ buffer:
         self.login_done =True
 
     def close_session(self):
+        self.write_locker.acquire()
+        print('session {}: Closing!!!'.format(self.name))
         self.session_status=False
-        print('session {}: Close!!!'.format(self.name))
         time.sleep(0.001)
+
+
     def add_data_to_search_buffer(self,data):
         if len(data):
             self.buffer_locker.acquire()
@@ -238,14 +241,13 @@ buffer:
             current_time = datetime.datetime.now()
             if common.debug:
                 pass
-            print('session {name} alive'.format(name =self.name))
+            #print('session {name} alive'.format(name =self.name))
             if (current_time-last_update_time).total_seconds()> max_idle_time:
                 last_update_time = current_time
                 self.write()
-
             self.add_data_to_search_buffer(self.read())
-
-            time.sleep(0.001)
+            time.sleep(0.01)
+        print('session {}: Closed!!!'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
         if self.session:
@@ -260,13 +262,15 @@ buffer:
                 resp +=self.session.write(new_line)
             else:
                 resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line), ctrl=ctrl)
-            self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
+            #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
             self.write_locker.release()
         return  resp
     def read(self):
         resp =''
         if self.session:
             resp =self.session.read()
-            if len(resp):
+            if len(resp.strip()):
+                #pass
                 print('{}'.format(resp))
+                print('-'*40)
         return  resp

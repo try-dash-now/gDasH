@@ -64,6 +64,6 @@ class echo (object):
                     response = data[0]
                     self.io_map[cmd].pop(0)
         #print('{}'.format(response))
-        return  '{}'.format(response)
+        return  '{cmd}\n{rsp}'.format(cmd=cmd, rsp =response)
 
 
