@@ -49,6 +49,8 @@ if __name__ == '__main__':
         pprint(fail[0])
         for line in fail[1].split('\n')[1:]:
             print('\t\t{}'.format(line))
+    import time
+    time.sleep(0.5)#sleep a while, make sure all sessions have been closed in threads
     print('*'*80+'\nut summary:')
     pprint(result)
     print('*'*80)

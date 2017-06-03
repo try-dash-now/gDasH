@@ -217,11 +217,13 @@ buffer:
         self.login_done =True
 
     def close_session(self):
-        self.write_locker.acquire()
-        print('session {}: Closing!!!'.format(self.name))
-        self.session_status=False
-        time.sleep(0.001)
 
+        if self.session_status: #try to avoid to call this function twice
+            self.write_locker.acquire()
+            print('session {}: Closing!!!\n'.format(self.name))
+            self.session_status=False
+            self.write_locker.release()
+        time.sleep(0.001)
 
     def add_data_to_search_buffer(self,data):
         if len(data):
@@ -247,7 +249,7 @@ buffer:
                 self.write()
             self.add_data_to_search_buffer(self.read())
             time.sleep(0.01)
-        print('session {}: Closed!!!'.format(self.name))
+        print('session {}: Closed!!!\n'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
         if self.session:

@@ -43,14 +43,15 @@ class ut_echo(unittest.TestCase):
 
     def test_single_line_respone(self):
         self.echo.write('cmd1')
-        self.assertEquals(self.echo.read(),'result1')
+        self.assertEquals(self.echo.read().split('\n')[-1],'result1')
+
     def test_repeat_same_command(self):
         self.echo.write('cmd2')
-        self.assertEquals(self.echo.read(),'result2')
+        self.assertEquals(self.echo.read().split('\n')[-1],'result2')
         self.echo.write('cmd2')
-        self.assertEquals(self.echo.read(),'result3')
+        self.assertEquals(self.echo.read().split('\n')[-1],'result3')
         self.echo.write('cmd2')
-        self.assertEquals(self.echo.read(),'')
+        self.assertEquals(self.echo.read().split('\n')[-1],'')
         #self.assertEquals(self.echo.cmd('cmd2'),'None')
 
 def suite():
