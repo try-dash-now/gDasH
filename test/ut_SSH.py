@@ -30,14 +30,14 @@ import unittest
 init_file_name = 'ut_echo.json'
 class ut_dut(unittest.TestCase):
     def setUp(self):
-        self.my_dut = dut('test_ssh', type='ssh', host= 'localhost' )#,login_step='./ut_SSH_login_step.csv'
+        self.my_dut = dut('test_ssh', type='ssh', host= 'localhost', port = 22, user_name ='sean', password='0421' )#,login_step='./ut_SSH_login_step.csv'
     def tearDown(self):
         self.my_dut.close_session()
     def test_login(self):
         self.my_dut.login()
     def test_step(self):
         lib.common.debug=True
-        self.my_dut.step('','')
+        self.my_dut.step('ls','sean')
 
 
 

@@ -66,6 +66,8 @@ class dut(object):
         self.name = name
         self.host= host
         self.port = port
+        self.user = user_name
+        self.password = password
         self.log_path = log_path
         self.new_line = new_line
         self.session_status = True
@@ -78,6 +80,9 @@ class dut(object):
         if type == 'echo':
             from lib.echo import echo
             self.session = echo(host)
+        elif type.lower() =='ssh':
+            from lib.SSH import SSH
+            self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
         if login_step==None:
             self.login_steps =[]
         else:
@@ -223,9 +228,12 @@ buffer:
             print('session {}: Closing!!!'.format(self.name))
             self.session_status=False
             self.write_locker.release()
+
         time.sleep(0.001)
 
     def add_data_to_search_buffer(self,data):
+        if data in [None]:
+            data=''
         if len(data):
             self.buffer_locker.acquire()
             self.search_buffer+='{}'.format(data)
@@ -249,6 +257,10 @@ buffer:
                 self.write()
             self.add_data_to_search_buffer(self.read())
             time.sleep(0.01)
+        if self.session_type in ['ssh']:
+            if self.session.client:
+                self.session.client.close()
+                self.session.client=None
         print('session {}: Closed!!!'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
@@ -270,7 +282,10 @@ buffer:
     def read(self):
         resp =''
         if self.session:
-            resp =self.session.read()
+            try:
+                resp =self.session.read()
+            except Exception as e:
+                pprint(format_exc())
             if len(resp.strip()):
                 print('-'*20+'read start'+'-'*20)
                 print('{}'.format(resp))
