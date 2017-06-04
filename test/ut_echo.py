@@ -32,7 +32,7 @@ class ut_echo(unittest.TestCase):
     def tearDown(self):
         pass
     def test_init(self):
-        print(self.echo)
+        #print(self.echo)
         io_data = ''.join([x.strip() for x in open(init_file_name).readlines()])
         import json
         io_json = json.loads(io_data)

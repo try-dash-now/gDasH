@@ -59,7 +59,7 @@ class dut(object):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.login_steps = login_step
         self.session_type = type
@@ -220,7 +220,7 @@ buffer:
 
         if self.session_status: #try to avoid to call this function twice
             self.write_locker.acquire()
-            print('session {}: Closing!!!\n'.format(self.name))
+            print('session {}: Closing!!!'.format(self.name))
             self.session_status=False
             self.write_locker.release()
         time.sleep(0.001)
@@ -249,7 +249,7 @@ buffer:
                 self.write()
             self.add_data_to_search_buffer(self.read())
             time.sleep(0.01)
-        print('session {}: Closed!!!\n'.format(self.name))
+        print('session {}: Closed!!!'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
         if self.session:
@@ -272,7 +272,7 @@ buffer:
         if self.session:
             resp =self.session.read()
             if len(resp.strip()):
-                #pass
+                print('-'*20+'read start'+'-'*20)
                 print('{}'.format(resp))
-                print('-'*40)
+                print('-'*20+'read end'+'-'*20)
         return  resp
