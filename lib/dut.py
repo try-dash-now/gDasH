@@ -222,13 +222,11 @@ buffer:
         self.login_done =True
 
     def close_session(self):
-
+        self.write_locker.acquire()
         if self.session_status: #try to avoid to call this function twice
-            self.write_locker.acquire()
             print('session {}: Closing!!!'.format(self.name))
             self.session_status=False
-            self.write_locker.release()
-
+        self.write_locker.release()
         time.sleep(0.001)
 
     def add_data_to_search_buffer(self,data):
