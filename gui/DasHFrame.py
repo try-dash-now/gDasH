@@ -42,6 +42,7 @@ class DasHFrame(MainFrame):#wx.Frame
             tmp = self.m_case_tree.InsertItem(sub_folder, sub_folder, 'case %d'%(i+1))
 
         self.m_case_tree.ExpandAll()
+        self.m_editor.WriteText('welcome to dash world')
 
 
 
