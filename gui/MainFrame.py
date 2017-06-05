@@ -9,6 +9,7 @@
 
 import wx
 import wx.xrc
+import wx.richtext
 import wx.grid
 
 ###########################################################################
@@ -22,26 +23,27 @@ class MainFrame ( wx.Frame ):
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
+		self.m_menubar1 = wx.MenuBar( 0 )
+		self.SetMenuBar( self.m_menubar1 )
+		
 		gSizerMain = wx.GridSizer( 1, 3, 0, 0 )
 		
 		self.m_case_tree = wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TR_DEFAULT_STYLE|wx.TR_EDIT_LABELS|wx.TR_EXTENDED|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL|wx.WANTS_CHARS )
-		gSizerMain.Add( self.m_case_tree, 0, wx.EXPAND, 5 )
+		gSizerMain.Add( self.m_case_tree, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		bSizerLeft = wx.BoxSizer( wx.VERTICAL )
 		
-		# WARNING: wxPython code generation isn't supported for this widget yet.
-		self.m_file_editor = wx.Window( self )
-		bSizerLeft.Add( self.m_file_editor, 1, wx.EXPAND |wx.ALL, 5 )
+		self.m_editor = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+		bSizerLeft.Add( self.m_editor, 1, wx.EXPAND |wx.ALL, 5 )
 		
-		# WARNING: wxPython code generation isn't supported for this widget yet.
-		self.m_log_window = wx.Window( self )
-		bSizerLeft.Add( self.m_log_window, 1, wx.EXPAND |wx.ALL, 5 )
+		self.m_log = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+		bSizerLeft.Add( self.m_log, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_command_box = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizerLeft.Add( self.m_command_box, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		gSizerMain.Add( bSizerLeft, 1, wx.EXPAND, 5 )
+		gSizerMain.Add( bSizerLeft, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_case_steps = wx.grid.Grid( self, wx.ID_ANY, wx.Point( -1,-1 ), wx.Size( -1,-1 ), 0 )
 		

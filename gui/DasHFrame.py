@@ -44,6 +44,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_case_tree.ExpandAll()
 
 
+
     def OnSelChanged(self, event):
         item =  event.GetItem()
         self.display.SetLabel(self.tree.GetItemText(item))
