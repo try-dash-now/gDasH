@@ -43,6 +43,8 @@ class DasHFrame(MainFrame):#wx.Frame
 
         self.m_case_tree.ExpandAll()
         self.m_editor.WriteText('welcome to dash world')
+        self.m_log.WriteText('Happy Birthday!')
+        self.m_command_box.WriteText('read only,but select copy allowed')
 
 
 
