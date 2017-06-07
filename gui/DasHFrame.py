@@ -45,6 +45,11 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Happy Birthday!')
         self.m_command_box.WriteText('read only,but select copy allowed')
+        fileMenu = wx.Menu()
+        open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
+        open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
+        self.m_menubar_main.Append(fileMenu, "&Open TestSuite")
+
 
 
 

@@ -23,8 +23,8 @@ class MainFrame ( wx.Frame ):
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
-		self.m_menubar1 = wx.MenuBar( 0 )
-		self.SetMenuBar( self.m_menubar1 )
+		self.m_menubar_main = wx.MenuBar( 0 )
+		self.SetMenuBar( self.m_menubar_main )
 		
 		gSizerMain = wx.GridSizer( 1, 3, 0, 0 )
 		
