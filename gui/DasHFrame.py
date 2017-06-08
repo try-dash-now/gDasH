@@ -41,6 +41,8 @@ class DasHFrame(MainFrame):#wx.Frame
         for i in range(10):
             tmp = self.m_case_tree.InsertItem(sub_folder, sub_folder, 'case %d'%(i+1))
 
+            self.m_case_tree.SetItemTextColour(tmp ,wx.Colour(255-10*i,10*i,i*i))
+
         self.m_case_tree.ExpandAll()
         self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Happy Birthday!')

@@ -33,8 +33,15 @@ class MainFrame ( wx.Frame ):
 		
 		bSizerLeft = wx.BoxSizer( wx.VERTICAL )
 		
+		self.m_notebook1 = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
+		
+		bSizerLeft.Add( self.m_notebook1, 1, wx.EXPAND |wx.ALL, 5 )
+		
 		self.m_editor = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
 		bSizerLeft.Add( self.m_editor, 1, wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_textCtrl2 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizerLeft.Add( self.m_textCtrl2, 0, wx.ALL, 5 )
 		
 		self.m_log = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
 		self.m_log.Enable( False )
@@ -43,9 +50,6 @@ class MainFrame ( wx.Frame ):
 		
 		self.m_command_box = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY )
 		bSizerLeft.Add( self.m_command_box, 0, wx.ALL|wx.EXPAND, 5 )
-		
-		self.m_textCtrl2 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizerLeft.Add( self.m_textCtrl2, 0, wx.ALL, 5 )
 		
 		
 		gSizerMain.Add( bSizerLeft, 1, wx.ALL|wx.EXPAND, 5 )
