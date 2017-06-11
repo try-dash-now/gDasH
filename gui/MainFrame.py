@@ -33,9 +33,8 @@ class MainFrame ( wx.Frame ):
 		
 		bSizerLeft = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_notebook1 = wx.Notebook( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
-		
-		bSizerLeft.Add( self.m_notebook1, 1, wx.EXPAND |wx.ALL, 5 )
+		self.m_file_editor = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		bSizerLeft.Add( self.m_file_editor, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_editor = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
 		bSizerLeft.Add( self.m_editor, 1, wx.EXPAND |wx.ALL, 5 )

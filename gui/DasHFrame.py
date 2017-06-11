@@ -24,8 +24,24 @@ __doc__ = '''
 it's GUI of DasH aka Do as Human
 created 2017-05-06 by Sean Yu
 '''
+
+
+
 import wx
 from gui.MainFrame import MainFrame
+
+class PageOne(wx.Panel):
+    editor =None
+    def __init__(self, parent, title='pageOne'):
+        wx.Panel.__init__(self, parent)
+        self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.VSCROLL|wx.HSCROLL, size=(200, 200))#, size = (250,150))
+        #self.content1= wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+        #self.content1 = wx.richtext.RichTextCtrl(self, size=(300, 100), style=wx.TE_MULTILINE)
+
+
+
+        #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
+
 class DasHFrame(MainFrame):#wx.Frame
     def __init__(self,parent=None):
         #wx.Frame.__init__(self, None, title="DasH")
@@ -53,6 +69,24 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_menubar_main.Append(fileMenu, "&Open TestSuite")
 
 
+        p = self.m_file_editor
+        nb = wx.Notebook(p)
+                # create the page windows as children of the notebook
+        page1 = PageOne(nb, 'a')
+        page2 = PageOne(nb, 'b')
+        page3 = PageOne(nb)
+        page1.editor.WriteText('aaa')
+
+        # add the pages to the notebook with the label to show on the tab
+        nb.AddPage(page1, "Page 1")
+        nb.AddPage(page2, "Page 2")
+        nb.AddPage(page3, "Page 3")
+        page1.editor.WriteText('aaa')
+        page2.editor.WriteText('bbbb')
+        page3.editor.WriteText('aaacccc')
+        sizer = wx.BoxSizer()
+        sizer.Add(nb, 1, wx.EXPAND)
+        self.m_file_editor.SetSizer(sizer)
 
 
     def OnSelChanged(self, event):
