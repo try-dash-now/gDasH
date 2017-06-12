@@ -34,10 +34,13 @@ class PageOne(wx.Panel):
     editor =None
     def __init__(self, parent, title='pageOne'):
         wx.Panel.__init__(self, parent)
-        self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.VSCROLL|wx.HSCROLL, size=(200, 200))#, size = (250,150))
+        self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.ALL, size=(-1,-1))
         #self.content1= wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
         #self.content1 = wx.richtext.RichTextCtrl(self, size=(300, 100), style=wx.TE_MULTILINE)
 
+        sizer = wx.BoxSizer()
+        sizer.Add(self.editor, 1, wx.EXPAND)
+        self.SetSizer(sizer)
 
 
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
