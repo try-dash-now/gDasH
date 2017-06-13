@@ -34,8 +34,8 @@ class PageOne(wx.Panel):
     editor =None
     def __init__(self, parent, title='pageOne'):
         wx.Panel.__init__(self, parent)
-        self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.ALL, size=(-1,-1))
-        #self.content1= wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+        #self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.ALL, size=(-1,-1))
+        self.editor = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
         #self.content1 = wx.richtext.RichTextCtrl(self, size=(300, 100), style=wx.TE_MULTILINE)
 
         sizer = wx.BoxSizer()
@@ -87,6 +87,8 @@ class DasHFrame(MainFrame):#wx.Frame
         page1.editor.WriteText('aaa')
         page2.editor.WriteText('bbbb')
         page3.editor.WriteText('aaacccc')
+        page1.editor.BeginTextColour((255,0,255))
+        page1.editor.WriteText('color')
         sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
         self.m_file_editor.SetSizer(sizer)
