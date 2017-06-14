@@ -89,6 +89,10 @@ class DasHFrame(MainFrame):#wx.Frame
         page3.editor.WriteText('aaacccc')
         page1.editor.BeginTextColour((255,0,255))
         page1.editor.WriteText('color')
+        page1.editor.BeginFontSize( 20)
+        page1.editor.BeginTextColour((0,0,255))
+        page1.editor.WriteText('xcolor')
+
         sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
         self.m_file_editor.SetSizer(sizer)
@@ -97,3 +101,5 @@ class DasHFrame(MainFrame):#wx.Frame
     def OnSelChanged(self, event):
         item =  event.GetItem()
         self.display.SetLabel(self.tree.GetItemText(item))
+    #def case_tree_OnMouseWheel(self, event):
+
