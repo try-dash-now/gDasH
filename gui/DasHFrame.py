@@ -32,15 +32,30 @@ from gui.MainFrame import MainFrame
 
 class PageOne(wx.Panel):
     editor =None
+    font_size=3
+    parent=None
+
     def __init__(self, parent, title='pageOne'):
         wx.Panel.__init__(self, parent)
+        self.parent = parent
         #self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.ALL, size=(-1,-1))
         self.editor = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
         #self.content1 = wx.richtext.RichTextCtrl(self, size=(300, 100), style=wx.TE_MULTILINE)
-
+        self.editor.Bind( wx.EVT_MOUSEWHEEL, self.editor_OnMouseWheel )
         sizer = wx.BoxSizer()
         sizer.Add(self.editor, 1, wx.EXPAND)
         self.SetSizer(sizer)
+    def editor_OnMouseWheel(self,event):
+        if event.GetWheelRotation() < 0:
+                if self.font_size>1:
+                    self.font_size-=1
+        else:
+            self.font_size+=1
+        f =self.editor.GetFont()
+        f.PointSize= self.font_size
+        self.editor.SetFont(f)
+
+
 
 
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
