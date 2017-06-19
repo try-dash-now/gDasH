@@ -32,7 +32,7 @@ from gui.MainFrame import MainFrame
 
 class PageOne(wx.Panel):
     editor =None
-    font_size=3
+    font_size=5
     parent=None
 
     def __init__(self, parent, title='pageOne'):
@@ -46,9 +46,16 @@ class PageOne(wx.Panel):
         sizer.Add(self.editor, 1, wx.EXPAND)
         self.SetSizer(sizer)
     def editor_OnMouseWheel(self,event):
+        min_font_size = 5
+        interval_step = 1
+        if event.ControlDown():
+            pass
+        else:
+            return
+
         if event.GetWheelRotation() < 0:
-                if self.font_size>1:
-                    self.font_size-=1
+                if self.font_size>min_font_size:
+                    self.font_size-=interval_step
         else:
             self.font_size+=1
         f =self.editor.GetFont()
@@ -111,6 +118,22 @@ class DasHFrame(MainFrame):#wx.Frame
         sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
         self.m_file_editor.SetSizer(sizer)
+
+        mid_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        mid_sizer.Add(self.m_file_editor, 6, wx.EXPAND)
+        mid_sizer.Add(self.m_log,3 ,wx.EXPAND)
+        mid_sizer.Add(self.m_command_box, 1, wx.EXPAND)
+
+        main_sizer.Add(self.m_case_tree,2,wx.EXPAND)
+        main_sizer.Add(mid_sizer,6,wx.EXPAND)
+        main_sizer.Add(self.m_case_steps,2,wx.EXPAND)
+
+
+        self.SetSizer(main_sizer)
+
+
 
 
     def OnSelChanged(self, event):
