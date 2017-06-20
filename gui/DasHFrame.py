@@ -26,7 +26,7 @@ created 2017-05-06 by Sean Yu
 '''
 
 
-
+import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
 
@@ -35,12 +35,19 @@ class PageOne(wx.Panel):
     font_size=5
     parent=None
 
-    def __init__(self, parent, title='pageOne'):
+    def __init__(self, parent, title='pageOne', type ='grid'):
         wx.Panel.__init__(self, parent)
         self.parent = parent
+
+
         #self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.ALL, size=(-1,-1))
-        self.editor = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
-        #self.content1 = wx.richtext.RichTextCtrl(self, size=(300, 100), style=wx.TE_MULTILINE)
+        if type in ['text']:
+
+            self.editor = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+        else:
+            self.editor= gridlib.Grid(self)
+            self.editor.CreateGrid(12, 8)
+
         self.editor.Bind( wx.EVT_MOUSEWHEEL, self.editor_OnMouseWheel )
         sizer = wx.BoxSizer()
         sizer.Add(self.editor, 1, wx.EXPAND)
@@ -85,7 +92,7 @@ class DasHFrame(MainFrame):#wx.Frame
             self.m_case_tree.SetItemTextColour(tmp ,wx.Colour(255-10*i,10*i,i*i))
 
         self.m_case_tree.ExpandAll()
-        self.m_editor.WriteText('welcome to dash world')
+        #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Happy Birthday!')
         self.m_command_box.WriteText('read only,but select copy allowed')
         fileMenu = wx.Menu()
@@ -97,23 +104,24 @@ class DasHFrame(MainFrame):#wx.Frame
         p = self.m_file_editor
         nb = wx.Notebook(p)
                 # create the page windows as children of the notebook
-        page1 = PageOne(nb, 'a')
+        page1 = PageOne(nb, 'a', type='text')
         page2 = PageOne(nb, 'b')
         page3 = PageOne(nb)
-        page1.editor.WriteText('aaa')
-
-        # add the pages to the notebook with the label to show on the tab
         nb.AddPage(page1, "Page 1")
         nb.AddPage(page2, "Page 2")
         nb.AddPage(page3, "Page 3")
-        page1.editor.WriteText('aaa')
-        page2.editor.WriteText('bbbb')
-        page3.editor.WriteText('aaacccc')
-        page1.editor.BeginTextColour((255,0,255))
-        page1.editor.WriteText('color')
-        page1.editor.BeginFontSize( 20)
-        page1.editor.BeginTextColour((0,0,255))
-        page1.editor.WriteText('xcolor')
+        if False:
+            page1.editor.WriteText('aaa')
+            # add the pages to the notebook with the label to show on the tab
+
+            page1.editor.WriteText('aaa')
+            page2.editor.WriteText('bbbb')
+            page3.editor.WriteText('aaacccc')
+            page1.editor.BeginTextColour((255,0,255))
+            page1.editor.WriteText('color')
+            page1.editor.BeginFontSize( 20)
+            page1.editor.BeginTextColour((0,0,255))
+            page1.editor.WriteText('xcolor')
 
         sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
