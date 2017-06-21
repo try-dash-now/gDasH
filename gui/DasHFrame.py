@@ -34,11 +34,11 @@ class PageOne(wx.Panel):
     editor =None
     font_size=5
     parent=None
-
+    type = None
     def __init__(self, parent, title='pageOne', type ='grid'):
         wx.Panel.__init__(self, parent)
         self.parent = parent
-
+        self.type = type
 
         #self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.ALL, size=(-1,-1))
         if type in ['text']:
@@ -54,7 +54,7 @@ class PageOne(wx.Panel):
         self.SetSizer(sizer)
     def editor_OnMouseWheel(self,event):
         min_font_size = 5
-        interval_step = 1
+        interval_step = 2
         if event.ControlDown():
             pass
         else:
@@ -65,13 +65,19 @@ class PageOne(wx.Panel):
                     self.font_size-=interval_step
         else:
             self.font_size+=1
-        f =self.editor.GetFont()
-        f.PointSize= self.font_size
-        self.editor.SetFont(f)
-
-
-
-
+        if self.type in ['text']:
+            f =self.editor.GetFont()
+            f.PointSize= self.font_size
+            self.editor.SetFont(f)
+        else:
+            col = self.editor.GetNumberCols()
+            row = self.editor.GetNumberRows()
+            for c in range(0, col):
+                for r in range (0, row):
+                    f = self.editor.GetCellFont(r, c)
+                    f.PointSize = self.font_size
+                    self.editor.SetCellFont(r, c, f)
+            self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
 
 class DasHFrame(MainFrame):#wx.Frame
