@@ -47,6 +47,13 @@ class PageOne(wx.Panel):
         else:
             self.editor= gridlib.Grid(self)
             self.editor.CreateGrid(12, 8)
+            col = self.editor.GetNumberCols()
+            row = self.editor.GetNumberRows()
+            function_color ='black'
+            arg_color = 'blue'
+            for c in range(0, col):
+                for r in range (0, row):
+                    self.editor.SetCellTextColour(r,c,function_color if c <1 else arg_color)
 
         self.editor.Bind( wx.EVT_MOUSEWHEEL, self.editor_OnMouseWheel )
         sizer = wx.BoxSizer()
