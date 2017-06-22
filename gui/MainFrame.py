@@ -10,7 +10,6 @@
 import wx
 import wx.xrc
 import wx.richtext
-import wx.grid
 
 ###########################################################################
 ## Class MainFrame
@@ -46,32 +45,6 @@ class MainFrame ( wx.Frame ):
 		
 		
 		gSizerMain.Add( bSizerLeft, 1, wx.ALL|wx.EXPAND, 5 )
-		
-		self.m_case_steps = wx.grid.Grid( self, wx.ID_ANY, wx.Point( -1,-1 ), wx.Size( -1,-1 ), 0 )
-		
-		# Grid
-		self.m_case_steps.CreateGrid( 5, 5 )
-		self.m_case_steps.EnableEditing( True )
-		self.m_case_steps.EnableGridLines( True )
-		self.m_case_steps.EnableDragGridSize( False )
-		self.m_case_steps.SetMargins( 0, 0 )
-		
-		# Columns
-		self.m_case_steps.EnableDragColMove( False )
-		self.m_case_steps.EnableDragColSize( True )
-		self.m_case_steps.SetColLabelSize( 30 )
-		self.m_case_steps.SetColLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
-		
-		# Rows
-		self.m_case_steps.EnableDragRowSize( True )
-		self.m_case_steps.SetRowLabelSize( 80 )
-		self.m_case_steps.SetRowLabelAlignment( wx.ALIGN_CENTRE, wx.ALIGN_CENTRE )
-		
-		# Label Appearance
-		
-		# Cell Defaults
-		self.m_case_steps.SetDefaultCellAlignment( wx.ALIGN_LEFT, wx.ALIGN_TOP )
-		gSizerMain.Add( self.m_case_steps, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		self.SetSizer( gSizerMain )

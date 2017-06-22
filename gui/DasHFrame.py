@@ -32,7 +32,7 @@ from gui.MainFrame import MainFrame
 
 class PageOne(wx.Panel):
     editor =None
-    font_size=5
+    font_size=10
     parent=None
     type = None
     def __init__(self, parent, title='pageOne', type ='grid'):
@@ -54,6 +54,9 @@ class PageOne(wx.Panel):
             for c in range(0, col):
                 for r in range (0, row):
                     self.editor.SetCellTextColour(r,c,function_color if c <1 else arg_color)
+
+            for r in range (0, row):
+                    self.editor.SetCellFont(r, 0, wx.Font(self.font_size,wx.SWISS, wx.NORMAL, wx.BOLD ))
 
         self.editor.Bind( wx.EVT_MOUSEWHEEL, self.editor_OnMouseWheel )
         sizer = wx.BoxSizer()
@@ -147,9 +150,9 @@ class DasHFrame(MainFrame):#wx.Frame
         mid_sizer.Add(self.m_log,3 ,wx.EXPAND)
         mid_sizer.Add(self.m_command_box, 1, wx.EXPAND)
 
-        main_sizer.Add(self.m_case_tree,2,wx.EXPAND)
-        main_sizer.Add(mid_sizer,6,wx.EXPAND)
-        main_sizer.Add(self.m_case_steps,2,wx.EXPAND)
+        main_sizer.Add(self.m_case_tree,3,wx.EXPAND)
+        main_sizer.Add(mid_sizer,7,wx.EXPAND)
+        #main_sizer.Add(self.m_case_steps,0,wx.EXPAND)
 
 
         self.SetSizer(main_sizer)
