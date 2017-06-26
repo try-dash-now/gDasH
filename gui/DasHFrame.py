@@ -30,7 +30,7 @@ import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
 
-class PageOne(wx.Panel):
+class FileEditor(wx.Panel):
     editor =None
     font_size=10
     parent=None
@@ -46,12 +46,17 @@ class PageOne(wx.Panel):
             self.editor = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
         else:
             self.editor= gridlib.Grid(self)
-            self.editor.CreateGrid(12, 8)
+            self.editor.CreateGrid(50, 5)
             col = self.editor.GetNumberCols()
             row = self.editor.GetNumberRows()
+
             function_color ='black'
             arg_color = 'blue'
             for c in range(0, col):
+                if c < 1 :
+                    self.editor.SetColLabelValue(c, 'Function Name')
+                else:
+                    self.editor.SetColLabelValue(c, 'arg# {}'.format(c))
                 for r in range (0, row):
                     self.editor.SetCellTextColour(r,c,function_color if c <1 else arg_color)
 
@@ -120,9 +125,9 @@ class DasHFrame(MainFrame):#wx.Frame
         p = self.m_file_editor
         nb = wx.Notebook(p)
                 # create the page windows as children of the notebook
-        page1 = PageOne(nb, 'a', type='text')
-        page2 = PageOne(nb, 'b')
-        page3 = PageOne(nb)
+        page1 = FileEditor(nb, 'a', type='text')
+        page2 = FileEditor(nb, 'b')
+        page3 = FileEditor(nb)
         nb.AddPage(page1, "Page 1")
         nb.AddPage(page2, "Page 2")
         nb.AddPage(page3, "Page 3")
