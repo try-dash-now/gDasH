@@ -39,10 +39,6 @@ class ut_dut(unittest.TestCase):
         lib.common.debug=True
         self.my_dut.step('ls','sean')
 
-
-
-
-
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(ut_dut.test_login())

@@ -53,6 +53,7 @@ class MainFrame ( wx.Frame ):
 		self.Centre( wx.BOTH )
 		
 		# Connect Events
+		self.m_case_tree.Bind( wx.EVT_LEFT_DCLICK, self.m_case_treeOnLeftDClick )
 		self.m_case_tree.Bind( wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel )
 	
 	def __del__( self ):
@@ -60,6 +61,9 @@ class MainFrame ( wx.Frame ):
 	
 	
 	# Virtual event handlers, overide them in your derived class
+	def m_case_treeOnLeftDClick( self, event ):
+		event.Skip()
+	
 	def case_tree_OnMouseWheel( self, event ):
 		event.Skip()
 	

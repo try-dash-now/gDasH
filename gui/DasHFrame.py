@@ -96,6 +96,7 @@ class FileEditor(wx.Panel):
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
 
 class DasHFrame(MainFrame):#wx.Frame
+    edit_area=None
     def __init__(self,parent=None):
         #wx.Frame.__init__(self, None, title="DasH")
         MainFrame.__init__(self, parent=parent)
@@ -124,14 +125,17 @@ class DasHFrame(MainFrame):#wx.Frame
 
         p = self.m_file_editor
         nb = wx.Notebook(p)
+        self.edit_area =nb
                 # create the page windows as children of the notebook
-        page1 = FileEditor(nb, 'a', type='text')
-        page2 = FileEditor(nb, 'b')
-        page3 = FileEditor(nb)
-        nb.AddPage(page1, "Page 1")
-        nb.AddPage(page2, "Page 2")
-        nb.AddPage(page3, "Page 3")
+
         if False:
+            page1 = FileEditor(nb, 'a', type='text')
+            page2 = FileEditor(nb, 'b')
+            page3 = FileEditor(nb)
+            nb.AddPage(page1, "Page 1")
+            nb.AddPage(page2, "Page 2")
+            nb.AddPage(page3, "Page 3")
+
             page1.editor.WriteText('aaa')
             # add the pages to the notebook with the label to show on the tab
 
@@ -169,4 +173,16 @@ class DasHFrame(MainFrame):#wx.Frame
         item =  event.GetItem()
         self.display.SetLabel(self.tree.GetItemText(item))
     #def case_tree_OnMouseWheel(self, event):
+
+    def m_case_treeOnLeftDClick(self, event):
+        ht_item =self.m_case_tree.GetSelection()
+        #ht_item = self.HitTest(event.GetPosition())
+        item_name = self.m_case_tree.GetItemText(ht_item)
+        if self.m_case_tree.ItemHasChildren(ht_item):
+            type = 'text'
+        else:
+            type = 'grid'
+        new_page = FileEditor(self.edit_area, 'a', type= type)
+        self.edit_area.AddPage(new_page, item_name)
+
 
