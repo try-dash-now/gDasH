@@ -179,10 +179,13 @@ class DasHFrame(MainFrame):#wx.Frame
         #ht_item = self.HitTest(event.GetPosition())
         item_name = self.m_case_tree.GetItemText(ht_item)
         if self.m_case_tree.ItemHasChildren(ht_item):
-            type = 'text'
+            if self.m_case_tree.IsExpanded(ht_item):
+                self.m_case_tree.Collapse(ht_item)
+            else:
+                self.m_case_tree.ExpandAllChildren(ht_item)
         else:
             type = 'grid'
-        new_page = FileEditor(self.edit_area, 'a', type= type)
-        self.edit_area.AddPage(new_page, item_name)
+            new_page = FileEditor(self.edit_area, 'a', type= type)
+            self.edit_area.AddPage(new_page, item_name)
 
 
