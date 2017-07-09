@@ -29,6 +29,7 @@ created 2017-05-06 by Sean Yu
 import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
+import os
 
 class FileEditor(wx.Panel):
     editor =None
@@ -94,26 +95,17 @@ class FileEditor(wx.Panel):
                     self.editor.SetCellFont(r, c, f)
             self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
-
+from lib.common import get_folder_item
+import ConfigParser
 class DasHFrame(MainFrame):#wx.Frame
+    ini_setting = None
     edit_area=None
-    def __init__(self,parent=None):
+    def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         MainFrame.__init__(self, parent=parent)
-
-        root =self.m_case_tree.AddRoot('TestSuiteName 1')
-
-        for i in range(10):
-            self.m_case_tree.AppendItem(root, 'case %d'%(i+1))
-        sub_folder = self.m_case_tree.AppendItem(root,'TestSuiteName 2')
-        self.m_case_tree.ItemHasChildren(sub_folder)
-        #self.m_case_tree.InsertItem
-        for i in range(10):
-            tmp = self.m_case_tree.InsertItem(sub_folder, sub_folder, 'case %d'%(i+1))
-
-            self.m_case_tree.SetItemTextColour(tmp ,wx.Colour(255-10*i,10*i,i*i))
-
-        self.m_case_tree.ExpandAll()
+        self.ini_setting = ConfigParser.ConfigParser()
+        self.ini_setting.read(ini_file)
+        self.build_suite_tree()
         #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Happy Birthday!')
         self.m_command_box.WriteText('read only,but select copy allowed')
@@ -166,8 +158,53 @@ class DasHFrame(MainFrame):#wx.Frame
 
         self.SetSizer(main_sizer)
 
+    def add_item_to_subfolder_in_tree(self,node):
+        subfolder_path_name = self.m_case_tree.GetPyData(node)
+        items = get_folder_item(subfolder_path_name)
+        if items is None:
+            self.m_case_tree.SetItemText(node, self.m_case_tree.GetItemText(node)+' Not Exists!!!')
+            self.m_case_tree.SetItemTextColour(node, wx.Colour(255,0,0))
+            return
+        for i in items:
+            path_name = '{}/{}'.format(subfolder_path_name,i)
+            base_name = os.path.basename(i)
+            item_info = wx.TreeItemData(path_name)
+            new_item = self.m_case_tree.InsertItem(node, node, base_name)
+            self.m_case_tree.SetItemData(new_item, item_info)
+
+            if os.path.isdir(path_name):
+                self.m_case_tree.SetItemHasChildren(new_item)
+                #self.m_case_tree.ItemHasChildren()
+                #self.m_case_tree.InsertItem(new_item,new_item,'')
+
+    def build_suite_tree(self):
+        suite_path = os.path.abspath(self.ini_setting.get('dash','test_suite_path'))
+        base_name = os.path.basename(suite_path)
+        root =self.m_case_tree.AddRoot(base_name)
+        item_info = wx.TreeItemData(suite_path)
+        self.m_case_tree.SetItemData(root, item_info)
+        self.add_item_to_subfolder_in_tree(root)
 
 
+
+        if False:
+            for i in item_list.sort():
+                base_name = os.path.basename(i)
+            if os.path.isdir(i):
+                sub_folder = self.m_case_tree.AppendItem(root,base_name)
+                self.m_case_tree.ItemHasChildren(sub_folder)
+            else:
+                self.m_case_tree.AppendItem(root, base_name)
+
+
+            sub_folder = self.m_case_tree.AppendItem(root,'TestSuiteName 2')
+        #self.m_case_tree.InsertItem
+            for i in range(10):
+                tmp = self.m_case_tree.InsertItem(sub_folder, sub_folder, 'case %d'%(i+1))
+
+                self.m_case_tree.SetItemTextColour(tmp ,wx.Colour(255-10*i,10*i,i*i))
+
+        self.m_case_tree.Expand(root)
 
     def OnSelChanged(self, event):
         item =  event.GetItem()
@@ -188,4 +225,13 @@ class DasHFrame(MainFrame):#wx.Frame
             new_page = FileEditor(self.edit_area, 'a', type= type)
             self.edit_area.AddPage(new_page, item_name)
 
+    def m_case_treeOnTreeItemExpanding(self,event):
 
+        ht_item =self.m_case_tree.GetSelection()
+        try:
+            if 0== self.m_case_tree.GetChildrenCount(ht_item):
+                item_info = self.m_case_tree.GetPyData(ht_item)
+                if os.path.isdir(item_info):
+                    self.add_item_to_subfolder_in_tree(ht_item)
+        except Exception as e:
+            pass

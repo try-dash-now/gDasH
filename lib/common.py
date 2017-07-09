@@ -26,6 +26,10 @@ created 5/14/2017
 '''
 from functools import wraps
 import  traceback
+import os
+
+
+
 debug = False
 def dut_exception_handler(function_name):
     @wraps(function_name)
@@ -44,3 +48,11 @@ def dut_exception_handler(function_name):
             raise
         return r
     return wrapped
+
+def get_folder_item(path):
+    abs_path = os.path.abspath(path)
+    if os.path.exists(abs_path):
+        folder_list = sorted(os.listdir(abs_path))
+    else:
+        folder_list= None
+    return folder_list

@@ -55,6 +55,7 @@ class MainFrame ( wx.Frame ):
 		# Connect Events
 		self.m_case_tree.Bind( wx.EVT_LEFT_DCLICK, self.m_case_treeOnLeftDClick )
 		self.m_case_tree.Bind( wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel )
+		self.m_case_tree.Bind( wx.EVT_TREE_ITEM_EXPANDING, self.m_case_treeOnTreeItemExpanding )
 	
 	def __del__( self ):
 		pass
@@ -65,6 +66,9 @@ class MainFrame ( wx.Frame ):
 		event.Skip()
 	
 	def case_tree_OnMouseWheel( self, event ):
+		event.Skip()
+	
+	def m_case_treeOnTreeItemExpanding( self, event ):
 		event.Skip()
 	
 
