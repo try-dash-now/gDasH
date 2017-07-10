@@ -116,7 +116,8 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
         p = self.m_file_editor
-        nb = wx.Notebook(p)
+        from wx.aui import AuiNotebook
+        nb = AuiNotebook(p)
         self.edit_area =nb
                 # create the page windows as children of the notebook
 
