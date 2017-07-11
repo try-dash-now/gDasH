@@ -56,3 +56,12 @@ def get_folder_item(path):
     else:
         folder_list= None
     return folder_list
+
+def runner(file_name, setting_file=None):
+    #from setting file to get the log folder path and more setting for future
+
+    #check file type, python file, csv file, test suite file ....
+
+    #init sessions, create a session pool for used by test steps
+
+    #execute
