@@ -57,11 +57,18 @@ def get_folder_item(path):
         folder_list= None
     return folder_list
 
+import subprocess, tempfile
 def runner(file_name, setting_file=None):
+    exe_cmd =''
+    pipe_input ,file_name =tempfile.mkstemp()
     #from setting file to get the log folder path and more setting for future
-
+    valid_file_type =['.tc', '.ts', '.py']
+    cmd={
+        'tc': '',
+        'ts': ''
+    }
     #check file type, python file, csv file, test suite file ....
-
+    subprocess.Popen(args = exe_cmd ,shell =True, stdin=pipe_input)
     #init sessions, create a session pool for used by test steps
 
     #execute
