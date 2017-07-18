@@ -36,6 +36,8 @@ class FileEditor(wx.Panel):
     font_size=10
     parent=None
     type = None
+    sessions_node =None
+    function_node =None
     def __init__(self, parent, title='pageOne', type ='grid'):
         wx.Panel.__init__(self, parent)
         self.parent = parent
@@ -160,7 +162,8 @@ class DasHFrame(MainFrame):#wx.Frame
         self.SetSizer(main_sizer)
 
     def add_item_to_subfolder_in_tree(self,node):
-        subfolder_path_name = self.m_case_tree.GetPyData(node)
+        type = 'suite'
+        subfolder_path_name = self.m_case_tree.GetPyData(node)['path_name']
         items = get_folder_item(subfolder_path_name)
         if items is None:
             self.m_case_tree.SetItemText(node, self.m_case_tree.GetItemText(node)+' Not Exists!!!')
@@ -168,8 +171,9 @@ class DasHFrame(MainFrame):#wx.Frame
             return
         for i in items:
             path_name = '{}/{}'.format(subfolder_path_name,i)
+
             base_name = os.path.basename(i)
-            item_info = wx.TreeItemData(path_name)
+            item_info = wx.TreeItemData({'path_name':path_name, 'type':type})
             new_item = self.m_case_tree.InsertItem(node, node, base_name)
             self.m_case_tree.SetItemData(new_item, item_info)
 
@@ -180,11 +184,20 @@ class DasHFrame(MainFrame):#wx.Frame
 
     def build_suite_tree(self):
         suite_path = os.path.abspath(self.ini_setting.get('dash','test_suite_path'))
+        if not os.path.exists(suite_path):
+            suite_path= os.path.abspath(os.path.curdir)
         base_name = os.path.basename(suite_path)
-        root =self.m_case_tree.AddRoot(base_name)
-        item_info = wx.TreeItemData(suite_path)
-        self.m_case_tree.SetItemData(root, item_info)
-        self.add_item_to_subfolder_in_tree(root)
+
+
+        root =self.m_case_tree.AddRoot('')
+        self.session_node = self.m_case_tree.AppendItem(root,'Session')
+        self.function_node = self.m_case_tree.AppendItem(root,'Function')
+        self.case_suite_node = self.m_case_tree.AppendItem(root,base_name)
+
+
+        item_info = wx.TreeItemData({'path_name':suite_path, 'type':'suite'})
+        self.m_case_tree.SetItemData(self.case_suite_node, item_info)
+        self.add_item_to_subfolder_in_tree(self.case_suite_node)
 
 
 
@@ -227,12 +240,12 @@ class DasHFrame(MainFrame):#wx.Frame
             self.edit_area.AddPage(new_page, item_name)
 
     def m_case_treeOnTreeItemExpanding(self,event):
-
         ht_item =self.m_case_tree.GetSelection()
         try:
-            if 0== self.m_case_tree.GetChildrenCount(ht_item):
-                item_info = self.m_case_tree.GetPyData(ht_item)
-                if os.path.isdir(item_info):
-                    self.add_item_to_subfolder_in_tree(ht_item)
+            item_info = self.m_case_tree.GetPyData(ht_item)
+            if item_info['type']=='suite':
+                if 0== self.m_case_tree.GetChildrenCount(ht_item):
+                    if os.path.isdir(item_info['path_name']):
+                        self.add_item_to_subfolder_in_tree(ht_item)
         except Exception as e:
             pass

@@ -1,6 +1,7 @@
 *.pyc
 #ignore pycharm ide folder
 ./idea
+./sessions
 
 # Compiled source #
 ###################

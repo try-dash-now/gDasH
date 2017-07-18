@@ -72,3 +72,26 @@ def runner(file_name, setting_file=None):
     #init sessions, create a session pool for used by test steps
 
     #execute
+import csv
+def load_bench(bench_file):
+    dict_bench = {os.path.basename(bench_file):{}}
+    with open(bench_file) as bench:
+        reader = csv.reader(bench,delimiter=',')
+        for row in reader:
+            if len(row)<1:
+                continue
+            else:
+                name = row[0]
+                if dict_bench.has_key(name):
+                    print('warning: duplicate session name "{}" in file "{}",overwritten!!!'.format(name, os.path.abspath(bench_file)))
+                    continue
+                else:
+                    dict_attributes = {}
+                    for attribute in row[1:]:
+                        a_name,a_value = attribute.split('=')
+                        dict_attributes[a_name.strip()]=a_value.strip()
+                    dict_bench[name]=dict_attributes
+    return dict_bench
+
+
+
