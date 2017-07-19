@@ -38,6 +38,7 @@ class FileEditor(wx.Panel):
     type = None
     sessions_node =None
     function_node =None
+    case_suite_node =None
     def __init__(self, parent, title='pageOne', type ='grid'):
         wx.Panel.__init__(self, parent)
         self.parent = parent
@@ -107,7 +108,7 @@ class DasHFrame(MainFrame):#wx.Frame
         MainFrame.__init__(self, parent=parent)
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
-        self.build_suite_tree()
+
         #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Happy Birthday!')
         self.m_command_box.WriteText('read only,but select copy allowed')
@@ -116,13 +117,31 @@ class DasHFrame(MainFrame):#wx.Frame
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
         self.m_menubar_main.Append(fileMenu, "&Open TestSuite")
 
-
+        bSizerLeft = wx.BoxSizer( wx.VERTICAL )
+        self.m_file_editor = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+        bSizerLeft.Add( self.m_file_editor, 1, wx.EXPAND |wx.ALL, 5 )
         p = self.m_file_editor
         from wx.aui import AuiNotebook
         nb = AuiNotebook(p)
         self.edit_area =nb
-                # create the page windows as children of the notebook
 
+        self.m_case_tree.Hide()
+        self.m_case_tree = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+        self.m_case_tree.Show()
+        case_nb = AuiNotebook(self.m_case_tree)
+        self.case_suite_node =wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TR_DEFAULT_STYLE|wx.TR_EDIT_LABELS|wx.TR_EXTENDED|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL|wx.WANTS_CHARS )
+        self.function_node =wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TR_DEFAULT_STYLE|wx.TR_EDIT_LABELS|wx.TR_EXTENDED|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL|wx.WANTS_CHARS )
+        self.session_node =wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TR_DEFAULT_STYLE|wx.TR_EDIT_LABELS|wx.TR_EXTENDED|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL|wx.WANTS_CHARS )
+
+        case_nb.AddPage(self.session_node, 'SESSION')
+        case_nb.AddPage(self.function_node, 'FUNCTION')
+        case_nb.AddPage(self.case_suite_node, 'CASE')
+                # create the page windows as children of the notebook
+        sizer = wx.BoxSizer()
+        sizer.Add(case_nb, 1, wx.EXPAND)
+        self.m_case_tree.SetSizer(sizer)
+        #self.session_node.SetSizer(sizer)
+        #self.case_suite_node.SetSizer(sizer)
         if False:
             page1 = FileEditor(nb, 'a', type='text')
             page2 = FileEditor(nb, 'b')
@@ -160,25 +179,24 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
         self.SetSizer(main_sizer)
-
+        self.build_suite_tree()
     def add_item_to_subfolder_in_tree(self,node):
-        type = 'suite'
-        subfolder_path_name = self.m_case_tree.GetPyData(node)['path_name']
+        subfolder_path_name = self.case_suite_node.GetPyData(node)['path_name']
         items = get_folder_item(subfolder_path_name)
         if items is None:
-            self.m_case_tree.SetItemText(node, self.m_case_tree.GetItemText(node)+' Not Exists!!!')
-            self.m_case_tree.SetItemTextColour(node, wx.Colour(255,0,0))
+            self.case_suite_node.SetItemText(node, self.m_case_tree.GetItemText(node)+' Not Exists!!!')
+            self.case_suite_node.SetItemTextColour(node, wx.Colour(255,0,0))
             return
         for i in items:
             path_name = '{}/{}'.format(subfolder_path_name,i)
 
             base_name = os.path.basename(i)
-            item_info = wx.TreeItemData({'path_name':path_name, 'type':type})
-            new_item = self.m_case_tree.InsertItem(node, node, base_name)
-            self.m_case_tree.SetItemData(new_item, item_info)
+            item_info = wx.TreeItemData({'path_name':path_name})
+            new_item = self.case_suite_node.InsertItem(node, node, base_name)
+            self.case_suite_node.SetItemData(new_item, item_info)
 
             if os.path.isdir(path_name):
-                self.m_case_tree.SetItemHasChildren(new_item)
+                self.case_suite_node.SetItemHasChildren(new_item)
                 #self.m_case_tree.ItemHasChildren()
                 #self.m_case_tree.InsertItem(new_item,new_item,'')
 
@@ -189,15 +207,10 @@ class DasHFrame(MainFrame):#wx.Frame
         base_name = os.path.basename(suite_path)
 
 
-        root =self.m_case_tree.AddRoot('')
-        self.session_node = self.m_case_tree.AppendItem(root,'Session')
-        self.function_node = self.m_case_tree.AppendItem(root,'Function')
-        self.case_suite_node = self.m_case_tree.AppendItem(root,base_name)
-
-
-        item_info = wx.TreeItemData({'path_name':suite_path, 'type':'suite'})
-        self.m_case_tree.SetItemData(self.case_suite_node, item_info)
-        self.add_item_to_subfolder_in_tree(self.case_suite_node)
+        root =self.case_suite_node.AddRoot(base_name)
+        item_info = wx.TreeItemData({'path_name':suite_path})
+        self.case_suite_node.SetItemData(root, item_info)
+        self.add_item_to_subfolder_in_tree(root)
 
 
 
@@ -218,7 +231,7 @@ class DasHFrame(MainFrame):#wx.Frame
 
                 self.m_case_tree.SetItemTextColour(tmp ,wx.Colour(255-10*i,10*i,i*i))
 
-        self.m_case_tree.Expand(root)
+        self.case_suite_node.Expand(root)
 
     def OnSelChanged(self, event):
         item =  event.GetItem()
@@ -240,12 +253,12 @@ class DasHFrame(MainFrame):#wx.Frame
             self.edit_area.AddPage(new_page, item_name)
 
     def m_case_treeOnTreeItemExpanding(self,event):
-        ht_item =self.m_case_tree.GetSelection()
+        ht_item =self.case_suite_node.GetSelection()
         try:
             item_info = self.m_case_tree.GetPyData(ht_item)
-            if item_info['type']=='suite':
-                if 0== self.m_case_tree.GetChildrenCount(ht_item):
-                    if os.path.isdir(item_info['path_name']):
-                        self.add_item_to_subfolder_in_tree(ht_item)
+
+            if 0== self.m_case_tree.GetChildrenCount(ht_item):
+                if os.path.isdir(item_info['path_name']):
+                    self.add_item_to_subfolder_in_tree(ht_item)
         except Exception as e:
             pass
