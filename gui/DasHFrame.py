@@ -30,6 +30,7 @@ import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
 import os
+from lib.common import load_bench
 
 class FileEditor(wx.Panel):
     editor =None
@@ -102,6 +103,7 @@ from lib.common import get_folder_item
 import ConfigParser
 class DasHFrame(MainFrame):#wx.Frame
     ini_setting = None
+    left_tree =None
     edit_area=None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
@@ -128,17 +130,19 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_case_tree.Hide()
         self.m_case_tree = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
         self.m_case_tree.Show()
-        case_nb = AuiNotebook(self.m_case_tree)
+        bookStyle = wx.aui.AUI_NB_DEFAULT_STYLE
+        bookStyle &= ~(wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
+        self.left_tree = AuiNotebook(self.m_case_tree, style= bookStyle )
         self.case_suite_node =wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TR_DEFAULT_STYLE|wx.TR_EDIT_LABELS|wx.TR_EXTENDED|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL|wx.WANTS_CHARS )
         self.function_node =wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TR_DEFAULT_STYLE|wx.TR_EDIT_LABELS|wx.TR_EXTENDED|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL|wx.WANTS_CHARS )
         self.session_node =wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,-1 ), wx.TR_DEFAULT_STYLE|wx.TR_EDIT_LABELS|wx.TR_EXTENDED|wx.TR_HAS_BUTTONS|wx.TR_HAS_VARIABLE_ROW_HEIGHT|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL|wx.WANTS_CHARS )
 
-        case_nb.AddPage(self.session_node, 'SESSION')
-        case_nb.AddPage(self.function_node, 'FUNCTION')
-        case_nb.AddPage(self.case_suite_node, 'CASE')
+        self.left_tree.AddPage(self.session_node, 'SESSION')
+        self.left_tree.AddPage(self.function_node, 'FUNCTION')
+        self.left_tree.AddPage(self.case_suite_node, 'CASE')
                 # create the page windows as children of the notebook
         sizer = wx.BoxSizer()
-        sizer.Add(case_nb, 1, wx.EXPAND)
+        sizer.Add(self.left_tree, 1, wx.EXPAND)
         self.m_case_tree.SetSizer(sizer)
         #self.session_node.SetSizer(sizer)
         #self.case_suite_node.SetSizer(sizer)
@@ -180,6 +184,13 @@ class DasHFrame(MainFrame):#wx.Frame
 
         self.SetSizer(main_sizer)
         self.build_suite_tree()
+        self.build_session_tab()
+        self.case_suite_node.Bind( wx.EVT_LEFT_DCLICK, self.m_case_treeOnLeftDClick )
+        self.case_suite_node.Bind( wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel )
+        self.case_suite_node.Bind( wx.EVT_TREE_ITEM_EXPANDING, self.m_case_treeOnTreeItemExpanding )
+
+    def on_close_tab(self ,event):
+        pass
     def add_item_to_subfolder_in_tree(self,node):
         subfolder_path_name = self.case_suite_node.GetPyData(node)['path_name']
         items = get_folder_item(subfolder_path_name)
@@ -211,26 +222,6 @@ class DasHFrame(MainFrame):#wx.Frame
         item_info = wx.TreeItemData({'path_name':suite_path})
         self.case_suite_node.SetItemData(root, item_info)
         self.add_item_to_subfolder_in_tree(root)
-
-
-
-        if False:
-            for i in item_list.sort():
-                base_name = os.path.basename(i)
-            if os.path.isdir(i):
-                sub_folder = self.m_case_tree.AppendItem(root,base_name)
-                self.m_case_tree.ItemHasChildren(sub_folder)
-            else:
-                self.m_case_tree.AppendItem(root, base_name)
-
-
-            sub_folder = self.m_case_tree.AppendItem(root,'TestSuiteName 2')
-        #self.m_case_tree.InsertItem
-            for i in range(10):
-                tmp = self.m_case_tree.InsertItem(sub_folder, sub_folder, 'case %d'%(i+1))
-
-                self.m_case_tree.SetItemTextColour(tmp ,wx.Colour(255-10*i,10*i,i*i))
-
         self.case_suite_node.Expand(root)
 
     def OnSelChanged(self, event):
@@ -239,14 +230,14 @@ class DasHFrame(MainFrame):#wx.Frame
     #def case_tree_OnMouseWheel(self, event):
 
     def m_case_treeOnLeftDClick(self, event):
-        ht_item =self.m_case_tree.GetSelection()
+        ht_item =self.case_suite_node.GetSelection()
         #ht_item = self.HitTest(event.GetPosition())
-        item_name = self.m_case_tree.GetItemText(ht_item)
-        if self.m_case_tree.ItemHasChildren(ht_item):
-            if self.m_case_tree.IsExpanded(ht_item):
-                self.m_case_tree.Collapse(ht_item)
+        item_name = self.case_suite_node.GetItemText(ht_item)
+        if self.case_suite_node.ItemHasChildren(ht_item):
+            if self.case_suite_node.IsExpanded(ht_item):
+                self.case_suite_node.Collapse(ht_item)
             else:
-                self.m_case_tree.ExpandAllChildren(ht_item)
+                self.case_suite_node.ExpandAllChildren(ht_item)
         else:
             type = 'grid'
             new_page = FileEditor(self.edit_area, 'a', type= type)
@@ -255,10 +246,57 @@ class DasHFrame(MainFrame):#wx.Frame
     def m_case_treeOnTreeItemExpanding(self,event):
         ht_item =self.case_suite_node.GetSelection()
         try:
-            item_info = self.m_case_tree.GetPyData(ht_item)
+            item_info = self.case_suite_node.GetPyData(ht_item)
 
-            if 0== self.m_case_tree.GetChildrenCount(ht_item):
+            if 0== self.case_suite_node.GetChildrenCount(ht_item):
                 if os.path.isdir(item_info['path_name']):
                     self.add_item_to_subfolder_in_tree(ht_item)
         except Exception as e:
             pass
+    def build_session_tab(self):
+        if self.session_node.RootItem:
+            self.session_node.DeleteAllItems()
+
+        session_path = os.path.abspath(self.ini_setting.get('dash','session_path'))
+        if not os.path.exists(session_path):
+            session_path= os.path.abspath(os.path.curdir)
+        base_name = os.path.basename(session_path)
+        sessions = {}
+
+        root =self.session_node.AddRoot(base_name)
+        item_info = wx.TreeItemData({'path_name':session_path})
+        self.session_node.SetItemData(root, item_info)
+        self.session_node.Expand(root)
+        item_list =  get_folder_item(session_path)
+        session_files=[]
+        for item in item_list:
+            if os.path.isfile('{}/{}'.format(session_path,item)) and '{}'.format(item).lower().strip().endswith('.csv'):
+                session_files.append(item)
+        for csv_file in sorted(session_files):
+            try:
+                ses_in_bench = load_bench(os.path.abspath('{}/{}'.format(session_path, csv_file)))
+                sessions.update(ses_in_bench)
+            except Exception as e:
+                pass
+        root =self.session_node.GetRootItem()
+        for file_name in sorted(sessions.keys()):
+
+            item_name = os.path.basename(file_name)
+            item_info = wx.TreeItemData({'file_name':file_name})
+            new_bench = self.session_node.InsertItem(root,root, item_name)
+            self.case_suite_node.SetItemData(new_bench, item_info)
+
+            for ses in sorted(sessions[file_name]):
+                item_name = ses
+                item_info = wx.TreeItemData({'attribute':sessions[file_name][ses]})
+                new_item = self.session_node.InsertItem(new_bench,new_bench, item_name)
+                self.case_suite_node.SetItemData(new_item, item_info)
+
+
+
+
+
+
+
+
+
