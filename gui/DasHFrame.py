@@ -138,24 +138,37 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
 
-        self.edit_area = AuiNotebook(self.m_file_editor, style = wx.aui.AUI_NB_DEFAULT_STYLE|wx.EXPAND)
+        self.edit_area = AuiNotebook(self.m_file_editor, style = wx.aui.AUI_NB_DEFAULT_STYLE)
         new_page = FileEditor(self.edit_area, 'a', type= type)
         self.edit_area.AddPage(new_page, 'test')
         self.edit_area.Enable(True)
+        right_sizer = wx.BoxSizer(wx.VERTICAL)
+        #right_sizer =wx.GridSizer( 3, 1, 0, 0 )
+
 
         left_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        left_sizer.Add(self.navigator, 1, wx.EXPAND)
-        right_sizer = wx.BoxSizer(wx.VERTICAL)
+        left_sizer.Add(self.m_left_navigator, 1, wx.EXPAND)
 
-        right_sizer.Add(self.edit_area,     6,  wx.EXPAND, 1)
-        right_sizer.Add(self.m_log,         3,  wx.EXPAND, 2)
-        right_sizer.Add(self.m_command_box, 1,  wx.EXPAND, 3)
+
 
         self.case_suite_page.Bind(wx.EVT_LEFT_DCLICK, self.m_case_treeOnLeftDClick)
         #self.case_suite_page.Bind(wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel)
         self.case_suite_page.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.m_case_treeOnTreeItemExpanding)
-        main_sizer = wx.GridSizer( 1, 2, 0, 0 )#wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.Add(left_sizer,  3,  wx.EXPAND)
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
+        nav_sizer = wx.BoxSizer()
+        nav_sizer.Add(self.navigator, 1, wx.EXPAND, 1)
+        self.m_left_navigator.SetSizer(nav_sizer)
+        #main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        #main_sizer.Add(left_sizer,  3,  wx.EXPAND)
+
+        main_sizer.Add(left_sizer, 3, wx.EXPAND)
+        edit_sizer = wx.BoxSizer()
+        edit_sizer.Add(self.edit_area, 1, wx.EXPAND, 1)
+        self.m_file_editor.SetSizer(edit_sizer)
+        right_sizer.Add(self.m_file_editor,     6,  wx.ALL|wx.EXPAND, 1)
+        right_sizer.Add(self.m_log,         3,  wx.ALL|wx.EXPAND, 2)
+        right_sizer.Add(self.m_command_box, 0,  wx.ALL|wx.EXPAND, 3)
         main_sizer.Add(right_sizer, 7,  wx.EXPAND)
         self.SetSizer(main_sizer)
         self.build_session_tab()
