@@ -154,6 +154,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.case_suite_page.Bind(wx.EVT_LEFT_DCLICK, self.m_case_treeOnLeftDClick)
         #self.case_suite_page.Bind(wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel)
         self.case_suite_page.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.m_case_treeOnTreeItemExpanding)
+        self.session_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Session_tab)
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
         nav_sizer = wx.BoxSizer()
@@ -279,7 +280,8 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
 
-
+    def on_LeftDClick_in_Session_tab(self, event):
+        print(self.session_page.GetItemText(self.session_page.GetSelection()))
 
 
 
