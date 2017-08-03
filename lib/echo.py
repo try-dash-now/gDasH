@@ -29,8 +29,8 @@ class echo (object):
     io_map = None
     name = None
     last_command = None
-    def __init__(self, io_data_file):
-        self.name = io_data_file
+    def __init__(self,name, io_data_file):
+        self.name = name #io_data_file
         self.last_command = Queue.Queue()
         self.load(io_data_file)
     def load(self, io_data_file):

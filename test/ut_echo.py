@@ -28,7 +28,7 @@ import unittest
 init_file_name = 'ut_echo.json'
 class ut_echo(unittest.TestCase):
     def setUp(self):
-        self.echo = echo(init_file_name)
+        self.echo = echo(init_file_name, init_file_name)
     def tearDown(self):
         pass
     def test_init(self):

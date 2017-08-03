@@ -79,7 +79,7 @@ class dut(object):
         self.new_line_during_login = new_line_during_login
         if type == 'echo':
             from lib.echo import echo
-            self.session = echo(host)
+            self.session = echo(name, host)
         elif type.lower() =='ssh':
             from lib.SSH import SSH
             self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)

@@ -31,6 +31,28 @@ import wx
 from gui.MainFrame import MainFrame
 import os
 from lib.common import load_bench
+class SessionTab(wx.Panel):
+    stdout=None
+    stderr=None
+    parent = None
+    type = type
+    output_window = None
+    cmd_window = None
+    def __init__(self, parent, name,attributes):
+        #init a session, and stdout, stderr, redirected to
+        wx.Panel.__init__(self, parent)
+        self.parent = parent
+        self.type = type
+        self.output_window = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
+        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.output_window, 10, wx.EXPAND)
+        sizer.Add(self.cmd_window, 0, wx.EXPAND)
+        self.SetSizer(sizer)
+        from lib.common import create_session
+        print (os.curdir)
+        ses = create_session(name, attributes)
 
 class FileEditor(wx.Panel):
     editor =None
@@ -227,7 +249,8 @@ class DasHFrame(MainFrame):#wx.Frame
             type = 'grid'
             new_page = FileEditor(self.edit_area, 'a', type= type)
             self.edit_area.AddPage(new_page, item_name)
-
+            index = self.edit_area.GetPageIndex(new_page)
+            self.edit_area.SetSelection(index)
 
     def m_case_treeOnTreeItemExpanding(self,event):
         ht_item =self.case_suite_page.GetSelection()
@@ -264,6 +287,7 @@ class DasHFrame(MainFrame):#wx.Frame
                 sessions.update(ses_in_bench)
             except Exception as e:
                 pass
+
         root =self.session_page.GetRootItem()
         for file_name in sorted(sessions.keys()):
 
@@ -278,10 +302,20 @@ class DasHFrame(MainFrame):#wx.Frame
                 new_item = self.session_page.InsertItem(new_bench, new_bench, item_name)
                 self.case_suite_page.SetItemData(new_item, item_info)
 
-
+        self.session_page.Expand(root)
 
     def on_LeftDClick_in_Session_tab(self, event):
-        print(self.session_page.GetItemText(self.session_page.GetSelection()))
+        ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
+        self.session_page.GetItemText(self.session_page.GetSelection())
+        session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
+        if session_attribute.Data.has_key('attribute'):
+            print(session_attribute.Data['attribute'])
+            new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'])
+            window_id = self.edit_area.AddPage(new_page, ses_name)
+            index = self.edit_area.GetPageIndex(new_page)
+            self.edit_area.SetSelection(index)
+
+
 
 
 

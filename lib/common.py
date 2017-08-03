@@ -93,5 +93,15 @@ def load_bench(bench_file):
                     dict_bench[os.path.basename(bench_file)][name]=dict_attributes
     return dict_bench
 
+def create_session(name, attribute):
+    if attribute.has_key('init_file_name'):
+        #this is a echo session
+        from echo import echo
+        from dut import dut
+        ses = echo(name, attribute['init_file_name'])
+    elif attribute.has_key('type'):
+        if attribute[type].lower()=='ssh':
+           ses = dut(name, attribute )
 
+    return  ses
 
