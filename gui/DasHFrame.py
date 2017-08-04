@@ -31,6 +31,8 @@ import wx
 from gui.MainFrame import MainFrame
 import os
 from lib.common import load_bench
+import re
+
 class SessionTab(wx.Panel):
     stdout=None
     stderr=None
@@ -38,6 +40,7 @@ class SessionTab(wx.Panel):
     type = type
     output_window = None
     cmd_window = None
+    session = None
     def __init__(self, parent, name,attributes):
         #init a session, and stdout, stderr, redirected to
         wx.Panel.__init__(self, parent)
@@ -46,13 +49,31 @@ class SessionTab(wx.Panel):
         self.output_window = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.output_window, 10, wx.EXPAND)
         sizer.Add(self.cmd_window, 0, wx.EXPAND)
         self.SetSizer(sizer)
         from lib.common import create_session
         print (os.curdir)
-        ses = create_session(name, attributes)
+        self.session  = create_session(name, attributes)
+    def on_close(self):
+        pass
+
+class RedirectText(object):
+    font_point_size = 10
+
+    def __init__(self,aWxTextCtrl):
+        self.out=aWxTextCtrl
+        self.font_point_size = self.out.GetFont().PointSize
+
+    def write(self,string):
+        if re.search('error|err|fail|wrong',string.lower()):
+            wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point_size+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+        else:
+            wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+        wx.CallAfter(self.out.AppendText, string)
+
 
 class FileEditor(wx.Panel):
     editor =None
@@ -123,6 +144,7 @@ class FileEditor(wx.Panel):
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
 from lib.common import get_folder_item
 import ConfigParser
+import sys
 class DasHFrame(MainFrame):#wx.Frame
     ini_setting = None
     #m_left_navigator =None
@@ -133,6 +155,11 @@ class DasHFrame(MainFrame):#wx.Frame
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
 
+        redir = RedirectText(self.m_log)
+        sys.stdout = redir
+        sys.stderr = redir
+        self.m_log.SetBackgroundColour('Black')
+        self.m_log.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Log window!')
         self.m_command_box.WriteText('read only,but select copy allowed')

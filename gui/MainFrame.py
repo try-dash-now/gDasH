@@ -35,7 +35,7 @@ class MainFrame ( wx.Frame ):
 		self.m_file_editor = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		sizer_right.Add( self.m_file_editor, 6, wx.EXPAND, 5 )
 		
-		self.m_log = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.HSCROLL|wx.VSCROLL|wx.WANTS_CHARS )
+		self.m_log = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.HSCROLL|wx.VSCROLL|wx.TE_RICH|wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER) )#richtext.RichTextCtrl |wx.WANTS_CHARS
 		sizer_right.Add( self.m_log, 3, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_command_box = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
