@@ -47,23 +47,28 @@ class echo (object):
         return ''
     def read(self):
         response = ''
-        input_cmd = self.last_command.get()
-        pure_cmd = input_cmd.strip()
-        cmd = pure_cmd
-        if self.io_map.has_key(input_cmd):
-            cmd = input_cmd
-        elif self.io_map.has_key(pure_cmd):
+        cmd = ''
+        try:
+            input_cmd = self.last_command.get()
+            pure_cmd = input_cmd.strip()
+            cmd = pure_cmd
+            if self.io_map.has_key(input_cmd):
+                cmd = input_cmd
+            elif self.io_map.has_key(pure_cmd):
+                pass
+
+            if self.io_map.has_key(cmd):
+                data = self.io_map[cmd]
+                if type(data) ==type(u''):
+                    response = data
+                elif type([]) == type(data):
+                    if len(data)>0:
+                        response = data[0]
+                        self.io_map[cmd].pop(0)
+            #print('{}'.format(response))
+        except Exception as e:
             pass
 
-        if self.io_map.has_key(cmd):
-            data = self.io_map[cmd]
-            if type(data) ==type(u''):
-                response = data
-            elif type([]) == type(data):
-                if len(data)>0:
-                    response = data[0]
-                    self.io_map[cmd].pop(0)
-        #print('{}'.format(response))
-        return  '{cmd}\n{rsp}'.format(cmd=cmd, rsp =response)
+        return  '\n{cmd}\n{rsp}'.format(cmd=cmd, rsp =response)
 
 

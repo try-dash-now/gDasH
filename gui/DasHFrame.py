@@ -32,7 +32,8 @@ from gui.MainFrame import MainFrame
 import os
 from lib.common import load_bench
 import re
-
+import time
+import threading
 class SessionTab(wx.Panel):
     stdout=None
     stderr=None
@@ -41,13 +42,27 @@ class SessionTab(wx.Panel):
     output_window = None
     cmd_window = None
     session = None
+    alive =False
+    def on_close(self):
+        self.alive = False
+        self.parent.Close()
+    def update_output(self):
+        while( self.alive):
+            response = self.session.read()
+            wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
+            last = self.output_window.GetLastPosition()
+            wx.CallAfter(self.output_window.SetInsertionPoint,last)
+            wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
+            time.sleep(0.1)
+
+
     def __init__(self, parent, name,attributes):
         #init a session, and stdout, stderr, redirected to
         wx.Panel.__init__(self, parent)
         self.parent = parent
         self.type = type
-        self.output_window = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
-        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+        self.output_window = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
+        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER )
 
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -56,18 +71,36 @@ class SessionTab(wx.Panel):
         self.SetSizer(sizer)
         from lib.common import create_session
         print (os.curdir)
+        parent.Bind(wx.EVT_CLOSE, self.on_close)
+        self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
         self.session  = create_session(name, attributes)
+        self.alive =True
+        th =threading.Thread(target=self.update_output)
+        th.start()
+        self.cmd_window.SetFocus()
+    def on_enter_a_command(self, event):
+        event.Skip()
+        ctrl = False
+        cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
+        self.cmd_window.Clear()
+        self.session.write(cmd,ctrl=ctrl)
+
     def on_close(self):
         pass
 
 class RedirectText(object):
     font_point_size = 10
+    old_stdout = None
+    old_stderr = None
 
     def __init__(self,aWxTextCtrl):
+        self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize
 
     def write(self,string):
+        self.old_stdout.write(string)
+        #self.old_stderr.write(string)
         if re.search('error|err|fail|wrong',string.lower()):
             wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point_size+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         else:
