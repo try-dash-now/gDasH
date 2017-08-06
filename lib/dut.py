@@ -50,7 +50,9 @@ class dut(object):
     session =None
     command_respone_json = None # a dict to record the interaction procedure
     search_buffer =None
-    buffer_locker =None
+    display_buffer =None
+    search_buffer_locker =None
+    display_buffer_locker =None
     session_status = None
     login_done =False
     write_locker = None
@@ -72,8 +74,10 @@ class dut(object):
         self.new_line = new_line
         self.session_status = True
         self.search_buffer = ''
-        self.buffer_locker=  threading.Lock()
+        self.display_buffer = ''
+        self.search_buffer_locker=  threading.Lock()
         self.write_locker=  threading.Lock()
+        self.display_buffer_locker = threading.Lock()
         th =threading.Thread(target=self.read_data)
         th.start()
         self.new_line_during_login = new_line_during_login
@@ -233,15 +237,29 @@ buffer:
         if data in [None]:
             data=''
         if len(data):
-            self.buffer_locker.acquire()
+            self.search_buffer_locker.acquire()
             self.search_buffer+='{}'.format(data)
-            self.buffer_locker.release()
+            self.search_buffer_locker.release()
+
+            self.display_buffer_locker.acquire()
+            self.display_buffer+='{}'.format(data)
+            self.display_buffer_locker.release()
+
     def reset_search_buffer(self):
-        self.buffer_locker.acquire()
+        self.search_buffer_locker.acquire()
         self.search_buffer=''
         if common.debug:
             print('{}:reset search buffer'.format(self.name))
-        self.buffer_locker.release()
+        self.search_buffer_locker.release()
+    def read_display_buffer(self, clear=True):
+        self.display_buffer_locker.acquire()
+        response = self.display_buffer
+        if clear :
+            self.display_buffer=''
+        if common.debug:
+            print('{}:reset display buffer'.format(self.name))
+        self.display_buffer_locker.release()
+        return response
     def read_data(self):
         max_idle_time = 60
         last_update_time = datetime.datetime.now()

@@ -50,13 +50,15 @@ class SessionTab(wx.Panel):
     def update_output(self):
         while( self.alive):
             self.output_lock.acquire()
-            response = self.session.read()
-            pat = chr(27)+'\[[0-9;]+m'
+            response = self.session.read_display_buffer()
+
+            pat = chr(27)+'\[[0-9;]+m|'+chr(27)+'\]0;'
             response = re.sub(pat,'',response)
-            wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
-            last = self.output_window.GetLastPosition()
-            wx.CallAfter(self.output_window.SetInsertionPoint,last)
-            wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
+            if len(response)!=0:
+                wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
+                last = self.output_window.GetLastPosition()
+                wx.CallAfter(self.output_window.SetInsertionPoint,last)
+                wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
             time.sleep(0.1)
             self.output_lock.release()
 
