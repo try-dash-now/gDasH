@@ -363,8 +363,10 @@ class DasHFrame(MainFrame):#wx.Frame
                 self.case_suite_page.SetItemData(new_item, item_info)
 
         self.session_page.Expand(root)
-
+        first_child = self.session_page.GetFirstChild(root)
+        self.session_page.Expand(first_child[0])
     def on_LeftDClick_in_Session_tab(self, event):
+        event.Skip()
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
