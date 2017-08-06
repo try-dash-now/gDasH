@@ -194,12 +194,18 @@ class FileEditor(wx.Panel):
 from lib.common import get_folder_item
 import ConfigParser
 import sys
-#todo: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
+#DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
 class DasHFrame(MainFrame):#wx.Frame
     ini_setting = None
     #m_left_navigator =None
     edit_area=None
     tabs_in_edit_area = None
+    def on_close(self, event):
+        for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+            closing_page = self.edit_area.GetPage(index)
+            closing_page.on_close()
+            self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(closing_page.session.name))
+        event.Skip()
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
@@ -220,6 +226,7 @@ class DasHFrame(MainFrame):#wx.Frame
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
         self.m_menubar_main.Append(fileMenu, "&Open TestSuite")
 
+        self.Bind(wx.EVT_CLOSE, self.on_close)
 
         from wx.aui import AuiNotebook
 
