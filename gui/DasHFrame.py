@@ -46,7 +46,8 @@ class SessionTab(wx.Panel):
     output_lock = None
     def on_close(self):
         self.alive = False
-        self.parent.Close()
+        self.session.sleep(0.3)
+        print('session {} closed!'.format(self.session.name))
     def update_output(self):
         while( self.alive):
             self.output_lock.acquire()
@@ -59,8 +60,9 @@ class SessionTab(wx.Panel):
                 last = self.output_window.GetLastPosition()
                 wx.CallAfter(self.output_window.SetInsertionPoint,last)
                 wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
-            time.sleep(0.1)
             self.output_lock.release()
+            time.sleep(0.1)
+
 
     def __init__(self, parent, name,attributes):
         #init a session, and stdout, stderr, redirected to
@@ -78,7 +80,8 @@ class SessionTab(wx.Panel):
         self.SetSizer(sizer)
         from lib.common import create_session
         print (os.curdir)
-        parent.Bind(wx.EVT_CLOSE, self.on_close)
+        #self.Bind(wx.EVT_CLOSE, self.on_close)
+        #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
         self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
 
         self.cmd_window.SetFocus()
@@ -93,8 +96,7 @@ class SessionTab(wx.Panel):
         self.cmd_window.Clear()
         self.session.write(cmd,ctrl=ctrl)
 
-    def on_close(self):
-        pass
+
 
 class RedirectText(object):
     font_point_size = 10
@@ -127,6 +129,9 @@ class FileEditor(wx.Panel):
     sessions_node =None
     function_node =None
     case_suite_node =None
+    def on_close(self):
+        pass
+        #todo: handle close tab in edit_area
     def __init__(self, parent, title='pageOne', type ='grid'):
         wx.Panel.__init__(self, parent)
         self.parent = parent
@@ -193,8 +198,10 @@ class DasHFrame(MainFrame):#wx.Frame
     ini_setting = None
     #m_left_navigator =None
     edit_area=None
+    tabs_in_edit_area = None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        self.tabs_in_edit_area=[]
         MainFrame.__init__(self, parent=parent)
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
@@ -232,8 +239,11 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
         self.edit_area = AuiNotebook(self.m_file_editor, style = wx.aui.AUI_NB_DEFAULT_STYLE)
-        new_page = FileEditor(self.edit_area, 'a', type= type)
-        self.edit_area.AddPage(new_page, 'test')
+        self.edit_area.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.on_close_tab_in_edit_area, self.edit_area)
+        if False:
+            new_page = FileEditor(self.edit_area, 'a', type= type)
+            self.edit_area.AddPage(new_page, 'test')
+            self.tabs_in_edit_area.append(('test'))
         self.edit_area.Enable(True)
         right_sizer = wx.BoxSizer(wx.VERTICAL)
         #right_sizer =wx.GridSizer( 3, 1, 0, 0 )
@@ -267,6 +277,11 @@ class DasHFrame(MainFrame):#wx.Frame
         self.SetSizer(main_sizer)
         self.build_session_tab()
         self.build_suite_tree()
+    def on_close_tab_in_edit_area(self, event):
+        #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
+        closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
+        closing_page.on_close()
+        self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(closing_page.session.name))
 
 
     def add_item_to_subfolder_in_tree(self,node):
@@ -383,10 +398,19 @@ class DasHFrame(MainFrame):#wx.Frame
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
         if session_attribute.Data.has_key('attribute'):
             print(session_attribute.Data['attribute'])
+
+            counter = 1
+            original_ses_name = ses_name
+            while ses_name in self.tabs_in_edit_area:
+                ses_name= '{}-{}'.format(original_ses_name,counter)
+                counter+=1
             new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'])
+
             window_id = self.edit_area.AddPage(new_page, ses_name)
+
             index = self.edit_area.GetPageIndex(new_page)
             self.edit_area.SetSelection(index)
+            self.tabs_in_edit_area.append(ses_name)
 
 
 
