@@ -41,7 +41,7 @@ class SSH(object):
         #ssh.util.log_to_file(self.logfile.name+'.ssh')
         self.client.set_missing_host_key_policy(ssh.WarningPolicy())
         self.client.load_system_host_keys()
-        self.client.connect(host, port, user, password)
+        self.client.connect(host, int(port), user, password)
         self.chan = self.client.invoke_shell()
     def read(self):
         resp = self.chan.recv(64)

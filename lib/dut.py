@@ -285,7 +285,7 @@ buffer:
             except Exception as e:
                 pprint(format_exc())
             if len(resp.strip()):
-                print('-'*20+'read start'+'-'*20)
+                print('-'*20+'read start'+'-'*20+'\n')
                 print('{}'.format(resp))
-                print('-'*20+'read end'+'-'*20)
+                print('\n'+'-'*20+'read   end'+'-'*20+'\n')
         return  resp

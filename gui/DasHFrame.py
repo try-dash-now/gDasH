@@ -43,24 +43,29 @@ class SessionTab(wx.Panel):
     cmd_window = None
     session = None
     alive =False
+    output_lock = None
     def on_close(self):
         self.alive = False
         self.parent.Close()
     def update_output(self):
         while( self.alive):
+            self.output_lock.acquire()
             response = self.session.read()
+            pat = chr(27)+'\[[0-9;]+m'
+            response = re.sub(pat,'',response)
             wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
             last = self.output_window.GetLastPosition()
             wx.CallAfter(self.output_window.SetInsertionPoint,last)
             wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
             time.sleep(0.1)
-
+            self.output_lock.release()
 
     def __init__(self, parent, name,attributes):
         #init a session, and stdout, stderr, redirected to
         wx.Panel.__init__(self, parent)
         self.parent = parent
         self.type = type
+        self.output_lock = threading.Lock()
         self.output_window = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER )
 
@@ -73,11 +78,12 @@ class SessionTab(wx.Panel):
         print (os.curdir)
         parent.Bind(wx.EVT_CLOSE, self.on_close)
         self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
+
+        self.cmd_window.SetFocus()
         self.session  = create_session(name, attributes)
         self.alive =True
         th =threading.Thread(target=self.update_output)
         th.start()
-        self.cmd_window.SetFocus()
     def on_enter_a_command(self, event):
         event.Skip()
         ctrl = False
@@ -92,21 +98,24 @@ class RedirectText(object):
     font_point_size = 10
     old_stdout = None
     old_stderr = None
-
+    write_lock = None
     def __init__(self,aWxTextCtrl):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize
-
+        self.write_lock = threading.Lock()
     def write(self,string):
+        self.write_lock.acquire()
         self.old_stdout.write(string)
+        #string = string.replace('\\033\[[0-9\;]+m', '')
+
         #self.old_stderr.write(string)
         if re.search('error|err|fail|wrong',string.lower()):
             wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point_size+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         else:
             wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
         wx.CallAfter(self.out.AppendText, string)
-
+        self.write_lock.release()
 
 class FileEditor(wx.Panel):
     editor =None
