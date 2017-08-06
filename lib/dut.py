@@ -59,7 +59,7 @@ class dut(object):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n'):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n', init_file_name=None):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.login_steps = login_step
         self.session_type = type
@@ -77,9 +77,9 @@ class dut(object):
         th =threading.Thread(target=self.read_data)
         th.start()
         self.new_line_during_login = new_line_during_login
-        if type == 'echo':
+        if type == 'echo' or init_file_name !=None:
             from lib.echo import echo
-            self.session = echo(name, host)
+            self.session = echo(name, init_file_name)
         elif type.lower() =='ssh':
             from lib.SSH import SSH
             self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)

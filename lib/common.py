@@ -96,13 +96,13 @@ from echo import echo
 from dut import dut
 
 def create_session(name, attribute):
-    if attribute.has_key('init_file_name'):
-        #this is a echo session
-        ses = echo(name, attribute['init_file_name'])
-    elif attribute.has_key('type'):
-        if attribute['type'].lower()=='ssh':
+    # if attribute.has_key('init_file_name'):
+    #     #this is a echo session
+    #     ses = echo(name, attribute['init_file_name'])
+    # elif attribute.has_key('type'):
+    #if attribute['type'].lower()=='ssh':
 
-           ses = dut(name, **attribute )
+    ses = dut(name, **attribute )
 
     return  ses
 
