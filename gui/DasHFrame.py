@@ -44,6 +44,7 @@ class SessionTab(wx.Panel):
     session = None
     alive =False
     output_lock = None
+    font_point = None
     def on_close(self):
         self.alive = False
         self.session.sleep(0.3)
@@ -72,6 +73,10 @@ class SessionTab(wx.Panel):
             pat = chr(27)+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
             #response = re.sub(pat,'',response)
             if len(response)!=0:
+                if re.search('error|err|fail|wrong',response.lower()):
+                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+                else:
+                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                 wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
                 last = self.output_window.GetLastPosition()
                 wx.CallAfter(self.output_window.SetInsertionPoint,last)
@@ -86,10 +91,11 @@ class SessionTab(wx.Panel):
         self.parent = parent
         self.type = type
         self.output_lock = threading.Lock()
-        #wx.stc.StyledTextCtrl
-        self.output_window = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
+        #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
+        self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER )
 
+        self.font_point = self.output_window.GetFont().PointSize
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.output_window, 10, wx.EXPAND)
@@ -100,7 +106,8 @@ class SessionTab(wx.Panel):
         #self.Bind(wx.EVT_CLOSE, self.on_close)
         #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
         self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
-
+        self.output_window.SetBackgroundColour('Black')
+        self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
         self.session  = create_session(name, attributes)
         self.alive =True
@@ -236,8 +243,8 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_log.SetBackgroundColour('Black')
         self.m_log.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         #self.m_editor.WriteText('welcome to dash world')
-        self.m_log.WriteText('Log window!')
-        self.m_command_box.WriteText('read only,but select copy allowed')
+        self.m_log.WriteText('Welcome to DasH!\n')
+        #self.m_command_box.WriteText('')
         fileMenu = wx.Menu()
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
