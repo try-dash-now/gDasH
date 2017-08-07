@@ -87,7 +87,10 @@ class dut(object):
         elif type.lower() =='ssh':
             from lib.SSH import SSH
             self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
-        if login_step==None:
+        elif type.lower() in ['telnet']:
+            from lib.TELNET import  TELNET
+            self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
+        if login_step is None or login_step.strip().lower() in ['none',None, "''", '""']:
             self.login_steps =[]
         else:
             self.login(login_step)

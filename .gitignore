@@ -2,6 +2,7 @@
 #ignore pycharm ide folder
 ./idea
 ./sessions
+./src
 
 # Compiled source #
 ###################
