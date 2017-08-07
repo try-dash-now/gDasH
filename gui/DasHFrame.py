@@ -302,6 +302,9 @@ class DasHFrame(MainFrame):#wx.Frame
         self.SetSizer(main_sizer)
         self.build_session_tab()
         self.build_suite_tree()
+
+        ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
+        self.SetIcon(ico)
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
         closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
