@@ -47,8 +47,10 @@ class SessionTab(wx.Panel):
     font_point = None
     def on_close(self):
         self.alive = False
-        self.session.sleep(0.3)
-        print('session {} closed!'.format(self.session.name))
+        self.session.session_status=False
+        self.session.sleep(0.001)
+        print('tab {} closed!!!'.format(self.session.name))
+
     def update_output(self):
         while( self.alive):
             self.output_lock.acquire()
@@ -82,7 +84,7 @@ class SessionTab(wx.Panel):
                 wx.CallAfter(self.output_window.SetInsertionPoint,last)
                 wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
             self.output_lock.release()
-            time.sleep(0.1)
+            time.sleep(0.001)
 
 
     def __init__(self, parent, name,attributes):
@@ -221,7 +223,8 @@ import sys
 #DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
 class DasHFrame(MainFrame):#wx.Frame
     ini_setting = None
-    #m_left_navigator =None
+        #m_left_navigator =None
+    redir = None
     edit_area=None
     tabs_in_edit_area = None
     def on_close(self, event):
@@ -229,6 +232,8 @@ class DasHFrame(MainFrame):#wx.Frame
             closing_page = self.edit_area.GetPage(index)
             closing_page.on_close()
             self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(closing_page.session.name))
+        sys.stderr =self.redir.old_stderr
+        sys.stdout = self.redir.old_stdout
         event.Skip()
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
@@ -237,9 +242,9 @@ class DasHFrame(MainFrame):#wx.Frame
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
 
-        redir = RedirectText(self.m_log)
-        sys.stdout = redir
-        sys.stderr = redir
+        self.redir = RedirectText(self.m_log)
+        sys.stdout = self.redir
+        sys.stderr = self.redir
         self.m_log.SetBackgroundColour('Black')
         self.m_log.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         #self.m_editor.WriteText('welcome to dash world')

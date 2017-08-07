@@ -275,7 +275,7 @@ buffer:
                 last_update_time = current_time
                 self.write()
             self.add_data_to_search_buffer(self.read())
-            time.sleep(0.01)
+            time.sleep(0.001)
         if self.session_type in ['ssh']:
             if self.session.client:
                 self.session.client.close()
@@ -300,10 +300,11 @@ buffer:
         return  resp
     def read(self):
         resp =''
-        if self.session:
+        if self.session_status and self.session:
             try:
                 resp =self.session.read()
             except Exception as e:
+                print('session {}'.format(self.name))
                 pprint(format_exc())
             if len(resp.strip()):
                 print('-'*20+'read start'+'-'*20+'\n')
