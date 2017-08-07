@@ -52,9 +52,25 @@ class SessionTab(wx.Panel):
         while( self.alive):
             self.output_lock.acquire()
             response = self.session.read_display_buffer()
+            ansi_escape = re.compile(r'\x1b[^m]*m*|'+r'\x1b(' \
+             r'(\[\??\d+[hl])|' \
+             r'([=<>a-kzNM78])|' \
+             r'([\(\)][a-b0-2])|' \
+             r'(\[\d{0,2}[ma-dgkjqi])|' \
+             r'(\[\d+;\d+[hfy]?)|' \
+             r'(\[;?[hf])|' \
+             r'(#[3-68])|' \
+             r'([01356]n)|' \
+             r'(O[mlnp-z]?)|' \
+             r'(/Z)|' \
+             r'(\d+)|' \
+             r'(\[\?\d;\d0c)|' \
+             r'(\d;\dR))'
+             , flags=re.IGNORECASE)
+            response = ansi_escape.sub('', response)
 
-            pat = chr(27)+'\[[0-9;]+m|'+chr(27)+'\]0;'
-            response = re.sub(pat,'',response)
+            pat = chr(27)+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
+            #response = re.sub(pat,'',response)
             if len(response)!=0:
                 wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
                 last = self.output_window.GetLastPosition()
@@ -70,6 +86,7 @@ class SessionTab(wx.Panel):
         self.parent = parent
         self.type = type
         self.output_lock = threading.Lock()
+        #wx.stc.StyledTextCtrl
         self.output_window = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER )
 
