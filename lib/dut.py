@@ -232,7 +232,7 @@ buffer:
     def close_session(self):
         self.write_locker.acquire()
         if self.session_status: #try to avoid to call this function twice
-            print('session {}: Closing!!!'.format(self.name))
+            print('session {}:close_session called Closing!!!'.format(self.name))
             self.session_status=False
             #fix issue
             # Traceback (most recent call last):
@@ -247,7 +247,10 @@ buffer:
             # PyDeadObjectError: The C++ part of the SessionTab object has been deleted, attribute access no longer allowed.
             if self.session_type in ['ssh']:
                 self.session.write('exit')
-            if
+            if self.session_type in 'telnet':
+                #self.session.write('exit')
+                self.session.write('exit')
+
         self.write_locker.release()
         time.sleep(0.001)
 
