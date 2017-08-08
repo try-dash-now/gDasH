@@ -149,7 +149,10 @@ class SessionTab(wx.Panel):
         cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
         self.cmd_window.Clear()
         try:
-            self.session.write(cmd,ctrl=ctrl)
+            if self.alive:
+                th = threading.Thread(target=self.session.write,args=( cmd,ctrl))
+                th.start()
+                #self.session.write(cmd,ctrl=ctrl)
         except Exception as e:
             self.on_close()
             self.session.close_session()

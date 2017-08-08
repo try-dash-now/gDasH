@@ -287,7 +287,7 @@ buffer:
         print('session {}: Closed!!!'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
-        if self.session:
+        if self.session_status:
             new_line =self.new_line
             if not self.login_done:
                 new_line = self.new_line_during_login
@@ -298,7 +298,10 @@ buffer:
                 resp = self.session.write(cmd, ctrl=ctrl)
                 resp +=self.session.write(new_line)
             else:
-                resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line), ctrl=ctrl)
+                try:
+                    resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line), ctrl=ctrl)
+                except Exception as e :
+                    self.session_status =False
             #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
             self.write_locker.release()
         return  resp
@@ -311,6 +314,7 @@ buffer:
                 print('session {}'.format(self.name))
                 pprint(format_exc())
             if len(resp.strip()):
+
                 print('-'*20+'read start'+'-'*20+'\n')
                 print('{}'.format(resp))
                 print('\n'+'-'*20+'read   end'+'-'*20+'\n')
