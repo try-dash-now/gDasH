@@ -234,6 +234,8 @@ buffer:
         if self.session_status: #try to avoid to call this function twice
             print('session {}: Closing!!!'.format(self.name))
             self.session_status=False
+            if self.session_type in ['ssh']:
+                self.session.write('exit')
         self.write_locker.release()
         time.sleep(0.001)
 

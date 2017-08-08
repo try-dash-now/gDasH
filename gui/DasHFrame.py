@@ -50,11 +50,17 @@ class SessionTab(wx.Panel):
     def on_close(self):
         self.alive = False
         self.session.close_session()
-        self.session.sleep(0.001)
+        #self.session.sleep(0.001)
         print('tab {} closed!!!'.format(self.session.name))
 
     def update_output(self):
-        while( self.alive and self.session.session_status):
+        status =True
+        while( status):
+            try:
+                status = self.alive and self.session.session_status
+            except Exception as e :
+                time.sleep(0.001)
+                break
             #time.sleep(0.05)
             self.output_lock.acquire()
             response = self.session.read_display_buffer()
