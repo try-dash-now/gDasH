@@ -317,14 +317,14 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_log.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Welcome to DasH!\n')
-        #self.m_command_box.WriteText('')
+        self.m_command_box.WriteText('m.c.f 1 2 3 a=1 b=2 c=""')
         fileMenu = wx.Menu()
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
         self.m_menubar_main.Append(fileMenu, "&Open TestSuite")
 
         self.Bind(wx.EVT_CLOSE, self.on_close)
-
+        self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
         from wx.aui import AuiNotebook
 
 
@@ -522,6 +522,13 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
 
+    def on_command_enter(self, event):
+        print('called on_command_enter')
+        cmd = self.m_command_box.GetValue()
+
+        from lib.common import parse_command_line, call_function_in_module
+        module,class_name, function,args = parse_command_line(cmd)
+        call_function_in_module(module,class_name,function,args)
 
 
 

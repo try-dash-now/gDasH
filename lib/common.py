@@ -106,3 +106,39 @@ def create_session(name, attribute):
 
     return  ses
 
+def parse_command_line(cmd_string):
+    import shlex
+    lex = shlex.shlex(cmd_string)
+    lex.quotes = '"'
+    lex.whitespace_split = True
+    cmd_list=list(lex)
+    if cmd_list.__len__()>1:
+        mod_funct=cmd_list[0].split('.')
+        if mod_funct.__len__() ==1:
+            module_name =''
+            class_name = ''
+            function_name = mod_funct[0]
+        elif mod_funct.__len__()==2:
+            class_name=''
+            module_name,function_name = mod_funct[:2]
+        elif mod_funct.__len__()>2:
+            module_name,class_name,function_name=mod_funct[:3]
+        args = cmd_list[1:]
+        return  module_name,class_name,function_name,args
+
+def call_function_in_module(module_name, class_name, function_name, args):
+    import inspect
+    new_argvs=[]
+    new_kwargs={}
+    def GetFunArgs(*argvs, **kwargs):
+    #re-assign for self.argvs and self.kwargvs
+        for arg in argvs:
+            new_argvs.append(arg)
+        for k in kwargs.keys():
+            new_kwargs.update({k:kwargs[k]})
+
+
+    eval('GetFunArgs({args})'.format(args=','.join(['{}'.format(x) for x in args])))
+    print('module_name: {mn}\nfunction_name: {fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
+
+
