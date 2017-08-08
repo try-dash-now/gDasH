@@ -47,12 +47,13 @@ class SessionTab(wx.Panel):
     font_point = None
     def on_close(self):
         self.alive = False
-        self.session.session_status=False
+        self.session.close_session()
         self.session.sleep(0.001)
         print('tab {} closed!!!'.format(self.session.name))
 
     def update_output(self):
-        while( self.alive):
+        while( self.alive and self.session.session_status):
+            #time.sleep(0.05)
             self.output_lock.acquire()
             response = self.session.read_display_buffer()
             ansi_escape = re.compile(r'\x1b[^m]*m*|'+r'\x1b(' \
@@ -71,20 +72,47 @@ class SessionTab(wx.Panel):
              r'(\d;\dR))'
              , flags=re.IGNORECASE)
             response = ansi_escape.sub('', response)
+            BACKSPACE = chr(8)
+            #response = re.sub(chr(32)+BACKSPACE,'',response)
 
-            pat = chr(27)+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
-            #response = re.sub(pat,'',response)
+            BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
+
+
             if len(response)!=0:
+                if False:
+                    whole_text = self.output_window.GetValue()
+                    last_index = len(whole_text)
+                    total_BS_in_response = int(response.count(BACKSPACE))
+                    start_BS = response.find(BACKSPACE)
+                    end_BS = response.rfind(BACKSPACE)+1
+                    start = last_index-total_BS_in_response-1
+                    end = last_index
+                    if total_BS_in_response:
+                        self.output_window.Remove(start ,end)
+                        #wx.CallAfter(self.output_window.Remove,start ,end)
+                        response= response[:start_BS]+response[end_BS:]
+                        #response =''
+
                 if re.search('error|err|fail|wrong',response.lower()):
-                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+                    self.output_window.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+                    #wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
                 else:
-                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
+                    self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    #wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                self.output_window.AppendText( response)
+                whole_text = self.output_window.GetValue()
+                m = re.search('[^\b]\b',whole_text)
+                while m:
+                    self.output_window.Remove(m.start(), m.end())
+                    whole_text = self.output_window.GetValue()
+                    m = re.search('[^\b]\b',whole_text)
+
+                #wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
                 last = self.output_window.GetLastPosition()
                 wx.CallAfter(self.output_window.SetInsertionPoint,last)
                 wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
             self.output_lock.release()
-            time.sleep(0.001)
+            time.sleep(0.5)
 
 
     def __init__(self, parent, name,attributes):
@@ -120,7 +148,13 @@ class SessionTab(wx.Panel):
         ctrl = False
         cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
         self.cmd_window.Clear()
-        self.session.write(cmd,ctrl=ctrl)
+        try:
+            self.session.write(cmd,ctrl=ctrl)
+        except Exception as e:
+            self.on_close()
+            self.session.close_session()
+            print ('{} closed unexpected'.format(self.session.name))
+            self.alive= False
 
 
 

@@ -267,15 +267,19 @@ buffer:
         max_idle_time = 60
         last_update_time = datetime.datetime.now()
         while self.session_status:
-            current_time = datetime.datetime.now()
-            if common.debug:
-                pass
-            #print('session {name} alive'.format(name =self.name))
-            if (current_time-last_update_time).total_seconds()> max_idle_time:
-                last_update_time = current_time
-                self.write()
-            self.add_data_to_search_buffer(self.read())
-            time.sleep(0.001)
+            try:
+                current_time = datetime.datetime.now()
+                if common.debug:
+                    pass
+                #print('session {name} alive'.format(name =self.name))
+                if (current_time-last_update_time).total_seconds()> max_idle_time:
+                    last_update_time = current_time
+                    self.write()
+                self.add_data_to_search_buffer(self.read())
+                time.sleep(0.001)
+            except  Exception as e:
+                if str(e) in ['error: Socket is closed']:
+                    self.session_status =False
         if self.session_type in ['ssh']:
             if self.session.client:
                 self.session.client.close()
