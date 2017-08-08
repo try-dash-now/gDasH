@@ -38,6 +38,7 @@ import time,datetime, re, math, datetime
 import threading
 from common import dut_exception_handler
 import common
+import os
 class dut(object):
     name=None
     session_type= None
@@ -61,7 +62,7 @@ class dut(object):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= '\n', new_line_during_login='\n', init_file_name=None):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.login_steps = login_step
         self.session_type = type

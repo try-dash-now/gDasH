@@ -45,6 +45,8 @@ class SessionTab(wx.Panel):
     alive =False
     output_lock = None
     font_point = None
+    history_cmd = None
+    history_cmd_index = 0
     def on_close(self):
         self.alive = False
         self.session.close_session()
@@ -118,6 +120,8 @@ class SessionTab(wx.Panel):
     def __init__(self, parent, name,attributes):
         #init a session, and stdout, stderr, redirected to
         wx.Panel.__init__(self, parent)
+        self.history_cmd=[os.linesep ]
+        self.history_cmd_index = 0
         self.parent = parent
         self.type = type
         self.output_lock = threading.Lock()
@@ -136,6 +140,7 @@ class SessionTab(wx.Panel):
         #self.Bind(wx.EVT_CLOSE, self.on_close)
         #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
         self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
+        self.cmd_window.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.output_window.SetBackgroundColour('Black')
         self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
@@ -143,15 +148,30 @@ class SessionTab(wx.Panel):
         self.alive =True
         th =threading.Thread(target=self.update_output)
         th.start()
+    def on_key_up(self, event):
+        keycode = event.KeyCode
+
+        if keycode ==wx.WXK_UP:
+                self.history_cmd_index= self.history_cmd_index-1 if self.history_cmd_index>0 else len(self.history_cmd)-1
+        elif keycode ==wx.WXK_DOWN:
+                self.history_cmd_index= self.history_cmd_index+1 if self.history_cmd_index <len(self.history_cmd)-1 else 0
+        if keycode in [wx.WXK_UP, wx.WXK_DOWN]:
+            self.cmd_window.Clear()
+            self.cmd_window.AppendText(self.history_cmd[self.history_cmd_index])
+        event.Skip()
     def on_enter_a_command(self, event):
         event.Skip()
         ctrl = False
         cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
+        cmd= cmd.replace('\n', os.linesep)
         self.cmd_window.Clear()
+        self.add_cmd_to_history(cmd)
         try:
-            if self.alive:
+            if self.session.session_status:
                 th = threading.Thread(target=self.session.write,args=( cmd,ctrl))
                 th.start()
+            else:
+                self.alive= self.session.session_status
                 #self.session.write(cmd,ctrl=ctrl)
         except Exception as e:
             self.on_close()
@@ -159,7 +179,12 @@ class SessionTab(wx.Panel):
             print ('{} closed unexpected'.format(self.session.name))
             self.alive= False
 
-
+    def add_cmd_to_history(self, cmd):
+        if self.history_cmd[-1]==cmd:
+            pass
+        else:
+            self.history_cmd.append(cmd)
+            self.history_cmd_index= len(self.history_cmd)-1
 
 class RedirectText(object):
     font_point_size = 10
