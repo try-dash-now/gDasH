@@ -234,8 +234,20 @@ buffer:
         if self.session_status: #try to avoid to call this function twice
             print('session {}: Closing!!!'.format(self.name))
             self.session_status=False
+            #fix issue
+            # Traceback (most recent call last):
+            # File "C:\Python27\Lib\threading.py", line 801, in __bootstrap_inner
+            # self.run()
+            # File "C:\Python27\Lib\threading.py", line 754, in run
+            # self.__target(*self.__args, **self.__kwargs)
+            # File "C:/workspace/gDasH\gui\DasHFrame.py", line 57, in update_output
+            # while( self.alive ):#and self.session.session_status
+            # File "C:\Python27\lib\site-packages\wx-3.0-msw\wx\_core.py", line 16711, in __getattr__
+            # raise PyDeadObjectError(self.attrStr % self._name)
+            # PyDeadObjectError: The C++ part of the SessionTab object has been deleted, attribute access no longer allowed.
             if self.session_type in ['ssh']:
                 self.session.write('exit')
+            if
         self.write_locker.release()
         time.sleep(0.001)
 
