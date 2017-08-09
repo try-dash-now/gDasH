@@ -28,7 +28,7 @@ from functools import wraps
 import  traceback
 import os
 import inspect
-
+import imp
 
 debug = False
 def dut_exception_handler(function_name):
@@ -139,27 +139,72 @@ def call_function_in_module(module_name, class_name, function_name, args):
 
 
     eval('GetFunArgs({args})'.format(args=','.join(['{}'.format(x) for x in args])))
-    print('module_name: {mn}\nfunction_name: {fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
+    print('module_name: \t{mn}\nclass_name: \t{cn}\nfunction_name: \t{fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,cn = class_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
+    instance_name = '{}_inst'.format(module_name)
+    try:
+        file, path_name, description = imp.find_module(module_name)
+        lmod = imp.load_module(module_name, file, path_name,description)
+        instance_name = getattr(lmod, class_name)()
+        getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
+    except Exception as e:
+        msg = "failed to load module {}:{}".format(module_name, e)
+        error(msg )
+
+
+
 
 log_type_name = ['INFO','WARN','ERRO','DEBUG']
-log_level = 0
-def caller_stack_info(level=log_level):
+log_level = 4
+def caller_stack_info(level=log_level, depth = 2):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
     calframe = inspect.getouterframes(calframe[1][0],2)
+    if depth==3:
+        calframe = inspect.getouterframes(calframe[1][0],2)
     class_name = '{}'.format(type(calframe[2][0].f_locals['self']))
+    class_name=''
     name = calframe[2][0].f_locals['self'].ses_name+'.' if  'ses_name' in inspect.getmembers(calframe[2][0].f_locals['self']) else ''
     file_name, line_no, caller_name,code_list, = calframe[2][1:5]
+    msg= '{level}\t{fn}:{line_no}\t{caller}'.format(level = log_type_name[level],fn=os.path.basename(file_name), line_no = line_no,caller = caller_name)
     if level==0:
-        msg = '{level}\t{line_no}\t{caller}'.format(level = log_type_name[log_level],line_no = line_no,caller = caller_name)
+        msg = '{level}\t{line_no}\t{caller}'.format(level = log_type_name[level],line_no = line_no,caller = caller_name)
     elif level==1:
         msg = ''
 
     return msg
 
-def log(string, info_type_index=log_level):
-    info = caller_stack_info(info_type_index)
+def log(string, info_type_index=3, depth = 2):
+    info = caller_stack_info(info_type_index, depth)
     str = '{}:\t{}'.format(info,string)
-    print(str)
+    if log_level>=info_type_index:
+        print(str)
     return  str
+def error(string):
+    log(string,2,3)
+def debug(string):
+    log(string, 3, 3)
+def warn(string):
+    log(string,1,3)
+
+def reload_module(instance, function_name):
+    parents = type.mro(type(instance))[:-1]
+    parents.insert(0, instance)
+    class_name = 0
+
+    target_module_name =None
+    target_module = None
+    for p in parents:
+        if p.__dict__.has_key(function_name):
+            target_module_name= p.__module__
+            break
+
+
+    for p in parents:#[::-1]:
+        mn = p.__module__
+        if target_module_name==mn:
+            module_info =imp.find_module(mn )# imp.new_module(modulename)
+            module_dyn = imp.load_module(mn ,*module_info)
+            reload(module_dyn)
+            target_module= module_dyn
+
 

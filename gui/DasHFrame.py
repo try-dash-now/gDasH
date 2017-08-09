@@ -313,7 +313,8 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_log.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Welcome to DasH!\n')
-        self.m_command_box.WriteText('m.c.f 1 2 3 a=1 b=2 c=""')
+
+        self.m_command_box.WriteText('functions.functions.test 1 2 3 a=1 b=2 c=""')
         fileMenu = wx.Menu()
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
