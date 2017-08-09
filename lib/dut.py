@@ -38,7 +38,7 @@ from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
-from common import get_caller_name, dut_exception_handler
+from common import log, dut_exception_handler
 import common
 import os
 class dut(object):
@@ -235,7 +235,7 @@ buffer:
         self.write_locker.acquire()
         if self.session_status: #try to avoid to call this function twice
             self.log('session {}:close_session called Closing!!!'.format(self.name))
-            self.session_status=False
+
             #fix issue
             # Traceback (most recent call last):
             # File "C:\Python27\Lib\threading.py", line 801, in __bootstrap_inner
@@ -247,11 +247,15 @@ buffer:
             # File "C:\Python27\lib\site-packages\wx-3.0-msw\wx\_core.py", line 16711, in __getattr__
             # raise PyDeadObjectError(self.attrStr % self._name)
             # PyDeadObjectError: The C++ part of the SessionTab object has been deleted, attribute access no longer allowed.
-            if self.session_type in ['ssh']:
-                self.session.write('exit')
-            if self.session_type in 'telnet':
-                #self.session.write('exit')
-                self.session.write('exit')
+            try:
+                if self.session_type in ['ssh']:
+                    self.session.write('exit')
+                if self.session_type in 'telnet':
+                    #self.session.write('exit')
+                    self.session.write('exit')
+            except:
+                pass
+            self.session_status=False
 
         self.write_locker.release()
         time.sleep(0.001)
@@ -336,9 +340,9 @@ buffer:
             if len(resp.strip()):
 
                 self.log('-'*20+'read start'+'-'*20+'\n')
-                self.log('{}'.format(resp))
-                self.log('\n'+'-'*20+'read   end'+'-'*20+'\n')
+                self.log('{}'.format(resp)+os.linesep)
+                self.log(''+'-'*20+'read   end'+'-'*20+'\n')
         return  resp
-    def log(self, string):
-        caller = get_caller_name()
-        self.log('{}:{}'.format(caller, string))
+    def log(self, string, log_type_index= 0):
+        log(string, log_type_index)
+        #print('{}:{}.{}:{}'.format(log_type_name[log_type_index],self.name, caller, string))

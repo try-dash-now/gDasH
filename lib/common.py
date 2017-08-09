@@ -92,8 +92,7 @@ def load_bench(bench_file):
                         dict_attributes[a_name.strip()]=a_value.strip()
                     dict_bench[os.path.basename(bench_file)][name]=dict_attributes
     return dict_bench
-from echo import echo
-from dut import dut
+
 
 def create_session(name, attribute):
     # if attribute.has_key('init_file_name'):
@@ -102,6 +101,7 @@ def create_session(name, attribute):
     # elif attribute.has_key('type'):
     #if attribute['type'].lower()=='ssh':
 
+    from dut import dut
     ses = dut(name, **attribute )
 
     return  ses
@@ -141,8 +141,25 @@ def call_function_in_module(module_name, class_name, function_name, args):
     eval('GetFunArgs({args})'.format(args=','.join(['{}'.format(x) for x in args])))
     print('module_name: {mn}\nfunction_name: {fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
 
-
-def get_caller_name():
+log_type_name = ['INFO','WARN','ERRO','DEBUG']
+log_level = 0
+def caller_stack_info(level=log_level):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    return calframe[1][3]
+    calframe = inspect.getouterframes(calframe[1][0],2)
+    class_name = '{}'.format(type(calframe[2][0].f_locals['self']))
+    name = calframe[2][0].f_locals['self'].ses_name+'.' if  'ses_name' in inspect.getmembers(calframe[2][0].f_locals['self']) else ''
+    file_name, line_no, caller_name,code_list, = calframe[2][1:5]
+    if level==0:
+        msg = '{level}\t{line_no}\t{caller}'.format(level = log_type_name[log_level],line_no = line_no,caller = caller_name)
+    elif level==1:
+        msg = ''
+
+    return msg
+
+def log(string, info_type_index=log_level):
+    info = caller_stack_info(info_type_index)
+    str = '{}:\t{}'.format(info,string)
+    print(str)
+    return  str
+
