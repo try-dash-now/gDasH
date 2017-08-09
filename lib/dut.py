@@ -30,13 +30,15 @@ provide functions
     enter a command and wait for a respone
     when interacting with real device, record the steps to a json file
 '''
-#todo: function_step completion, add stream_buffer, search_index, to support search in buffer
+#done: dut.add_data_to_search_buffer --function_step completion, add stream_buffer, search_index, to support search in buffer check
 #todo: function_step defines the output format:
+#todo: build executable(exe) file for windows user, allow to distribute it without python installation
+
 from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
-from common import dut_exception_handler
+from common import get_caller_name, dut_exception_handler
 import common
 import os
 class dut(object):
@@ -146,7 +148,7 @@ buffer:
 
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
-                    pprint(format_exc())
+                    self.log(format_exc())
                     e.message='{dut_name}.step: command={cmd}, time_out={time_out}, total_try={total_try},ctrl={ctrl}, not_want_to_find={not_want}, no_wait={no_wait},flags={flags}\n{msg}'.format(
                         dut_name = self.name,
                         cmd = command,
@@ -158,7 +160,7 @@ buffer:
                         flags = flags,
                         msg= e.message
                     )
-                    pprint( e.message)
+                    self.log(pprint( e.message))
                     raise
 
     def match_in_buffer(self, pattern):
@@ -232,7 +234,7 @@ buffer:
     def close_session(self):
         self.write_locker.acquire()
         if self.session_status: #try to avoid to call this function twice
-            print('session {}:close_session called Closing!!!'.format(self.name))
+            self.log('session {}:close_session called Closing!!!'.format(self.name))
             self.session_status=False
             #fix issue
             # Traceback (most recent call last):
@@ -270,7 +272,7 @@ buffer:
         self.search_buffer_locker.acquire()
         self.search_buffer=''
         if common.debug:
-            print('{}:reset search buffer'.format(self.name))
+            self.log('{}:reset search buffer'.format(self.name))
         self.search_buffer_locker.release()
     def read_display_buffer(self, clear=True):
         self.display_buffer_locker.acquire()
@@ -278,7 +280,7 @@ buffer:
         if clear :
             self.display_buffer=''
         if common.debug:
-            print('{}:reset display buffer'.format(self.name))
+            self.log('{}:reset display buffer'.format(self.name))
         self.display_buffer_locker.release()
         return response
     def read_data(self):
@@ -289,7 +291,7 @@ buffer:
                 current_time = datetime.datetime.now()
                 if common.debug:
                     pass
-                #print('session {name} alive'.format(name =self.name))
+                #self.log('session {name} alive'.format(name =self.name))
                 if (current_time-last_update_time).total_seconds()> max_idle_time:
                     last_update_time = current_time
                     self.write()
@@ -302,7 +304,7 @@ buffer:
             if self.session.client:
                 self.session.client.close()
                 self.session.client=None
-        print('session {}: Closed!!!'.format(self.name))
+        self.log('session {}: Closed!!!'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
         if self.session_status:
@@ -329,11 +331,14 @@ buffer:
             try:
                 resp =self.session.read()
             except Exception as e:
-                print('session {}'.format(self.name))
-                pprint(format_exc())
+                self.log('session {}'.format(self.name))
+                self.log(pprint(format_exc()))
             if len(resp.strip()):
 
-                print('-'*20+'read start'+'-'*20+'\n')
-                print('{}'.format(resp))
-                print('\n'+'-'*20+'read   end'+'-'*20+'\n')
+                self.log('-'*20+'read start'+'-'*20+'\n')
+                self.log('{}'.format(resp))
+                self.log('\n'+'-'*20+'read   end'+'-'*20+'\n')
         return  resp
+    def log(self, string):
+        caller = get_caller_name()
+        self.log('{}:{}'.format(caller, string))

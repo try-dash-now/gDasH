@@ -285,9 +285,11 @@ class FileEditor(wx.Panel):
                     self.editor.SetCellFont(r, c, f)
             self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
-from lib.common import get_folder_item
+from lib.common import get_folder_item, get_caller_name
 import ConfigParser
 import sys
+import inspect
+
 #DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
 class DasHFrame(MainFrame):#wx.Frame
     ini_setting = None
@@ -295,21 +297,15 @@ class DasHFrame(MainFrame):#wx.Frame
     redir = None
     edit_area=None
     tabs_in_edit_area = None
-    def on_close(self, event):
-        for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
-            closing_page = self.edit_area.GetPage(index)
-            closing_page.on_close()
-            self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(closing_page.session.name))
-        sys.stderr =self.redir.old_stderr
-        sys.stdout = self.redir.old_stdout
-        event.Skip()
+    src_path = None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
         MainFrame.__init__(self, parent=parent)
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
-
+        self.src_path = os.path.abspath(self.ini_setting.get('dash','src_path'))
+        self.add_src_path_to_python_path(self.src_path)
         self.redir = RedirectText(self.m_log)
         sys.stdout = self.redir
         sys.stderr = self.redir
@@ -385,6 +381,15 @@ class DasHFrame(MainFrame):#wx.Frame
 
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
+    def on_close(self, event):
+        for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+            closing_page = self.edit_area.GetPage(index)
+            closing_page.on_close()
+            self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(closing_page.session.name))
+        sys.stderr =self.redir.old_stderr
+        sys.stdout = self.redir.old_stdout
+        event.Skip()
+
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
         closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
@@ -529,7 +534,22 @@ class DasHFrame(MainFrame):#wx.Frame
         from lib.common import parse_command_line, call_function_in_module
         module,class_name, function,args = parse_command_line(cmd)
         call_function_in_module(module,class_name,function,args)
+    def log(self, string):
+        caller = get_caller_name()
+        print('{}:{}'.format(caller, string))
+    def add_src_path_to_python_path(self, path):
+        paths = path.split(';')
+        old_path = sys.path
+        for p in paths:
+            if p in old_path:
 
+                self.log('path {} already in sys.path'.format(p))
+            else:
+                abspath = os.path.abspath(p)
+                if os.path.exists(abspath):
+                    sys.path.insert(0,abspath)
+                else:
+                    self.log('path {} is not existed, ignored to add it into sys.path'.format(p))
 
 
 

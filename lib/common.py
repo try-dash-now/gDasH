@@ -27,7 +27,7 @@ created 5/14/2017
 from functools import wraps
 import  traceback
 import os
-
+import inspect
 
 
 debug = False
@@ -142,3 +142,7 @@ def call_function_in_module(module_name, class_name, function_name, args):
     print('module_name: {mn}\nfunction_name: {fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
 
 
+def get_caller_name():
+    curframe = inspect.currentframe()
+    calframe = inspect.getouterframes(curframe, 2)
+    return calframe[1][3]
