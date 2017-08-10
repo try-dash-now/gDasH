@@ -132,14 +132,15 @@ def call_function_in_module(module_name, class_name, function_name, args):
     new_kwargs={}
     def GetFunArgs(*argvs, **kwargs):
     #re-assign for self.argvs and self.kwargvs
+
         for arg in argvs:
             new_argvs.append(arg)
         for k in kwargs.keys():
             new_kwargs.update({k:kwargs[k]})
-
-
-    eval('GetFunArgs({args})'.format(args=','.join(['{}'.format(x) for x in args])))
-    print('module_name: \t{mn}\nclass_name: \t{cn}\nfunction_name: \t{fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,cn = class_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
+    globals().update({args[0]:args[0]})
+    args_string = ','.join(['{}'.format(x) for x in args])
+    eval('GetFunArgs({args})'.format(args=args_string))
+    info('\nmodule_name: \t{mn}\nclass_name: \t{cn}\nfunction_name: \t{fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,cn = class_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
     instance_name = '{}_inst'.format(module_name)
     try:
         file, path_name, description = imp.find_module(module_name)
@@ -149,8 +150,6 @@ def call_function_in_module(module_name, class_name, function_name, args):
     except Exception as e:
         msg = "failed to load module {}:{}".format(module_name, e)
         error(msg )
-
-
     return instance_name,function_name, new_argvs,new_kwargs
 
 WARN_LEVEL = 0
@@ -158,16 +157,19 @@ INFO_LEVEL = 1
 DEBUG_LEVEL = 2
 ERRO_LEVEL = 3
 TRACE_LEVEL_NAME = ["WARN",'INFO','DBUG','ERRO']
-DEBUG_LEVEL = 3
+TRACE_LEVEL = 3
 def caller_stack_info(level=DEBUG_LEVEL, depth = 2):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
     for i in range(0,depth-2):
         calframe = inspect.getouterframes(calframe[1][0],2)
 
-    class_name = '{}'.format(type(calframe[2][0].f_locals['self']))
-    class_name=''
-    name = calframe[2][0].f_locals['self'].ses_name+'.' if  'ses_name' in inspect.getmembers(calframe[2][0].f_locals['self']) else ''
+    if calframe[2][0].f_locals.has_key('self'):
+        class_name = '{}'.format(type(calframe[2][0].f_locals['self']))
+        #name = calframe[2][0].f_locals['self'].ses_name+'.' if  'ses_name' in inspect.getmembers(calframe[2][0].f_locals['self']) else ''
+
+    else:
+        class_name=''
     file_name, line_no, caller_name,code_list, = calframe[2][1:5]
     level = TRACE_LEVEL_NAME[level]
     msg= '{level}\t{fn}:{line_no}\t{caller}'.format(level =level ,fn=os.path.basename(file_name), line_no = line_no,caller = caller_name)
@@ -182,7 +184,7 @@ def caller_stack_info(level=DEBUG_LEVEL, depth = 2):
 def log(string, info_type_index=3, depth = 2):
     prefix = caller_stack_info(info_type_index, depth)
     str = '{}:\t{}'.format(prefix,string)
-    if DEBUG_LEVEL<=info_type_index:
+    if TRACE_LEVEL<=info_type_index or info_type_index==INFO_LEVEL:
         print(str)
     return  str
 
@@ -207,7 +209,6 @@ def reload_module(instance, function_name):
             target_module_name= p.__module__
             break
 
-
     for p in parents:#[::-1]:
         mn = p.__module__
         if target_module_name==mn:
@@ -220,15 +221,12 @@ def get_next_in_ring_list(current_index,the_list,increase=True):
     index = current_index
     if the_list is [] or the_list is None:
         index = -1
-
     min_index = 0
     max_index = len(the_list) -1
-
     if increase:
         index +=1
         if index >max_index :
             index =0
-
     else:
         index -=1
         if index <0:

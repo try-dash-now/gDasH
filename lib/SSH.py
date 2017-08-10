@@ -50,4 +50,5 @@ class SSH(object):
         return resp
     def write(self, data,ctrl=False):
         self.chan.send(data)
+        self.chan.send(os.linesep)
         return  ''

@@ -84,8 +84,6 @@ class SessionTab(wx.Panel):
             #response = re.sub(chr(32)+BACKSPACE,'',response)
 
             BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
-
-
             if len(response)!=0:
                 if False:
                     whole_text = self.output_window.GetValue()
@@ -182,7 +180,7 @@ class SessionTab(wx.Panel):
         except Exception as e:
             self.on_close()
             self.session.close_session()
-            self.log ('{} closed unexpected'.format(self.session.name))
+            error ('{} closed unexpected'.format(self.session.name))
             self.alive= False
 
     def add_cmd_to_history(self, cmd):
@@ -316,7 +314,7 @@ class DasHFrame(MainFrame):#wx.Frame
         #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Welcome to DasH!\n')
 
-        self.m_command_box.WriteText('functions.functions.test 1 2 3 a=1 b=2 c=""')
+        self.m_command_box.WriteText('functions.functions.test test_ssh 2 3 a=1 b=2 c=""')
         fileMenu = wx.Menu()
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
@@ -532,30 +530,31 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
     def on_command_enter(self, event):
-        self.log('called on_command_enter')
+        info('called on_command_enter')
         cmd = self.m_command_box.GetValue()
 
         from lib.common import parse_command_line, call_function_in_module
         module,class_name, function,args = parse_command_line(cmd)
         #args[0]=self.sessions_alive['test_ssh'].session
         instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args)
-        new_argvs[0]=self.sessions_alive['test_ssh'].session
+        session_name = new_argvs[0]
+        if self.sessions_alive.has_key(session_name):
+            new_argvs[0]=self.sessions_alive[session_name].session
         getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
-    def log(self, string, log_type_index= 0):
-        print(info(string))
+
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
         old_path = sys.path
         for p in paths:
             if p in old_path:
 
-                self.log('path {} already in sys.path'.format(p))
+                info('path {} already in sys.path'.format(p))
             else:
                 abspath = os.path.abspath(p)
                 if os.path.exists(abspath):
                     sys.path.insert(0,abspath)
                 else:
-                    self.log('path {} is not existed, ignored to add it into sys.path'.format(p))
+                    warn('path {} is not existed, ignored to add it into sys.path'.format(p))
 
 
 

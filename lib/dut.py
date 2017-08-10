@@ -38,8 +38,7 @@ from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
-from common import info, dut_exception_handler
-import common
+from common import dut_exception_handler, debug, warn,log, info,error, TRACE_LEVEL
 import os
 class dut(object):
     name=None
@@ -148,7 +147,7 @@ buffer:
 
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
-                    self.log(format_exc())
+                    error(format_exc())
                     e.message='{dut_name}.step: command={cmd}, time_out={time_out}, total_try={total_try},ctrl={ctrl}, not_want_to_find={not_want}, no_wait={no_wait},flags={flags}\n{msg}'.format(
                         dut_name = self.name,
                         cmd = command,
@@ -160,7 +159,7 @@ buffer:
                         flags = flags,
                         msg= e.message
                     )
-                    self.log(pprint( e.message))
+                    error(pprint( e.message))
                     raise
 
     def match_in_buffer(self, pattern):
@@ -234,7 +233,7 @@ buffer:
     def close_session(self):
         self.write_locker.acquire()
         if self.session_status: #try to avoid to call this function twice
-            self.log('session {}:close_session called Closing!!!'.format(self.name))
+            info('session {}:close_session called Closing!!!'.format(self.name))
 
             #fix issue
             # Traceback (most recent call last):
@@ -275,16 +274,14 @@ buffer:
     def reset_search_buffer(self):
         self.search_buffer_locker.acquire()
         self.search_buffer=''
-        if common.debug:
-            self.log('{}:reset search buffer'.format(self.name))
+        debug('{}:reset search buffer'.format(self.name))
         self.search_buffer_locker.release()
     def read_display_buffer(self, clear=True):
         self.display_buffer_locker.acquire()
         response = self.display_buffer
         if clear :
             self.display_buffer=''
-        if common.debug:
-            self.log('{}:reset display buffer'.format(self.name), 2)
+        debug('{}:reset display buffer'.format(self.name))
         self.display_buffer_locker.release()
         return response
     def read_data(self):
@@ -293,7 +290,7 @@ buffer:
         while self.session_status:
             try:
                 current_time = datetime.datetime.now()
-                if common.debug:
+                if TRACE_LEVEL:
                     pass
                 #self.log('session {name} alive'.format(name =self.name))
                 if (current_time-last_update_time).total_seconds()> max_idle_time:
@@ -308,7 +305,7 @@ buffer:
             if self.session.client:
                 self.session.client.close()
                 self.session.client=None
-        self.log('session {}: Closed!!!'.format(self.name))
+        info('session {}: Closed!!!'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
         if self.session_status:
@@ -335,14 +332,13 @@ buffer:
             try:
                 resp =self.session.read()
             except Exception as e:
-                self.log('session {}'.format(self.name))
-                self.log(pprint(format_exc()))
+                error('session {}'.format(self.name))
+                error(pprint(format_exc()))
             if len(resp.strip()):
 
-                self.log('-'*20+'read start'+'-'*20+'\n')
-                self.log('{}'.format(resp)+os.linesep)
-                self.log(''+'-'*20+'read   end'+'-'*20+'\n')
+                debug('-'*20+'read start'+'-'*20+'\n')
+                debug('{}'.format(resp)+os.linesep)
+                debug(''+'-'*20+'read   end'+'-'*20+'\n')
         return  resp
-    def log(self, string, log_type_index= 1):
-        info(string)
+
         #print('{}:{}.{}:{}'.format(log_type_name[log_type_index],self.name, caller, string))
