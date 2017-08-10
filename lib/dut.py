@@ -38,7 +38,7 @@ from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
-from common import log, dut_exception_handler
+from common import info, dut_exception_handler
 import common
 import os
 class dut(object):
@@ -284,7 +284,7 @@ buffer:
         if clear :
             self.display_buffer=''
         if common.debug:
-            self.log('{}:reset display buffer'.format(self.name))
+            self.log('{}:reset display buffer'.format(self.name), 2)
         self.display_buffer_locker.release()
         return response
     def read_data(self):
@@ -343,6 +343,6 @@ buffer:
                 self.log('{}'.format(resp)+os.linesep)
                 self.log(''+'-'*20+'read   end'+'-'*20+'\n')
         return  resp
-    def log(self, string, log_type_index= 0):
-        log(string, log_type_index)
+    def log(self, string, log_type_index= 1):
+        info(string)
         #print('{}:{}.{}:{}'.format(log_type_name[log_type_index],self.name, caller, string))

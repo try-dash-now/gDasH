@@ -145,46 +145,55 @@ def call_function_in_module(module_name, class_name, function_name, args):
         file, path_name, description = imp.find_module(module_name)
         lmod = imp.load_module(module_name, file, path_name,description)
         instance_name = getattr(lmod, class_name)()
-        getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
+
     except Exception as e:
         msg = "failed to load module {}:{}".format(module_name, e)
         error(msg )
 
 
+    return instance_name,function_name, new_argvs,new_kwargs
 
-
-log_type_name = ['INFO','WARN','ERRO','DEBUG']
-log_level = 4
-def caller_stack_info(level=log_level, depth = 2):
+WARN_LEVEL = 0
+INFO_LEVEL = 1
+DEBUG_LEVEL = 2
+ERRO_LEVEL = 3
+TRACE_LEVEL_NAME = ["WARN",'INFO','DBUG','ERRO']
+DEBUG_LEVEL = 3
+def caller_stack_info(level=DEBUG_LEVEL, depth = 2):
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    calframe = inspect.getouterframes(calframe[1][0],2)
-    if depth==3:
+    for i in range(0,depth-2):
         calframe = inspect.getouterframes(calframe[1][0],2)
+
     class_name = '{}'.format(type(calframe[2][0].f_locals['self']))
     class_name=''
     name = calframe[2][0].f_locals['self'].ses_name+'.' if  'ses_name' in inspect.getmembers(calframe[2][0].f_locals['self']) else ''
     file_name, line_no, caller_name,code_list, = calframe[2][1:5]
-    msg= '{level}\t{fn}:{line_no}\t{caller}'.format(level = log_type_name[level],fn=os.path.basename(file_name), line_no = line_no,caller = caller_name)
+    level = TRACE_LEVEL_NAME[level]
+    msg= '{level}\t{fn}:{line_no}\t{caller}'.format(level =level ,fn=os.path.basename(file_name), line_no = line_no,caller = caller_name)
     if level==0:
-        msg = '{level}\t{line_no}\t{caller}'.format(level = log_type_name[level],line_no = line_no,caller = caller_name)
+        msg = '{level}\t{line_no}\t{caller}'.format(level = level,line_no = line_no,caller = caller_name)
     elif level==1:
         msg = ''
 
     return msg
 
+
 def log(string, info_type_index=3, depth = 2):
-    info = caller_stack_info(info_type_index, depth)
-    str = '{}:\t{}'.format(info,string)
-    if log_level>=info_type_index:
+    prefix = caller_stack_info(info_type_index, depth)
+    str = '{}:\t{}'.format(prefix,string)
+    if DEBUG_LEVEL<=info_type_index:
         print(str)
     return  str
+
+def info(string):
+    log(string, INFO_LEVEL, 3)
 def error(string):
-    log(string,2,3)
+    log(string, ERRO_LEVEL, 3)
 def debug(string):
-    log(string, 3, 3)
+    log(string, DEBUG_LEVEL, 3)
 def warn(string):
-    log(string,1,3)
+    log(string, WARN_LEVEL, 3)
 
 def reload_module(instance, function_name):
     parents = type.mro(type(instance))[:-1]
@@ -207,4 +216,21 @@ def reload_module(instance, function_name):
             reload(module_dyn)
             target_module= module_dyn
 
+def get_next_in_ring_list(current_index,the_list,increase=True):
+    index = current_index
+    if the_list is [] or the_list is None:
+        index = -1
 
+    min_index = 0
+    max_index = len(the_list) -1
+
+    if increase:
+        index +=1
+        if index >max_index :
+            index =0
+
+    else:
+        index -=1
+        if index <0:
+            index=max_index
+    return  index

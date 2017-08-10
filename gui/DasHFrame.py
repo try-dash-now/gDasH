@@ -30,7 +30,7 @@ import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
 import os
-from lib.common import load_bench, caller_stack_info,log
+from lib.common import load_bench, caller_stack_info,info
 import re
 import time
 import threading
@@ -51,7 +51,7 @@ class SessionTab(wx.Panel):
         self.alive = False
         self.session.close_session()
         #self.session.sleep(0.001)
-        log('tab {} closed!!!'.format(self.session.name))
+        info('tab {} closed!!!'.format(self.session.name))
 
     def update_output(self):
         status =True
@@ -142,7 +142,7 @@ class SessionTab(wx.Panel):
         sizer.Add(self.cmd_window, 0, wx.EXPAND)
         self.SetSizer(sizer)
         from lib.common import create_session
-        log (os.curdir)
+        info (os.curdir)
         #self.Bind(wx.EVT_CLOSE, self.on_close)
         #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
         self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
@@ -285,7 +285,7 @@ class FileEditor(wx.Panel):
                     self.editor.SetCellFont(r, c, f)
             self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
-from lib.common import get_folder_item, log
+from lib.common import get_folder_item, info,debug, warn,  error
 import ConfigParser
 import sys
 import inspect
@@ -298,9 +298,11 @@ class DasHFrame(MainFrame):#wx.Frame
     edit_area=None
     tabs_in_edit_area = None
     src_path = None
+    sessions_alive=None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
+        self.sessions_alive={}
         MainFrame.__init__(self, parent=parent)
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
@@ -511,7 +513,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
         if session_attribute.Data.has_key('attribute'):
-            self.log(session_attribute.Data['attribute'])
+            info(session_attribute.Data['attribute'])
 
             counter = 1
             original_ses_name = ses_name
@@ -525,6 +527,7 @@ class DasHFrame(MainFrame):#wx.Frame
             index = self.edit_area.GetPageIndex(new_page)
             self.edit_area.SetSelection(index)
             self.tabs_in_edit_area.append(ses_name)
+            self.sessions_alive.update({ses_name: new_page.session})
 
 
 
@@ -534,9 +537,12 @@ class DasHFrame(MainFrame):#wx.Frame
 
         from lib.common import parse_command_line, call_function_in_module
         module,class_name, function,args = parse_command_line(cmd)
-        call_function_in_module(module,class_name,function,args)
+        #args[0]=self.sessions_alive['test_ssh'].session
+        instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args)
+        new_argvs[0]=self.sessions_alive['test_ssh'].session
+        getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
     def log(self, string, log_type_index= 0):
-        print(log(string))
+        print(info(string))
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
         old_path = sys.path
