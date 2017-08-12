@@ -85,8 +85,7 @@ def load_bench(bench_file):
                 name = row[0]
                 import string
                 valid_chars = "_%s%s" % (string.ascii_letters, string.digits)
-                valid_chars  =frozenset(valid_chars)
-                frozenset()
+                #valid_chars  =frozenset(valid_chars)
                 name = re.sub('[^{}]'.format(valid_chars), '_',name)
                 if dict_bench.has_key(name):
                     print('warning: duplicate session name "{}" in file "{}",overwritten!!!'.format(name, os.path.abspath(bench_file)))
