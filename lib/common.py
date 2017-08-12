@@ -29,6 +29,7 @@ import  traceback
 import os
 import inspect
 import imp
+import re
 
 debug = False
 def dut_exception_handler(function_name):
@@ -82,6 +83,11 @@ def load_bench(bench_file):
                 continue
             else:
                 name = row[0]
+                import string
+                valid_chars = "_%s%s" % (string.ascii_letters, string.digits)
+                valid_chars  =frozenset(valid_chars)
+                frozenset()
+                name = re.sub('[^{}]'.format(valid_chars), '_',name)
                 if dict_bench.has_key(name):
                     print('warning: duplicate session name "{}" in file "{}",overwritten!!!'.format(name, os.path.abspath(bench_file)))
                     continue
@@ -145,7 +151,10 @@ def call_function_in_module(module_name, class_name, function_name, args):
     try:
         file, path_name, description = imp.find_module(module_name)
         lmod = imp.load_module(module_name, file, path_name,description)
-        instance_name = getattr(lmod, class_name)()
+        if class_name != "":
+            instance_name = getattr(lmod, class_name)()
+        else:
+            instance_name = getattr(lmod, function_name)
 
     except Exception as e:
         msg = "failed to load module {}:{}".format(module_name, e)
@@ -183,7 +192,10 @@ def caller_stack_info(level=DEBUG_LEVEL, depth = 2):
 
 def log(string, info_type_index=3, depth = 2):
     prefix = caller_stack_info(info_type_index, depth)
-    str = '{}:\t{}'.format(prefix,string)
+    string= "{}".format(string)
+    new_string = '\n\t'.join( string.split('\n'))
+
+    str = '{}:{}\n'.format(prefix,new_string)
     if TRACE_LEVEL<=info_type_index or info_type_index==INFO_LEVEL:
         print(str)
     return  str

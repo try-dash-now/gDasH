@@ -314,7 +314,7 @@ class DasHFrame(MainFrame):#wx.Frame
         #self.m_editor.WriteText('welcome to dash world')
         self.m_log.WriteText('Welcome to DasH!\n')
 
-        self.m_command_box.WriteText('functions.functions.test test_ssh 2 3 a=1 b=2 c=""')
+        self.m_command_box.WriteText('functions.static_function_in_module  test_ssh 2')
         fileMenu = wx.Menu()
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
@@ -516,7 +516,7 @@ class DasHFrame(MainFrame):#wx.Frame
             counter = 1
             original_ses_name = ses_name
             while ses_name in self.tabs_in_edit_area:
-                ses_name= '{}-{}'.format(original_ses_name,counter)
+                ses_name= '{}_{}'.format(original_ses_name,counter)
                 counter+=1
             new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'])
 
@@ -527,7 +527,11 @@ class DasHFrame(MainFrame):#wx.Frame
             self.tabs_in_edit_area.append(ses_name)
             self.sessions_alive.update({ses_name: new_page.session})
 
-
+    def add_new_session_to_globals(self, ses):
+        if globals().has_key(ses.name):
+            error('{} already '.format(ses.name))
+        else:
+            globals().update({ses.name: ses})
 
     def on_command_enter(self, event):
         info('called on_command_enter')
@@ -536,11 +540,18 @@ class DasHFrame(MainFrame):#wx.Frame
         from lib.common import parse_command_line, call_function_in_module
         module,class_name, function,args = parse_command_line(cmd)
         #args[0]=self.sessions_alive['test_ssh'].session
+
         instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args)
+
         session_name = new_argvs[0]
-        if self.sessions_alive.has_key(session_name):
-            new_argvs[0]=self.sessions_alive[session_name].session
-        getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
+        if globals().has_key(session_name):
+            new_argvs[0]= globals()[session_name]
+        elif self.sessions_alive.has_key(session_name):
+            new_argvs[0]=self.sessions_alive[session_name]
+        if class_name!="":
+            getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
+        else:
+            instance_name(*new_argvs,**new_kwargs)
 
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')

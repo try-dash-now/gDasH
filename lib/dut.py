@@ -320,7 +320,7 @@ buffer:
                 resp +=self.session.write(new_line)
             else:
                 try:
-                    resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line), ctrl=ctrl)
+                    resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line= new_line), ctrl=ctrl)
                 except Exception as e :
                     self.session_status =False
             #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
