@@ -242,4 +242,9 @@ def get_next_in_ring_list(current_index,the_list,increase=True):
         index -=1
         if index <0:
             index=max_index
-    return  index
+    value=''
+    if index==-1:
+        pass
+    else:
+        value=the_list[index]
+    return index, value

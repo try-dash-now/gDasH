@@ -30,7 +30,7 @@ import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
 import os
-from lib.common import load_bench, caller_stack_info,info
+from lib.common import load_bench, caller_stack_info,info, get_next_in_ring_list
 import re
 import time
 import threading
@@ -47,6 +47,7 @@ class SessionTab(wx.Panel):
     font_point = None
     history_cmd = None
     history_cmd_index = 0
+    sequence_queue =None
     def on_close(self):
         self.alive = False
         self.session.close_session()
@@ -121,13 +122,14 @@ class SessionTab(wx.Panel):
             time.sleep(0.5)
 
 
-    def __init__(self, parent, name,attributes):
+    def __init__(self, parent, name,attributes, seq_queue=None):
         #init a session, and stdout, stderr, redirected to
         wx.Panel.__init__(self, parent)
-        self.history_cmd=[os.linesep ]
+        self.history_cmd=[]
         self.history_cmd_index = 0
         self.parent = parent
         self.type = type
+        self.sequence_queue= seq_queue
         self.output_lock = threading.Lock()
         #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
         self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
@@ -155,13 +157,19 @@ class SessionTab(wx.Panel):
     def on_key_up(self, event):
         keycode = event.KeyCode
 
+        increase =False
         if keycode ==wx.WXK_UP:
-                self.history_cmd_index= self.history_cmd_index-1 if self.history_cmd_index>0 else len(self.history_cmd)-1
+                #self.history_cmd_index= self.history_cmd_index-1 if self.history_cmd_index>0 else len(self.history_cmd)-1
+                #get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=True)
+                pass
         elif keycode ==wx.WXK_DOWN:
-                self.history_cmd_index= self.history_cmd_index+1 if self.history_cmd_index <len(self.history_cmd)-1 else 0
+                increase =True#
+                #self.history_cmd_index= self.history_cmd_index+1 if self.history_cmd_index <len(self.history_cmd)-1 else 0
+
         if keycode in [wx.WXK_UP, wx.WXK_DOWN]:
             self.cmd_window.Clear()
-            self.cmd_window.AppendText(self.history_cmd[self.history_cmd_index])
+            self.history_cmd_index, new_command = get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=increase)
+            self.cmd_window.AppendText(new_command)
         event.Skip()
     def on_enter_a_command(self, event):
         event.Skip()
@@ -170,10 +178,12 @@ class SessionTab(wx.Panel):
         cmd= cmd.replace('\n', os.linesep)
         self.cmd_window.Clear()
         self.add_cmd_to_history(cmd)
+
         try:
             if self.session.session_status:
                 th = threading.Thread(target=self.session.write,args=( cmd,ctrl))
                 th.start()
+                self.sequence_queue.put(['TC.step({}, "{}")'.format(self.session.name,cmd)])#
             else:
                 self.alive= self.session.session_status
                 #self.session.write(cmd,ctrl=ctrl)
@@ -188,7 +198,7 @@ class SessionTab(wx.Panel):
             pass
         else:
             self.history_cmd.append(cmd)
-            self.history_cmd_index= len(self.history_cmd)-1
+            self.history_cmd_index= len(self.history_cmd)
 
 class RedirectText(object):
     font_point_size = 10
@@ -287,6 +297,7 @@ from lib.common import get_folder_item, info,debug, warn,  error
 import ConfigParser
 import sys
 import inspect
+import Queue
 
 #DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
 class DasHFrame(MainFrame):#wx.Frame
@@ -297,11 +308,14 @@ class DasHFrame(MainFrame):#wx.Frame
     tabs_in_edit_area = None
     src_path = None
     sessions_alive=None
+    sequence_queue=None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
         self.sessions_alive={}
         MainFrame.__init__(self, parent=parent)
+        self.sequence_queue= Queue.Queue()
+        #self.sequence_queue.put()
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
         self.src_path = os.path.abspath(self.ini_setting.get('dash','src_path'))
@@ -518,7 +532,7 @@ class DasHFrame(MainFrame):#wx.Frame
             while ses_name in self.tabs_in_edit_area:
                 ses_name= '{}_{}'.format(original_ses_name,counter)
                 counter+=1
-            new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'])
+            new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'], self.sequence_queue)
 
             window_id = self.edit_area.AddPage(new_page, ses_name)
 
