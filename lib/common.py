@@ -113,10 +113,12 @@ def create_session(name, attribute):
 
 def parse_command_line(cmd_string):
     import shlex
+    cmd_string = cmd_string.strip()
     lex = shlex.shlex(cmd_string)
     lex.quotes = '"'
     lex.whitespace_split = True
     cmd_list=list(lex)
+    module_name, class_name,function_name, args ='','','',[]
     if cmd_list.__len__()>1:
         mod_funct=cmd_list[0].split('.')
         if mod_funct.__len__() ==1:
@@ -129,7 +131,7 @@ def parse_command_line(cmd_string):
         elif mod_funct.__len__()>2:
             module_name,class_name,function_name=mod_funct[:3]
         args = cmd_list[1:]
-        return  module_name,class_name,function_name,args
+    return  module_name,class_name,function_name,args
 
 def call_function_in_module(module_name, class_name, function_name, args):
     import inspect
@@ -243,7 +245,7 @@ def get_next_in_ring_list(current_index,the_list,increase=True):
         if index <0:
             index=max_index
     value=''
-    if index==-1:
+    if index==-1 or len(the_list)==0:
         pass
     else:
         value=the_list[index]

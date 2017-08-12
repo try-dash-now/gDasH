@@ -25,7 +25,7 @@ it's GUI of DasH aka Do as Human
 created 2017-05-06 by Sean Yu
 '''
 
-
+from datetime import datetime
 import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
@@ -34,188 +34,13 @@ from lib.common import load_bench, caller_stack_info,info, get_next_in_ring_list
 import re
 import time
 import threading
-class SessionTab(wx.Panel):
-    stdout=None
-    stderr=None
-    parent = None
-    type = type
-    output_window = None
-    cmd_window = None
-    session = None
-    alive =False
-    output_lock = None
-    font_point = None
-    history_cmd = None
-    history_cmd_index = 0
-    sequence_queue =None
-    def on_close(self):
-        self.alive = False
-        self.session.close_session()
-        #self.session.sleep(0.001)
-        info('tab {} closed!!!'.format(self.session.name))
+from lib.common import get_folder_item, info,debug, warn,  error
+import ConfigParser
+import sys
+import inspect
+import Queue
+from SessionTab import  SessionTab
 
-    def update_output(self):
-        status =True
-        while( status):
-            try:
-                status = self.alive and self.session.session_status
-            except Exception as e :
-                time.sleep(0.001)
-                break
-            #time.sleep(0.05)
-            self.output_lock.acquire()
-            response = self.session.read_display_buffer()
-            ansi_escape = re.compile(r'\x1b[^m]*m*|'+r'\x1b(' \
-             r'(\[\??\d+[hl])|' \
-             r'([=<>a-kzNM78])|' \
-             r'([\(\)][a-b0-2])|' \
-             r'(\[\d{0,2}[ma-dgkjqi])|' \
-             r'(\[\d+;\d+[hfy]?)|' \
-             r'(\[;?[hf])|' \
-             r'(#[3-68])|' \
-             r'([01356]n)|' \
-             r'(O[mlnp-z]?)|' \
-             r'(/Z)|' \
-             r'(\d+)|' \
-             r'(\[\?\d;\d0c)|' \
-             r'(\d;\dR))'
-             , flags=re.IGNORECASE)
-            response = ansi_escape.sub('', response)
-            BACKSPACE = chr(8)
-            #response = re.sub(chr(32)+BACKSPACE,'',response)
-
-            BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
-            if len(response)!=0:
-                if False:
-                    whole_text = self.output_window.GetValue()
-                    last_index = len(whole_text)
-                    total_BS_in_response = int(response.count(BACKSPACE))
-                    start_BS = response.find(BACKSPACE)
-                    end_BS = response.rfind(BACKSPACE)+1
-                    start = last_index-total_BS_in_response-1
-                    end = last_index
-                    if total_BS_in_response:
-                        self.output_window.Remove(start ,end)
-                        #wx.CallAfter(self.output_window.Remove,start ,end)
-                        response= response[:start_BS]+response[end_BS:]
-                        #response =''
-
-                if re.search('error|err|fail|wrong',response.lower()):
-                    self.output_window.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
-                    #wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
-                else:
-                    self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    #wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                self.output_window.AppendText( response)
-                whole_text = self.output_window.GetValue()
-                m = re.search('[^\b]\b',whole_text)
-                while m:
-                    self.output_window.Remove(m.start(), m.end())
-                    whole_text = self.output_window.GetValue()
-                    m = re.search('[^\b]\b',whole_text)
-
-                #wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
-                last = self.output_window.GetLastPosition()
-                wx.CallAfter(self.output_window.SetInsertionPoint,last)
-                wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)
-            self.output_lock.release()
-            time.sleep(0.5)
-
-
-    def __init__(self, parent, name,attributes, seq_queue=None):
-        #init a session, and stdout, stderr, redirected to
-        wx.Panel.__init__(self, parent)
-        self.history_cmd=[]
-        self.history_cmd_index = 0
-        self.parent = parent
-        self.type = type
-        self.sequence_queue= seq_queue
-        self.output_lock = threading.Lock()
-        #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
-        self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
-        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER )
-
-        self.font_point = self.output_window.GetFont().PointSize
-
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.output_window, 10, wx.EXPAND)
-        sizer.Add(self.cmd_window, 0, wx.EXPAND)
-        self.SetSizer(sizer)
-        from lib.common import create_session
-        info (os.curdir)
-        #self.Bind(wx.EVT_CLOSE, self.on_close)
-        #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
-        self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
-        self.cmd_window.Bind(wx.EVT_KEY_UP, self.on_key_up)
-        self.cmd_window.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.output_window.SetBackgroundColour('Black')
-        self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
-        self.cmd_window.SetFocus()
-        self.session  = create_session(name, attributes)
-        self.alive =True
-        th =threading.Thread(target=self.update_output)
-        th.start()
-    def on_key_up(self, event):
-        keycode = event.KeyCode
-
-        increase =False
-        if keycode ==wx.WXK_UP:
-                #self.history_cmd_index= self.history_cmd_index-1 if self.history_cmd_index>0 else len(self.history_cmd)-1
-                #get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=True)
-                pass
-        elif keycode ==wx.WXK_DOWN:
-                increase =True#
-                #self.history_cmd_index= self.history_cmd_index+1 if self.history_cmd_index <len(self.history_cmd)-1 else 0
-
-        if keycode in [wx.WXK_UP, wx.WXK_DOWN]:
-            self.cmd_window.Clear()
-            self.history_cmd_index, new_command = get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=increase)
-            self.cmd_window.AppendText(new_command)
-        if keycode in [wx.WXK_TAB]:
-            pass
-        else:
-            event.Skip()
-    def on_enter_a_command(self, event):
-
-        ctrl = False
-        cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
-        cmd= cmd.replace('\n', os.linesep)
-        self.cmd_window.Clear()
-        self.add_cmd_to_history(cmd)
-
-        try:
-            if self.session.session_status:
-                th = threading.Thread(target=self.session.write,args=( cmd,ctrl))
-                th.start()
-                self.sequence_queue.put(['TC.step({}, "{}")'.format(self.session.name,cmd)])#
-            else:
-                self.alive= self.session.session_status
-                #self.session.write(cmd,ctrl=ctrl)
-        except Exception as e:
-            self.on_close()
-            self.session.close_session()
-            error ('{} closed unexpected'.format(self.session.name))
-            self.alive= False
-        self.cmd_window.SetFocus()
-    def add_cmd_to_history(self, cmd):
-        if self.history_cmd==[]:
-            self.history_cmd.append(cmd)
-        elif self.history_cmd[-1]==cmd:
-            pass
-        else:
-            self.history_cmd.append(cmd)
-            self.history_cmd_index= len(self.history_cmd)
-    def on_key_down(self, event):
-        keycode = event.KeyCode
-
-        if keycode ==wx.WXK_TAB:
-                self.cmd_window.AppendText('\t')
-                self.on_enter_a_command(event)
-        elif keycode == wx.WXK_NONE and wx.GetKeyState(wx.WXK_SHIFT):
-            self.cmd_window.AppendText('?')
-            self.on_enter_a_command(event)
-        else:
-            event.Skip()
 class RedirectText(object):
     font_point_size = 10
     old_stdout = None
@@ -309,11 +134,6 @@ class FileEditor(wx.Panel):
                     self.editor.SetCellFont(r, c, f)
             self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
-from lib.common import get_folder_item, info,debug, warn,  error
-import ConfigParser
-import sys
-import inspect
-import Queue
 
 #DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
 class DasHFrame(MainFrame):#wx.Frame
@@ -325,6 +145,8 @@ class DasHFrame(MainFrame):#wx.Frame
     src_path = None
     sessions_alive=None
     sequence_queue=None
+    history_cmd = []
+    history_cmd_index = -1
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
@@ -352,6 +174,9 @@ class DasHFrame(MainFrame):#wx.Frame
 
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
+        self.m_command_box.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.m_command_box.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
         from wx.aui import AuiNotebook
 
 
@@ -566,23 +391,28 @@ class DasHFrame(MainFrame):#wx.Frame
     def on_command_enter(self, event):
         info('called on_command_enter')
         cmd = self.m_command_box.GetValue()
+        self.m_command_box.Clear()
+        if cmd.strip()=='':
+            return
 
         from lib.common import parse_command_line, call_function_in_module
         module,class_name, function,args = parse_command_line(cmd)
         #args[0]=self.sessions_alive['test_ssh'].session
+        if module !='' or class_name!='' or function!='':
+            instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args)
 
-        instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args)
-
-        session_name = new_argvs[0]
-        if globals().has_key(session_name):
-            new_argvs[0]= globals()[session_name]
-        elif self.sessions_alive.has_key(session_name):
-            new_argvs[0]=self.sessions_alive[session_name]
-        if class_name!="":
-            getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
+            session_name = new_argvs[0]
+            if globals().has_key(session_name):
+                new_argvs[0]= globals()[session_name]
+            elif self.sessions_alive.has_key(session_name):
+                new_argvs[0]=self.sessions_alive[session_name]
+            if class_name!="":
+                getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
+            else:
+                instance_name(*new_argvs,**new_kwargs)
+            self.add_cmd_to_history(cmd)
         else:
-            instance_name(*new_argvs,**new_kwargs)
-
+            error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
         old_path = sys.path
@@ -599,3 +429,38 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
 
+    def on_key_down(self, event):
+        error(event.KeyCode)
+        keycode = event.KeyCode
+        if keycode ==wx.WXK_TAB:
+                self.m_command_box.AppendText('\t')
+                self.on_command_enter(event)
+        elif keycode == wx.PAPER_ENV_INVITE and wx.GetKeyState(wx.WXK_SHIFT):
+            self.m_command_box.AppendText('?')
+            self.on_command_enter(event)
+        else:
+            event.Skip()
+    def on_key_up(self, event):
+        keycode = event.KeyCode
+        increase =False
+        if keycode ==wx.WXK_UP:
+                pass
+        elif keycode ==wx.WXK_DOWN:
+                increase =True#
+        if keycode in [wx.WXK_UP, wx.WXK_DOWN]:
+            self.m_command_box.Clear()
+            self.history_cmd_index, new_command = get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=increase)
+            self.m_command_box.AppendText(new_command)
+        if keycode in [wx.WXK_TAB]:
+            pass
+        else:
+            event.Skip()
+    def add_cmd_to_history(self, cmd):
+        if self.history_cmd==[]:
+            self.history_cmd.append(cmd)
+        elif self.history_cmd[-1]==cmd:
+            pass
+        else:
+            self.history_cmd.append(cmd)
+            self.history_cmd_index= len(self.history_cmd)
+        self.sequence_queue.put([cmd, datetime.now()])
