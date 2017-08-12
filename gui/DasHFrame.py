@@ -147,6 +147,7 @@ class SessionTab(wx.Panel):
         #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
         self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
         self.cmd_window.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.cmd_window.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.output_window.SetBackgroundColour('Black')
         self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
@@ -170,9 +171,12 @@ class SessionTab(wx.Panel):
             self.cmd_window.Clear()
             self.history_cmd_index, new_command = get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=increase)
             self.cmd_window.AppendText(new_command)
-        event.Skip()
+        if keycode in [wx.WXK_TAB]:
+            pass
+        else:
+            event.Skip()
     def on_enter_a_command(self, event):
-        event.Skip()
+
         ctrl = False
         cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
         cmd= cmd.replace('\n', os.linesep)
@@ -192,14 +196,26 @@ class SessionTab(wx.Panel):
             self.session.close_session()
             error ('{} closed unexpected'.format(self.session.name))
             self.alive= False
-
+        self.cmd_window.SetFocus()
     def add_cmd_to_history(self, cmd):
-        if self.history_cmd[-1]==cmd:
+        if self.history_cmd==[]:
+            self.history_cmd.append(cmd)
+        elif self.history_cmd[-1]==cmd:
             pass
         else:
             self.history_cmd.append(cmd)
             self.history_cmd_index= len(self.history_cmd)
+    def on_key_down(self, event):
+        keycode = event.KeyCode
 
+        if keycode ==wx.WXK_TAB:
+                self.cmd_window.AppendText('\t')
+                self.on_enter_a_command(event)
+        elif keycode == wx.WXK_NONE and wx.GetKeyState(wx.WXK_SHIFT):
+            self.cmd_window.AppendText('?')
+            self.on_enter_a_command(event)
+        else:
+            event.Skip()
 class RedirectText(object):
     font_point_size = 10
     old_stdout = None
