@@ -40,7 +40,8 @@ import sys
 import inspect
 import Queue
 from SessionTab import  SessionTab
-
+import imp
+import types
 class RedirectText(object):
     font_point_size = 10
     old_stdout = None
@@ -215,6 +216,7 @@ class DasHFrame(MainFrame):#wx.Frame
         #self.case_suite_page.Bind(wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel)
         self.case_suite_page.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.m_case_treeOnTreeItemExpanding)
         self.session_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Session_tab)
+        self.function_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Function_tab)
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
         nav_sizer = wx.BoxSizer()
@@ -234,6 +236,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.SetSizer(main_sizer)
         self.build_session_tab()
         self.build_suite_tree()
+        self.build_function_tab()
 
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
@@ -430,7 +433,7 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
     def on_key_down(self, event):
-        error(event.KeyCode)
+        #error(event.KeyCode)
         keycode = event.KeyCode
         if keycode ==wx.WXK_TAB:
                 self.m_command_box.AppendText('\t')
@@ -464,3 +467,65 @@ class DasHFrame(MainFrame):#wx.Frame
             self.history_cmd.append(cmd)
             self.history_cmd_index= len(self.history_cmd)
         self.sequence_queue.put([cmd, datetime.now()])
+    def build_function_tab(self):
+        src_path = os.path.abspath(self.src_path)
+        if not os.path.exists(src_path):
+            src_path= os.path.abspath(os.path.curdir)
+        base_name = os.path.basename(src_path)
+
+
+        root =self.function_page.AddRoot(base_name)
+        item_info = wx.TreeItemData({'name':src_path})
+        self.function_page.SetItemData(root, item_info)
+        modules = get_folder_item(src_path)
+
+        if modules is None:
+            self.function_page.SetItemText(root, self.function_page.GetItemText(root) + ' Not Exists!!!')
+            self.function_page.SetItemTextColour(root, wx.Colour(255, 0, 0))
+            return
+        for module_file in modules:
+            path_name = '{}'.format(os.path.abspath(self.src_path))
+            module_name = os.path.basename(module_file).split('.')[0]
+            new_module = self.function_page.InsertItem(root, root, module_name)
+            file, path_name, description = imp.find_module(module_name)
+            lmod = imp.load_module(module_name, file, path_name,description)
+            for attr in sorted(dir(lmod)):
+                if attr.startswith('__'):
+                    continue
+                attr_obj = getattr(lmod, attr)
+                attr_type = type(attr_obj)
+
+                if attr_type == types.FunctionType :
+                    new_item  = self.function_page.InsertItem(new_module, new_module, '{}'.format( attr))
+                    item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
+                    self.function_page.SetItemData(new_item, item_info)
+                elif attr_type== types.TypeType:
+                    class_obj = getattr(lmod, attr)
+                    new_class  = self.function_page.InsertItem(new_module, new_module, attr)
+                    item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
+                    self.function_page.SetItemData(new_item, item_info)
+                    for attr_in_class in sorted(dir(class_obj)):
+                        if attr_in_class.startswith('__'):
+                            continue
+                        attr_obj = getattr(class_obj,attr_in_class)
+                        attr_type =type(attr_obj)
+
+                        if attr_type == types.MethodType :
+                            item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class)})
+                            new_item  = self.function_page.InsertItem(new_class, new_class, attr_in_class)
+                            self.function_page.SetItemData(new_item, item_info)
+
+    def on_LeftDClick_in_Function_tab(self,event):
+        event.Skip()
+        select_item = self.function_page.GetSelection()
+        fun_name = self.function_page.GetItemData(select_item)
+        text_in_tree = self.function_page.GetItemText(select_item)
+        if fun_name != None and  fun_name.Data.has_key('name'):
+            cmd = fun_name.Data['name']
+            info('click item in Functions tab: {}'.format(fun_name.Data['name']))
+            wx.CallAfter(self.m_command_box.Clear)
+            wx.CallAfter(self.m_command_box.AppendText, cmd+' ')
+            wx.CallAfter(self.m_command_box.SetFocus)
+            wx.CallAfter(self.m_command_box.SetInsertionPointEnd)
+            wx.CallAfter(self.m_command_box.Refresh)
+
