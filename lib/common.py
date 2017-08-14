@@ -31,6 +31,7 @@ import inspect
 import imp
 import re
 
+
 debug = False
 def dut_exception_handler(function_name):
     @wraps(function_name)
@@ -99,17 +100,16 @@ def load_bench(bench_file):
     return dict_bench
 
 
-def create_session(name, attribute):
+#def create_session(name, attribute):
     # if attribute.has_key('init_file_name'):
     #     #this is a echo session
     #     ses = echo(name, attribute['init_file_name'])
     # elif attribute.has_key('type'):
     #if attribute['type'].lower()=='ssh':
+#    from common import dut_exception_handler, debug, warn,log, info,error, TRACE_LEVEL
+#    ses = dut(name, **attribute )
 
-    from dut import dut
-    ses = dut(name, **attribute )
-
-    return  ses
+#    return  ses
 
 def parse_command_line(cmd_string):
     import shlex
@@ -131,7 +131,7 @@ def parse_command_line(cmd_string):
         elif mod_funct.__len__()>2:
             module_name,class_name,function_name=mod_funct[:3]
         args = cmd_list[1:]
-    
+
     return  module_name,class_name,function_name,args
 
 def call_function_in_module(module_name, class_name, function_name, args , environment =None):

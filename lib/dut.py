@@ -38,7 +38,7 @@ from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
-from common import dut_exception_handler, debug, warn,log, info,error, TRACE_LEVEL
+from lib.common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME
 import os
 class dut(object):
     name=None

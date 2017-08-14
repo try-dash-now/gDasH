@@ -24,17 +24,15 @@ __doc__ = '''
 it's GUI of DasH aka Do as Human
 created 2017-05-06 by Sean Yu
 '''
-
 from datetime import datetime
 import wx.grid as gridlib
 import wx
 from gui.MainFrame import MainFrame
 import os
-from lib.common import load_bench, caller_stack_info,info, get_next_in_ring_list
+from lib.common import load_bench, caller_stack_info,info, get_next_in_ring_list,get_folder_item, info,debug, warn,  error, parse_command_line, call_function_in_module
 import re
 import time
 import threading
-from lib.common import get_folder_item, info,debug, warn,  error
 import ConfigParser
 import sys
 import inspect
@@ -42,6 +40,8 @@ import Queue
 from SessionTab import  SessionTab
 import imp
 import types
+#from dut import  dut
+
 class RedirectText(object):
     font_point_size = 10
     old_stdout = None
@@ -148,6 +148,7 @@ class DasHFrame(MainFrame):#wx.Frame
     sequence_queue=None
     history_cmd = []
     history_cmd_index = -1
+    import_modules={'TC':'TC'}
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
@@ -243,6 +244,8 @@ class DasHFrame(MainFrame):#wx.Frame
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
     def on_close(self, event):
+        self.generate_code(file_name='{}/test_script.py'.format(self.ini_setting.get('dash', 'log_path')))
+
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
             closing_page.on_close()
@@ -418,7 +421,7 @@ class DasHFrame(MainFrame):#wx.Frame
         if cmd.strip()=='':
             return
 
-        from lib.common import parse_command_line, call_function_in_module
+
         module,class_name, function,args = parse_command_line(cmd)
         #args[0]=self.sessions_alive['test_ssh'].session
         if module !='' or class_name!='' or function!='':
@@ -434,11 +437,12 @@ class DasHFrame(MainFrame):#wx.Frame
                 getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
             else:
                 instance_name(*new_argvs,**new_kwargs)
-            self.add_cmd_to_history(cmd)
+            self.add_cmd_to_history(cmd, module)
         else:
             error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
+
         old_path = sys.path
         for p in paths:
             if p in old_path:
@@ -479,7 +483,7 @@ class DasHFrame(MainFrame):#wx.Frame
             pass
         else:
             event.Skip()
-    def add_cmd_to_history(self, cmd):
+    def add_cmd_to_history(self, cmd, module_name):
         if self.history_cmd==[]:
             self.history_cmd.append(cmd)
         elif self.history_cmd[-1]==cmd:
@@ -487,7 +491,8 @@ class DasHFrame(MainFrame):#wx.Frame
         else:
             self.history_cmd.append(cmd)
             self.history_cmd_index= len(self.history_cmd)
-        self.sequence_queue.put([cmd, datetime.now()])
+        self.add_cmd_to_sequence_queue(cmd,module_name )
+        #self.sequence_queue.put([cmd, datetime.now()])
     def build_function_tab(self):
         src_path = os.path.abspath(self.src_path)
         if not os.path.exists(src_path):
@@ -566,3 +571,25 @@ class DasHFrame(MainFrame):#wx.Frame
         self.function_page.DeleteAllItems()
         self.build_function_tab()
         info('Refresh Function tab done!')
+    def add_cmd_to_sequence_queue(self, cmd, module_name):
+        if self.import_modules.has_key(module_name):
+
+            pass
+        else:
+            self.import_modules.update({module_name:module_name})
+        self.sequence_queue.put([cmd,datetime.now() ])
+    def generate_code(self, file_name ):
+        str_code ='import sys,os\n'
+        for module in self.import_modules:
+            str_code+='import {}\n'.format(module)
+        while True:
+            try:
+                cmd, timestamp =self.sequence_queue.get(block=False)[:2]
+                str_code +='{}() #{}\n'.format(cmd, timestamp.isoformat( ' '))
+                #datetime.now().isoformat()
+            except Exception as e:
+                break
+        info(str_code)
+        with open(file_name, 'a+') as f:
+            f.write(str_code)
+
