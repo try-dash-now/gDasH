@@ -28,7 +28,7 @@ class MainFrame ( wx.Frame ):
 		gSizerMain = wx.GridSizer( 1, 2, 0, 0 )
 		
 		self.m_left_navigator = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		gSizerMain.Add( self.m_left_navigator, 3, wx.EXPAND |wx.ALL, 5 )
+		gSizerMain.Add( self.m_left_navigator, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		sizer_right = wx.BoxSizer( wx.VERTICAL )
 		
@@ -39,10 +39,13 @@ class MainFrame ( wx.Frame ):
 		sizer_right.Add( self.m_log, 3, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_command_box = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,  wx.TE_PROCESS_ENTER)
+		font1 = self.m_command_box.GetFont()
+		font1 = wx.Font(font1.PointSize+3, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Consolas')
+		self.m_command_box.SetFont(font1)
 		sizer_right.Add( self.m_command_box, 0, wx.ALL|wx.EXPAND, 1 )
 		
 		
-		gSizerMain.Add( sizer_right, 7, wx.EXPAND|wx.ALL, 1 )
+		gSizerMain.Add( sizer_right, 9, wx.EXPAND|wx.ALL, 1 )
 		
 		
 		self.SetSizer( gSizerMain )
