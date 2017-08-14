@@ -253,7 +253,12 @@ class DasHFrame(MainFrame):#wx.Frame
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
         closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
         closing_page.on_close()
-        self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(closing_page.session.name))
+        ses_name = closing_page.session.name
+        self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
+        if globals().has_key(ses_name):
+            g = dict(globals())
+            del g[ses_name]
+            #del globals()[ses_name]
 
 
     def add_item_to_subfolder_in_tree(self,node):
@@ -366,7 +371,19 @@ class DasHFrame(MainFrame):#wx.Frame
     def on_LeftDClick_in_Session_tab(self, event):
         event.Skip()
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
-        if globals().has_key(ses_name):
+
+
+
+        self.session_page.GetItemText(self.session_page.GetSelection())
+        session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
+        if session_attribute.Data.has_key('attribute'):
+            info(session_attribute.Data['attribute'])
+            counter =1
+            original_ses_name = ses_name
+            while ses_name in self.tabs_in_edit_area:
+                ses_name= '{}_{}'.format(original_ses_name,counter)
+                counter+=1
+            if globals().has_key(ses_name):
                 if not globals().has_key('_{}'.format(ses_name)):
                     info("variable '{}' is existed in global, change the name to _{}".format(ses_name, ses_name))
                     ses_name='_{}'.format(ses_name)
@@ -375,18 +392,7 @@ class DasHFrame(MainFrame):#wx.Frame
                 else:
                     error(("variable '{}' is existed in global, please change the name".format(ses_name)))
                     return
-
-
-        self.session_page.GetItemText(self.session_page.GetSelection())
-        session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
-        if session_attribute.Data.has_key('attribute'):
-            info(session_attribute.Data['attribute'])
-
-            counter = 1
-            original_ses_name = ses_name
-            while ses_name in self.tabs_in_edit_area:
-                ses_name= '{}_{}'.format(original_ses_name,counter)
-                counter+=1
+            
             new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'], self.sequence_queue)
 
             window_id = self.edit_area.AddPage(new_page, ses_name)
