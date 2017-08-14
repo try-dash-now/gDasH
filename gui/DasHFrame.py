@@ -366,6 +366,17 @@ class DasHFrame(MainFrame):#wx.Frame
     def on_LeftDClick_in_Session_tab(self, event):
         event.Skip()
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
+        if globals().has_key(ses_name):
+                if not globals().has_key('_{}'.format(ses_name)):
+                    info("variable '{}' is existed in global, change the name to _{}".format(ses_name, ses_name))
+                    ses_name='_{}'.format(ses_name)
+                    self.session_page.SetItemText(self.session_page.GetSelection(), ses_name)
+
+                else:
+                    error(("variable '{}' is existed in global, please change the name".format(ses_name)))
+                    return
+
+
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
         if session_attribute.Data.has_key('attribute'):
@@ -384,6 +395,7 @@ class DasHFrame(MainFrame):#wx.Frame
             self.edit_area.SetSelection(index)
             self.tabs_in_edit_area.append(ses_name)
             self.sessions_alive.update({ses_name: new_page.session})
+            globals().update({ses_name: new_page.session})
 
     def add_new_session_to_globals(self, ses):
         if globals().has_key(ses.name):
@@ -402,7 +414,7 @@ class DasHFrame(MainFrame):#wx.Frame
         module,class_name, function,args = parse_command_line(cmd)
         #args[0]=self.sessions_alive['test_ssh'].session
         if module !='' or class_name!='' or function!='':
-            instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args)
+            instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args, globals())
 
             session_name = new_argvs[0]
             if globals().has_key(session_name):

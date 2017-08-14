@@ -133,7 +133,7 @@ def parse_command_line(cmd_string):
         args = cmd_list[1:]
     return  module_name,class_name,function_name,args
 
-def call_function_in_module(module_name, class_name, function_name, args):
+def call_function_in_module(module_name, class_name, function_name, args , environment =None):
     import inspect
     new_argvs=[]
     new_kwargs={}
@@ -144,8 +144,10 @@ def call_function_in_module(module_name, class_name, function_name, args):
             new_argvs.append(arg)
         for k in kwargs.keys():
             new_kwargs.update({k:kwargs[k]})
-    globals().update({args[0]:args[0]})
+    if environment:
+        globals().update(environment)
     args_string = ','.join(['{}'.format(x) for x in args])
+
     eval('GetFunArgs({args})'.format(args=args_string))
     info('\nmodule_name: \t{mn}\nclass_name: \t{cn}\nfunction_name: \t{fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,cn = class_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
     instance_name = '{}_inst'.format(module_name)
