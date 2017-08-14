@@ -392,7 +392,7 @@ class DasHFrame(MainFrame):#wx.Frame
                 else:
                     error(("variable '{}' is existed in global, please change the name".format(ses_name)))
                     return
-            
+
             new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'], self.sequence_queue)
 
             window_id = self.edit_area.AddPage(new_page, ses_name)
@@ -533,7 +533,9 @@ class DasHFrame(MainFrame):#wx.Frame
                             item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class)})
                             new_item  = self.function_page.InsertItem(new_class, new_class, attr_in_class)
                             self.function_page.SetItemData(new_item, item_info)
-
+        self.function_page.Expand(root)
+        first_child = self.function_page.GetFirstChild(root)
+        self.function_page.Expand(first_child[0])
     def on_LeftDClick_in_Function_tab(self,event):
         event.Skip()
         select_item = self.function_page.GetSelection()
