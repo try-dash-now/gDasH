@@ -171,7 +171,7 @@ class DasHFrame(MainFrame):#wx.Frame
         fileMenu = wx.Menu()
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
-        self.m_menubar_main.Append(fileMenu, "&Open TestSuite")
+        self.m_menubar_main.Append(fileMenu, "&Open")
 
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
@@ -416,11 +416,12 @@ class DasHFrame(MainFrame):#wx.Frame
         if module !='' or class_name!='' or function!='':
             instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args, globals())
 
-            session_name = new_argvs[0]
-            if globals().has_key(session_name):
-                new_argvs[0]= globals()[session_name]
-            elif self.sessions_alive.has_key(session_name):
-                new_argvs[0]=self.sessions_alive[session_name]
+            if False:
+                session_name = new_argvs[0]
+                if globals().has_key(session_name):
+                    new_argvs[0]= globals()[session_name]
+                elif self.sessions_alive.has_key(session_name):
+                    new_argvs[0]=self.sessions_alive[session_name]
             if class_name!="":
                 getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
             else:

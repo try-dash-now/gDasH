@@ -118,8 +118,8 @@ def parse_command_line(cmd_string):
     lex.quotes = '"'
     lex.whitespace_split = True
     cmd_list=list(lex)
-    module_name, class_name,function_name, args ='','','',[]
-    if cmd_list.__len__()>1:
+    module_name, class_name,function_name, arg='','','',[]
+    if cmd_list.__len__()>=1:
         mod_funct=cmd_list[0].split('.')
         if mod_funct.__len__() ==1:
             module_name =''
@@ -131,6 +131,7 @@ def parse_command_line(cmd_string):
         elif mod_funct.__len__()>2:
             module_name,class_name,function_name=mod_funct[:3]
         args = cmd_list[1:]
+    
     return  module_name,class_name,function_name,args
 
 def call_function_in_module(module_name, class_name, function_name, args , environment =None):
