@@ -217,6 +217,8 @@ class DasHFrame(MainFrame):#wx.Frame
         self.case_suite_page.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.m_case_treeOnTreeItemExpanding)
         self.session_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Session_tab)
         self.function_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Function_tab)
+        self.function_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_function_tab)
+
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
         nav_sizer = wx.BoxSizer()
@@ -550,3 +552,17 @@ class DasHFrame(MainFrame):#wx.Frame
             wx.CallAfter(self.m_command_box.SetInsertionPointEnd)
             wx.CallAfter(self.m_command_box.Refresh)
 
+    def on_right_down_in_function_tab(self, event):
+        menu = wx.Menu()
+        item = wx.MenuItem(menu, wx.NewId(), "Refresh")
+        #acc = wx.AcceleratorEntry()
+        #acc.Set(wx.ACCEL_NORMAL, ord('O'), self.popupID1)
+        #item.SetAccel(acc)
+        menu.AppendItem(item)
+
+        self.Bind(wx.EVT_MENU, self.on_refresh_function_page,item)
+        self.PopupMenu(menu,event.GetPosition())
+    def on_refresh_function_page(self, event):
+        self.function_page.DeleteAllItems()
+        self.build_function_tab()
+        info('Refresh Function tab done!')
