@@ -149,6 +149,7 @@ class DasHFrame(MainFrame):#wx.Frame
     history_cmd = []
     history_cmd_index = -1
     import_modules={'TC':'TC'}
+    lib_path ='./lib'
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
@@ -159,6 +160,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.ini_setting = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
         self.src_path = os.path.abspath(self.ini_setting.get('dash','src_path'))
+        self.lib_path = os.path.abspath(self.ini_setting.get('dash','lib_path'))
         self.add_src_path_to_python_path(self.src_path)
         self.redir = RedirectText(self.m_log)
         sys.stdout = self.redir
@@ -406,13 +408,16 @@ class DasHFrame(MainFrame):#wx.Frame
             self.edit_area.SetSelection(index)
             self.tabs_in_edit_area.append(ses_name)
             self.sessions_alive.update({ses_name: new_page.session})
-            globals().update({ses_name: new_page.session})
+            self.add_new_session_to_globals(new_page.session, '{}'.format(session_attribute.Data['attribute']))
+            #globals().update({ses_name: new_page.session})
 
-    def add_new_session_to_globals(self, ses):
+    def add_new_session_to_globals(self, ses, args_str):
         if globals().has_key(ses.name):
             error('{} already '.format(ses.name))
         else:
             globals().update({ses.name: ses})
+            self.add_cmd_to_sequence_queue('{} = dut.dut(**{})'.format(ses.name,args_str ), 'dut')
+            #session  = dut(name, **attributes)
 
     def on_command_enter(self, event):
         info('called on_command_enter')
@@ -425,19 +430,13 @@ class DasHFrame(MainFrame):#wx.Frame
         module,class_name, function,args = parse_command_line(cmd)
         #args[0]=self.sessions_alive['test_ssh'].session
         if module !='' or class_name!='' or function!='':
-            instance_name, function_name, new_argvs, new_kwargs = call_function_in_module(module,class_name,function,args, globals())
+            instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,args, globals())
 
-            if False:
-                session_name = new_argvs[0]
-                if globals().has_key(session_name):
-                    new_argvs[0]= globals()[session_name]
-                elif self.sessions_alive.has_key(session_name):
-                    new_argvs[0]=self.sessions_alive[session_name]
             if class_name!="":
                 getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
             else:
                 instance_name(*new_argvs,**new_kwargs)
-            self.add_cmd_to_history(cmd, module)
+            self.add_cmd_to_history(cmd,  module, str_code)
         else:
             error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
     def add_src_path_to_python_path(self, path):
@@ -446,7 +445,6 @@ class DasHFrame(MainFrame):#wx.Frame
         old_path = sys.path
         for p in paths:
             if p in old_path:
-
                 info('path {} already in sys.path'.format(p))
             else:
                 abspath = os.path.abspath(p)
@@ -483,7 +481,7 @@ class DasHFrame(MainFrame):#wx.Frame
             pass
         else:
             event.Skip()
-    def add_cmd_to_history(self, cmd, module_name):
+    def add_cmd_to_history(self, cmd, module_name, str_code):
         if self.history_cmd==[]:
             self.history_cmd.append(cmd)
         elif self.history_cmd[-1]==cmd:
@@ -491,7 +489,7 @@ class DasHFrame(MainFrame):#wx.Frame
         else:
             self.history_cmd.append(cmd)
             self.history_cmd_index= len(self.history_cmd)
-        self.add_cmd_to_sequence_queue(cmd,module_name )
+        self.add_cmd_to_sequence_queue(str_code,module_name )
         #self.sequence_queue.put([cmd, datetime.now()])
     def build_function_tab(self):
         src_path = os.path.abspath(self.src_path)
@@ -579,16 +577,28 @@ class DasHFrame(MainFrame):#wx.Frame
             self.import_modules.update({module_name:module_name})
         self.sequence_queue.put([cmd,datetime.now() ])
     def generate_code(self, file_name ):
-        str_code ='import sys,os\n'
+        str_code ="""#created by DasH
+if __name__ == "__main__":
+\timport sys
+\tsys.path.insert(0,r'{}')
+\tsys.path.insert(0,r'{}')
+
+""".format(self.src_path,self.lib_path )
+        sessions =[]
         for module in self.import_modules:
-            str_code+='import {}\n'.format(module)
+            str_code+='\timport {}\n'.format(module)
         while True:
             try:
                 cmd, timestamp =self.sequence_queue.get(block=False)[:2]
-                str_code +='{}() #{}\n'.format(cmd, timestamp.isoformat( ' '))
+                str_code +='\t{} #{}\n'.format(cmd, timestamp.isoformat( ' '))
+                if cmd.find('dut.dut(')!=-1:
+                    sessions.append(cmd.split('=')[0].strip())
                 #datetime.now().isoformat()
             except Exception as e:
                 break
+        close_session=''
+        for ses in sessions:
+            str_code+='\t{}.close_session()\n'.format(ses)
         info(str_code)
         with open(file_name, 'a+') as f:
             f.write(str_code)
