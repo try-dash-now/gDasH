@@ -150,6 +150,7 @@ class DasHFrame(MainFrame):#wx.Frame
     history_cmd_index = -1
     import_modules={'TC':'TC'}
     lib_path ='./lib'
+    log_path = '../log'
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
@@ -161,6 +162,9 @@ class DasHFrame(MainFrame):#wx.Frame
         self.ini_setting.read(ini_file)
         self.src_path = os.path.abspath(self.ini_setting.get('dash','src_path'))
         self.lib_path = os.path.abspath(self.ini_setting.get('dash','lib_path'))
+        self.log_path = os.path.abspath(self.ini_setting.get('dash','log_path'))
+        if not os.path.exists(self.log_path):
+            os.mkdir(self.log_path)
         self.add_src_path_to_python_path(self.src_path)
         self.redir = RedirectText(self.m_log)
         sys.stdout = self.redir
@@ -400,7 +404,7 @@ class DasHFrame(MainFrame):#wx.Frame
                     error(("variable '{}' is existed in global, please change the name".format(ses_name)))
                     return
 
-            new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'], self.sequence_queue)
+            new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'], self.sequence_queue, log_path=self.log_path)
 
             window_id = self.edit_area.AddPage(new_page, ses_name)
 

@@ -58,7 +58,8 @@ class dut(object):
     session_status = None
     login_done =False
     write_locker = None
-
+    log_path = None
+    log_file =None
     def __del__(self):
         if self.session:
             self.close_session()
@@ -77,6 +78,11 @@ class dut(object):
         self.session_status = True
         self.search_buffer = ''
         self.display_buffer = ''
+        if log_path:
+            self.log_path = os.path.abspath(log_path)
+        else:
+            self.log_path = os.path.abspath('../log')
+        self.open_log_file()
         self.search_buffer_locker=  threading.Lock()
         self.write_locker=  threading.Lock()
         self.display_buffer_locker = threading.Lock()
@@ -254,6 +260,12 @@ buffer:
                     self.session.write('exit')
             except:
                 pass
+            try:
+                if self.log_file:
+                    self.log_file.close()
+                    self.log_file=None
+            except:
+                pass
             self.session_status=False
 
         self.write_locker.release()
@@ -296,7 +308,14 @@ buffer:
                 if (current_time-last_update_time).total_seconds()> max_idle_time:
                     last_update_time = current_time
                     self.write()
-                self.add_data_to_search_buffer(self.read())
+                data = self.read()
+                self.add_data_to_search_buffer(data)
+                try:
+                    if self.log_file:
+                        self.log_file.write(data)
+                except Exception as e:
+                    error('dut {}:{}'.format(self.name, e))
+                    self.log_file=None
                 time.sleep(0.001)
             except  Exception as e:
                 if str(e) in ['error: Socket is closed']:
@@ -342,3 +361,12 @@ buffer:
         return  resp
 
         #print('{}:{}.{}:{}'.format(log_type_name[log_type_index],self.name, caller, string))
+    def open_log_file(self):
+        if not os.path.exists(self.log_path):
+            try:
+                os.mkdir(self.log_path)
+            except Exception as e:
+                error('dut{}:{}'.format(self.name, e))
+
+        file_name = '{}/{}-{}.log'.format(self.log_path,self.name, datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-'))[0:256]
+        self.log_file = open(file_name, r"w+")
