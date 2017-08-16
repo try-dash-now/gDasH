@@ -151,6 +151,7 @@ class DasHFrame(MainFrame):#wx.Frame
     import_modules={'TC':'TC'}
     lib_path ='./lib'
     log_path = '../log'
+    session_path = './sessions'
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.tabs_in_edit_area=[]
@@ -267,8 +268,9 @@ class DasHFrame(MainFrame):#wx.Frame
         ses_name = closing_page.session.name
         self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
         if globals().has_key(ses_name):
-            g = dict(globals())
-            del g[ses_name]
+            #g = dict(globals())
+            globals()[ses_name]=None
+            #del g[ses_name]
             #del globals()[ses_name]
 
 
@@ -341,6 +343,7 @@ class DasHFrame(MainFrame):#wx.Frame
             self.session_page.DeleteAllItems()
 
         session_path = os.path.abspath(self.ini_setting.get('dash','session_path'))
+        self.session_path= session_path
         if not os.path.exists(session_path):
             session_path= os.path.abspath(os.path.curdir)
         base_name = os.path.basename(session_path)
@@ -358,7 +361,15 @@ class DasHFrame(MainFrame):#wx.Frame
         for csv_file in sorted(session_files):
             try:
                 ses_in_bench = load_bench(os.path.abspath('{}/{}'.format(session_path, csv_file)))
+
+                for bench in ses_in_bench:
+                    for ses in ses_in_bench[bench]:
+                        if ses_in_bench[bench][ses].has_key('login_step'):
+                            ses_in_bench[bench][ses].update(
+                                    {'login_step': os.path.abspath('{}/{}'.format(session_path, ses_in_bench[bench][ses]['login_step']))}
+                                    )
                 sessions.update(ses_in_bench)
+
             except Exception as e:
                 pass
 
@@ -417,10 +428,13 @@ class DasHFrame(MainFrame):#wx.Frame
 
     def add_new_session_to_globals(self, ses, args_str):
         if globals().has_key(ses.name):
-            error('{} already '.format(ses.name))
+            if globals()[ses.name]==None:
+                pass
+            else:
+                error('{} already '.format(ses.name))
         else:
             globals().update({ses.name: ses})
-            self.add_cmd_to_sequence_queue('{} = dut.dut(**{})'.format(ses.name,args_str ), 'dut')
+            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(ses.name,ses.name,args_str ), 'dut')
             #session  = dut(name, **attributes)
 
     def on_command_enter(self, event):
@@ -435,11 +449,16 @@ class DasHFrame(MainFrame):#wx.Frame
         #args[0]=self.sessions_alive['test_ssh'].session
         if module !='' or class_name!='' or function!='':
             instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,args, globals())
+            call_function = None
 
             if class_name!="":
-                getattr(instance_name, function_name)(*new_argvs,**new_kwargs)
+
+                call_function = getattr(instance_name, function_name)
+                #(*new_argvs,**new_kwargs)
             else:
-                instance_name(*new_argvs,**new_kwargs)
+                call_function = instance_name#(*new_argvs,**new_kwargs)
+            th =threading.Thread(target=call_function, args=new_argvs, kwargs=new_kwargs)
+            th.start()
             self.add_cmd_to_history(cmd,  module, str_code)
         else:
             error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
@@ -583,18 +602,18 @@ class DasHFrame(MainFrame):#wx.Frame
     def generate_code(self, file_name ):
         str_code ="""#created by DasH
 if __name__ == "__main__":
-\timport sys
-\tsys.path.insert(0,r'{}')
-\tsys.path.insert(0,r'{}')
+    import sys
+    sys.path.insert(0,r'{}')
+    sys.path.insert(0,r'{}')
 
 """.format(self.src_path,self.lib_path )
         sessions =[]
         for module in self.import_modules:
-            str_code+='\timport {}\n'.format(module)
+            str_code+='    import {mod}\n    {mod}_instance = {mod}()'.format(mod=module)
         while True:
             try:
                 cmd, timestamp =self.sequence_queue.get(block=False)[:2]
-                str_code +='\t{} #{}\n'.format(cmd, timestamp.isoformat( ' '))
+                str_code +='    {} #{}\n'.format(cmd, timestamp.isoformat( ' '))
                 if cmd.find('dut.dut(')!=-1:
                     sessions.append(cmd.split('=')[0].strip())
                 #datetime.now().isoformat()
@@ -602,7 +621,7 @@ if __name__ == "__main__":
                 break
         close_session=''
         for ses in sessions:
-            str_code+='\t{}.close_session()\n'.format(ses)
+            str_code+='    {}.close_session()\n'.format(ses)
         info(str_code)
         with open(file_name, 'a+') as f:
             f.write(str_code)

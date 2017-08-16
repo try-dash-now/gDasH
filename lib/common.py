@@ -157,7 +157,7 @@ def call_function_in_module(module_name, class_name, function_name, args , envir
         lmod = imp.load_module(module_name, file, path_name,description)
         if class_name != "":
             instance_name = getattr(lmod, class_name)()
-            str_code = '{}.{}.{}({})'.format(module_name,class_name, function_name, args_string)
+            str_code = '{}_instance.{}({})'.format(module_name, function_name, args_string)
         else:
             instance_name = getattr(lmod, function_name)
             str_code = '{}.{}({})'.format(module_name, function_name, args_string)

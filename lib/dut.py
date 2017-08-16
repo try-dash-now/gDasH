@@ -60,12 +60,17 @@ class dut(object):
     write_locker = None
     log_path = None
     log_file =None
+    last_cmd_time_stamp= None
+    new_line_during_login =None
+    init_file_name =None
+    type =None
     def __del__(self):
         if self.session:
             self.close_session()
 
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None):
         #expected types are [echo, telnet, ssh, shell, web_brower]
+        self.type = type
         self.login_steps = login_step
         self.session_type = type
         self.name = name
@@ -78,6 +83,11 @@ class dut(object):
         self.session_status = True
         self.search_buffer = ''
         self.display_buffer = ''
+        self.new_line_during_login = new_line_during_login
+        self.init_file_name = init_file_name
+        self.open()
+    def open(self):
+        log_path = self.log_path
         if log_path:
             self.log_path = os.path.abspath(log_path)
         else:
@@ -88,7 +98,12 @@ class dut(object):
         self.display_buffer_locker = threading.Lock()
         th =threading.Thread(target=self.read_data)
         th.start()
+        new_line_during_login = self.new_line_during_login
         self.new_line_during_login = new_line_during_login
+        init_file_name = self.init_file_name
+        login_step = self.login_steps
+        name = self.name
+        type = self.type
         if type == 'echo' or init_file_name !=None:
             from lib.echo import echo
             self.session = echo(name, init_file_name)
@@ -108,24 +123,8 @@ class dut(object):
         error_info = None
         init_total_try = total_try
         total_try= int(total_try)
-        match, buffer = None, ''
-        while total_try:
-            total_try -= 1
-            try:
-
-                resp = self.write(command, ctrl)
-                time.sleep(0.001)
-                self.add_data_to_search_buffer(resp)
-                if not no_wait:
-                    pass
-                else:
-                    self.reset_search_buffer()
-                success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
-                if not success :
-                    if not_want_to_find:
-                        pass
-                    else:
-                        error_message="""
+        success ,match, buffer = False, None, ''
+        error_message="""
     {dut_name}.step:
     command =>{cmd},
     expect  =>{exp},
@@ -149,25 +148,41 @@ buffer:
                         flags = flags,
                         buffer = buffer
                     )
+        while total_try:
+            total_try -= 1
+            try:
+                resp = self.write(command, ctrl)
+                time.sleep(0.001)
+                self.add_data_to_search_buffer(resp)
+                if not no_wait:
+                    pass
+                else:
+                    self.reset_search_buffer()
+                success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
+
+                if success:
+                    if not_want_to_find:
                         raise Exception(error_message)
+                    else:
+                        break
+                elif total_try>0:
+                    if not_want_to_find:
+                        continue
+                    else:
+                        success=False
+                        #raise Exception(error_message)
+                else:
+                    if not_want_to_find:
+                        success=True
+                        break
 
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
                     error(format_exc())
-                    e.message='{dut_name}.step: command={cmd}, time_out={time_out}, total_try={total_try},ctrl={ctrl}, not_want_to_find={not_want}, no_wait={no_wait},flags={flags}\n{msg}'.format(
-                        dut_name = self.name,
-                        cmd = command,
-                        time_out = time_out,
-                        total_try = total_try,
-                        ctrl = ctrl,
-                        not_want = not_want_to_find,
-                        no_wait = no_wait,
-                        flags = flags,
-                        msg= e.message
-                    )
+                    e.message=error_message
                     error(pprint( e.message))
-                    raise
-
+                    #raise
+        return  success, match, buffer
     def match_in_buffer(self, pattern):
         buffer = self.search_buffer
         match = re.search(pattern,buffer)
@@ -176,7 +191,10 @@ buffer:
         if self.session_type == 'echo':
             time.sleep(0.001)
         else:
-            time.sleep(sleep_time)
+            count = int(sleep_time/0.1) if sleep_time >0.1 else 0.1
+            while count and self.session_status:
+                count -=1
+                time.sleep(sleep_time)
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
@@ -299,15 +317,18 @@ buffer:
     def read_data(self):
         max_idle_time = 60
         last_update_time = datetime.datetime.now()
+        self.last_cmd_time_stamp = last_update_time
+
         while self.session_status:
             try:
                 current_time = datetime.datetime.now()
                 if TRACE_LEVEL:
                     pass
-                #self.log('session {name} alive'.format(name =self.name))
+                last_update_time = self.last_cmd_time_stamp        #self.log('session {name} alive'.format(name =self.name))
                 if (current_time-last_update_time).total_seconds()> max_idle_time:
                     last_update_time = current_time
-                    self.write()
+                    self.last_cmd_time_stamp = current_time
+                    self.write("\r\n")
                 data = self.read()
                 self.add_data_to_search_buffer(data)
                 try:
@@ -343,6 +364,7 @@ buffer:
                 except Exception as e :
                     self.session_status =False
             #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
+            self.last_cmd_time_stamp = datetime.datetime.now()
             self.write_locker.release()
         return  resp
     def read(self):
@@ -370,3 +392,10 @@ buffer:
 
         file_name = '{}/{}-{}.log'.format(self.log_path,self.name, datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-'))[0:256]
         self.log_file = open(file_name, r"w+")
+    def save_data_to_csv(self, data, file_name_prefix= ''):
+        data_file_name = '{}/{}_{}_{}.csv'.format(self.log_path, file_name_prefix, self.name, datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-'))[:256]
+        with open(data_file_name, 'a+') as data_file:
+            for record in data:
+                data_file.write(','.join(['{}'.format(x) for x in record]))
+                data_file.write('\n')
+                data_file.flush()
