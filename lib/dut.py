@@ -154,7 +154,7 @@ buffer:
                 resp = self.write(command, ctrl)
                 time.sleep(0.001)
                 self.add_data_to_search_buffer(resp)
-                if not no_wait:
+                if no_wait:
                     pass
                 else:
                     self.reset_search_buffer()
@@ -192,9 +192,9 @@ buffer:
             time.sleep(0.001)
         else:
             count = int(sleep_time/0.1) if sleep_time >0.1 else 0.1
-            while count and self.session_status:
+            while count >0 and self.session_status:
                 count -=1
-                time.sleep(sleep_time)
+                time.sleep(0.1)
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
