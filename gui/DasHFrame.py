@@ -511,7 +511,7 @@ class DasHFrame(MainFrame):#wx.Frame
             pass
         else:
             self.history_cmd.append(cmd)
-            self.history_cmd_index= len(self.history_cmd)
+            self.history_cmd_index= len(self.history_cmd)-1
         self.add_cmd_to_sequence_queue(str_code,module_name )
         #self.sequence_queue.put([cmd, datetime.now()])
     def build_function_tab(self):

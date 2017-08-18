@@ -205,15 +205,26 @@ def log(string, info_type_index=3, depth = 2):
     if TRACE_LEVEL<=info_type_index or info_type_index==INFO_LEVEL:
         print(str)
     return  str
-
-def info(string):
-    log(string, INFO_LEVEL, 3)
-def error(string):
-    log(string, ERRO_LEVEL, 3)
-def debug(string):
-    log(string, DEBUG_LEVEL, 3)
-def warn(string):
-    log(string, WARN_LEVEL, 3)
+def combine_args(string = [], kwargs ={}):
+    if string is None:
+        string = ''
+    if type(string)in [type(''), type(1), type(1.0)]:
+        stirng = [string]
+    str = ','.join(['{}'.format(x) for x in string])
+    str+='\t\n'+','.join(['{}={}'.format(x, kwargs[x]) for x in kwargs])
+    return str
+def info(*string, **kwargs):
+    str = combine_args(string,kwargs )
+    log(str, INFO_LEVEL, 3)
+def error(*string, **kwargs):
+    str = combine_args(string,kwargs )
+    log(str, ERRO_LEVEL, 3)
+def debug(*string, **kwargs):
+    str = combine_args(string,kwargs )
+    log(str, DEBUG_LEVEL, 3)
+def warn(*string, **kwargs):
+    str = combine_args(string,kwargs )
+    log(str, WARN_LEVEL, 3)
 
 def reload_module(instance, function_name):
     parents = type.mro(type(instance))[:-1]

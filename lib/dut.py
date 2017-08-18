@@ -113,7 +113,9 @@ class dut(object):
         elif type.lower() in ['telnet']:
             from lib.TELNET import  TELNET
             self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
-        if login_step is None or login_step.strip().lower() in ['none',None, "''", '""']:
+        if isinstance(login_step,(list, tuple)):
+            pass
+        elif login_step is None or login_step.strip().lower() in ['none',None, "''", '""']:
             self.login_steps =[]
         else:
             self.login(login_step)
@@ -159,7 +161,11 @@ buffer:
                 else:
                     self.reset_search_buffer()
                 success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
-
+                if len(buffer)>256:
+                    brief_buffer =buffer[:128]+'\n...\n'+buffer[-128:]
+                else:
+                    brief_buffer = buffer
+                info(cmd = command, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer)
                 if success:
                     if not_want_to_find:
                         raise Exception(error_message)
@@ -236,22 +242,32 @@ buffer:
         return success,match,buffer
     @dut_exception_handler
     def login(self, login_step_file=None, retry=1):
-        import csv
-        if login_step_file !=None:
+        login_steps =[]
+        if type(self.login_steps)==type([]):
+            login_steps = self.login_steps #login_steps = self.login_steps
+        elif login_step_file !=None :
             time.sleep(0.001)
+            import csv
             with open(login_step_file, 'rb') as csvfile:
                 self.login_steps = csv.reader(csvfile, delimiter=',', quotechar='|')
                 for row in self.login_steps:
-                    cmd,expect, time_out, total_try ='', '.*',30,1
-                    if len(row)==1:
-                        cmd= row[0]
-                    elif len(row)==2:
-                        cmd, expect= row
-                    elif len(row)==3:
-                        cmd,expect,time_out= row
-                    elif len(row) >3:
-                        cmd,expect, time_out, total_try =row[:4]
-                    self.step(cmd,expect, time_out,total_try)
+                    login_steps.append(row)
+        for row in login_steps:
+            cmd,expect, time_out, total_try ='', '.*',30,1
+            if len(row)==1:
+                cmd= row[0]
+            elif len(row)==2:
+                cmd, expect= row
+            elif len(row)==3:
+                cmd,expect,time_out= row
+            elif len(row) >3:
+                cmd,expect, time_out, total_try =row[:4]
+            self.step(cmd,expect, time_out,total_try)
+
+        self.login_steps= []
+        for row in login_steps:
+            self.login_steps.append(row)
+        #self.login_steps=login_steps
         self.login_done =True
 
     def close_session(self):
