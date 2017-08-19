@@ -266,3 +266,7 @@ def get_next_in_ring_list(current_index,the_list,increase=True):
     else:
         value=the_list[index]
     return index, value
+import smtplib
+def send_mail(to, msg, sender):
+    pass
+
