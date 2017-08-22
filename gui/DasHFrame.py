@@ -370,9 +370,9 @@ class DasHFrame(MainFrame):#wx.Frame
 
                 for bench in ses_in_bench:
                     for ses in ses_in_bench[bench]:
-                        if ses_in_bench[bench][ses].has_key('login_step'):
+                        if ses_in_bench[bench][ses].has_key('login_step') and ses_in_bench[bench][ses]['login_step'].strip() not in ['', None]:
                             ses_in_bench[bench][ses].update(
-                                    {'login_step': os.path.abspath('{}/{}'.format(session_path, ses_in_bench[bench][ses]['login_step']))}
+                                    {'login_step': os.path.abspath('{}/{}'.format(session_path, ses_in_bench[bench][ses]['login_step'].strip()))}
                                     )
                 sessions.update(ses_in_bench)
 
@@ -635,7 +635,7 @@ if __name__ == "__main__":
             with open(file_name, 'a+') as f:
                 f.write(str_code)
 
-#todo: 2017-08-19 save main log window to a file
+#done: 2017-08-19 save main log window to a file, 2017-08-22 done
 #todo: 2017-08-19 add timestamps to log message
 #todo: 2017-08-19 mail to someone
 #todo: 2017-08-19 run a script in DasH

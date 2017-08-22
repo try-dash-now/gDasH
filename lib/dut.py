@@ -71,6 +71,12 @@ class dut(object):
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.type = type
+        if login_step in [None, '']:
+            login_step = None
+        if isinstance(login_step, (basestring)) and os.path.exists(login_step):
+            pass
+        else:
+            login_step =None
         self.login_steps = login_step
         self.session_type = type
         self.name = name

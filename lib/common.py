@@ -30,6 +30,7 @@ import os
 import inspect
 import imp
 import re
+from datetime import datetime
 
 
 debug = False
@@ -198,6 +199,7 @@ def caller_stack_info(level=DEBUG_LEVEL, depth = 2):
 
 def log(string, info_type_index=3, depth = 2):
     prefix = caller_stack_info(info_type_index, depth)
+    prefix = '{}\t{}'.format(datetime.now().isoformat(' '), prefix)
     string= "{}".format(string)
     new_string = '\n\t'.join( string.split('\n'))
 
