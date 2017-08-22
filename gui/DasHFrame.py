@@ -610,12 +610,14 @@ if __name__ == "__main__":
         sessions =[]
         for module in self.import_modules:
             str_code+='    import {mod}\n    {mod}_instance = {mod}()'.format(mod=module)
+        no_operation = True
         while True:
             try:
                 cmd, timestamp =self.sequence_queue.get(block=False)[:2]
                 str_code +='    {} #{}\n'.format(cmd, timestamp.isoformat( ' '))
                 if cmd.find('dut.dut(')!=-1:
                     sessions.append(cmd.split('=')[0].strip())
+                no_operation=False
                 #datetime.now().isoformat()
             except Exception as e:
                 break
@@ -623,8 +625,9 @@ if __name__ == "__main__":
         for ses in sessions:
             str_code+='    {}.close_session()\n'.format(ses)
         info(str_code)
-        with open(file_name, 'a+') as f:
-            f.write(str_code)
+        if not no_operation:
+            with open(file_name, 'a+') as f:
+                f.write(str_code)
 
 #todo: 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
