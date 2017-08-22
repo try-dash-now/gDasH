@@ -47,11 +47,15 @@ class RedirectText(object):
     old_stdout = None
     old_stderr = None
     write_lock = None
-    def __init__(self,aWxTextCtrl):
+    log_file    = None
+    def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize
         self.write_lock = threading.Lock()
+        if log_path:
+            name = '{}/dash.log'.format(log_path)
+            self.log_file = open(name, 'a+')
     def write(self,string):
         self.write_lock.acquire()
         self.old_stdout.write(string)
@@ -63,6 +67,8 @@ class RedirectText(object):
         else:
             wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
         wx.CallAfter(self.out.AppendText, string)
+        if self.log_file:
+            self.log_file.write(string)
         self.write_lock.release()
 
 class FileEditor(wx.Panel):
@@ -167,7 +173,7 @@ class DasHFrame(MainFrame):#wx.Frame
         if not os.path.exists(self.log_path):
             os.mkdir(self.log_path)
         self.add_src_path_to_python_path(self.src_path)
-        self.redir = RedirectText(self.m_log)
+        self.redir = RedirectText(self.m_log, self.log_path)
         sys.stdout = self.redir
         sys.stderr = self.redir
         self.m_log.SetBackgroundColour('Black')
