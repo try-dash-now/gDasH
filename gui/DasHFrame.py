@@ -635,9 +635,9 @@ if __name__ == "__main__":
             with open(file_name, 'a+') as f:
                 f.write(str_code)
 
-#done: 2017-08-19 save main log window to a file, 2017-08-22 done
+#done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
-#todo: 2017-08-19 mail to someone
+#done: 2017-08-22, 2017-08-19 mail to someone
 #todo: 2017-08-19 run a script in DasH
 #todo: 2017-08-19 generate test report
 #todo: 2017-08-19 publish all test cases in a web page
@@ -645,3 +645,4 @@ if __name__ == "__main__":
 #todo: 2017-08-19 re-run failed cases
 #todo: 2017-08-19 build executable packege for DasH
 #todo: 2017-08-19 a popup window to get email address/password/mail_server...
+#todo: 2017-08-22 output in m_log window has a lot of empty line, need remove them

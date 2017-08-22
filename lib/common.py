@@ -269,6 +269,13 @@ def get_next_in_ring_list(current_index,the_list,increase=True):
         value=the_list[index]
     return index, value
 import smtplib
-def send_mail(to, msg, sender):
-    pass
-
+def send_mail_smtp_without_login(USERNAME, PASSWORD, TO, SUBJECT, TEXT, SERVER, FROM  ):#msg, FROM, TO, SUBJECT, USER, LOGIN, type='smtp', ):
+    if isinstance(TO, (basestring)):
+        TO = TO.replace(',',';').split(';')
+    mailServer = smtplib.SMTP(SERVER) #~~~SMTP server for outgoing mail
+    mailServer.ehlo()
+    for recipient in TO: #~Loop that emails everyone on the list
+        MAIL = '''from: {sender}\r\nsubject: {sub}\r\nto: {to}\r\n\r\n\r\n{msg}'''.format(sender=FROM, to=recipient, sub=SUBJECT, msg = TEXT)
+        mailServer.sendmail(FROM, recipient,MAIL)
+        print(MAIL)
+    mailServer.close()
