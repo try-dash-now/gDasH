@@ -154,6 +154,7 @@ def call_function_in_module(module_name, class_name, function_name, args , envir
     info('\nmodule_name: \t{mn}\nclass_name: \t{cn}\nfunction_name: \t{fn}\nargs:{args}\nkwargs: {kwargs}'.format(mn=module_name,cn = class_name,fn=function_name,args=new_argvs, kwargs=new_kwargs))
     instance_name = '{}_inst'.format(module_name)
     try:
+        print(module_name, 'is existed in globals()', globals()[module_name])
         file, path_name, description = imp.find_module(module_name)
         lmod = imp.load_module(module_name, file, path_name,description)
         if class_name != "":

@@ -93,6 +93,7 @@ class dut(object):
         self.init_file_name = init_file_name
         self.open()
     def open(self):
+        self.session_status = True
         log_path = self.log_path
         if log_path:
             self.log_path = os.path.abspath(log_path)
