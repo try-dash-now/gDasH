@@ -615,7 +615,7 @@ if __name__ == "__main__":
 """.format(self.src_path,self.lib_path )
         sessions =[]
         for module in self.import_modules:
-            str_code+='    import {mod}\n    {mod}_instance = {mod}()'.format(mod=module)
+            str_code+='    import {mod}\n    {mod}_instance = {mod}()\n'.format(mod=module)
         no_operation = True
         while True:
             try:

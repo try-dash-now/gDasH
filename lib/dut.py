@@ -93,39 +93,45 @@ class dut(object):
         self.init_file_name = init_file_name
         self.open()
     def open(self):
+        self.session_status = False
+        self.sleep(0.5)
         self.session_status = True
-        log_path = self.log_path
-        if log_path:
-            self.log_path = os.path.abspath(log_path)
-        else:
-            self.log_path = os.path.abspath('../log')
-        self.open_log_file()
-        self.search_buffer_locker=  threading.Lock()
-        self.write_locker=  threading.Lock()
-        self.display_buffer_locker = threading.Lock()
-        th =threading.Thread(target=self.read_data)
-        th.start()
-        new_line_during_login = self.new_line_during_login
-        self.new_line_during_login = new_line_during_login
-        init_file_name = self.init_file_name
-        login_step = self.login_steps
-        name = self.name
-        type = self.type
-        if type == 'echo' or init_file_name !=None:
-            from lib.echo import echo
-            self.session = echo(name, init_file_name)
-        elif type.lower() =='ssh':
-            from lib.SSH import SSH
-            self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
-        elif type.lower() in ['telnet']:
-            from lib.TELNET import  TELNET
-            self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
-        if isinstance(login_step,(list, tuple)):
-            pass
-        elif login_step is None or login_step.strip().lower() in ['none',None, "''", '""']:
-            self.login_steps =[]
-        else:
-            self.login(login_step)
+        try:
+            log_path = self.log_path
+            if log_path:
+                self.log_path = os.path.abspath(log_path)
+            else:
+                self.log_path = os.path.abspath('../log')
+            self.open_log_file()
+            self.search_buffer_locker=  threading.Lock()
+            self.write_locker=  threading.Lock()
+            self.display_buffer_locker = threading.Lock()
+            th =threading.Thread(target=self.read_data)
+            th.start()
+            new_line_during_login = self.new_line_during_login
+            self.new_line_during_login = new_line_during_login
+            init_file_name = self.init_file_name
+            login_step = self.login_steps
+            name = self.name
+            type = self.type
+            if type == 'echo' or init_file_name !=None:
+                from lib.echo import echo
+                self.session = echo(name, init_file_name)
+            elif type.lower() =='ssh':
+                from lib.SSH import SSH
+                self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
+            elif type.lower() in ['telnet']:
+                from lib.TELNET import  TELNET
+                self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
+            if isinstance(login_step,(list, tuple)):
+                pass
+            elif login_step is None or login_step.strip().lower() in ['none',None, "''", '""']:
+                self.login_steps =[]
+            else:
+                self.login(login_step)
+        except Exception as e:
+            error('failed to open{}'.format(self.name), e)
+            self.session_status =False
 
 
     def step(self,command, expect='.*', time_out=30, total_try =1, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.I|re.M):
