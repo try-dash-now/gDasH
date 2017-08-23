@@ -125,10 +125,12 @@ class dut(object):
                 self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
             if isinstance(login_step,(list, tuple)):
                 pass
-            elif login_step is None or login_step.strip().lower() in ['none',None, "''", '""']:
+            elif login_step is None :#login_step.strip().lower() in ['none',None, "''", '""']:
                 self.login_steps =[]
-            else:
-                self.login(login_step)
+            elif  isinstance(login_step, basestring):
+                if login_step.strip().lower() in ['none',None, "''", '""']:
+                    self.login_steps=[]
+            self.login(login_step)
         except Exception as e:
             error('failed to open{}'.format(self.name), e)
             self.session_status =False

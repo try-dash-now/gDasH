@@ -646,3 +646,5 @@ if __name__ == "__main__":
 #todo: 2017-08-19 build executable packege for DasH
 #todo: 2017-08-19 a popup window to get email address/password/mail_server...
 #todo: 2017-08-22 output in m_log window has a lot of empty line, need remove them
+#todo: 2017-08-23 in common.call_function_in_module, should end all threads which are started in previous instance
+#todo: 2017-08-23 add tips for all tree item in teh left

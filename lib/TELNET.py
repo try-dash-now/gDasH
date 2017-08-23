@@ -99,9 +99,6 @@ import os
 import time
 import re
 class TELNET(object):#, spawn
-
-
-
     def __init__(self, host='localhost', port=23, login_step=None):
         self.debuglevel = DEBUGLEVEL
         self.host = host
