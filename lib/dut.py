@@ -112,6 +112,7 @@ class dut(object):
             self.new_line_during_login = new_line_during_login
             init_file_name = self.init_file_name
             login_step = self.login_steps
+            self.login_done=False
             name = self.name
             type = self.type
             if type == 'echo' or init_file_name !=None:

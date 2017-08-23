@@ -62,10 +62,10 @@ class RedirectText(object):
         #string = string.replace('\\033\[[0-9\;]+m', '')
 
         #self.old_stderr.write(string)
-        if re.search('error|err|fail|wrong',string.lower()):
-            wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point_size+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+        if re.search('error|\s+err\s+|fail|wrong',string.lower()):
+            self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point_size+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))#wx.CallAfter(s
         else:
-            wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+            self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
         wx.CallAfter(self.out.AppendText, string)
         if self.log_file:
             self.log_file.write(string)
