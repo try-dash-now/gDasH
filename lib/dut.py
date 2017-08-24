@@ -93,8 +93,12 @@ class dut(object):
         self.init_file_name = init_file_name
         self.open()
     def open(self):
-        self.session_status = False
-        self.sleep(0.5)
+        if self.session:
+            #self.session_status=False
+            del self.session
+            self.session=None
+            self.sleep(0.1)
+
         self.session_status = True
         try:
             log_path = self.log_path
@@ -107,7 +111,7 @@ class dut(object):
             self.write_locker=  threading.Lock()
             self.display_buffer_locker = threading.Lock()
             th =threading.Thread(target=self.read_data)
-            th.start()
+
             new_line_during_login = self.new_line_during_login
             self.new_line_during_login = new_line_during_login
             init_file_name = self.init_file_name
@@ -131,6 +135,8 @@ class dut(object):
             elif  isinstance(login_step, basestring):
                 if login_step.strip().lower() in ['none',None, "''", '""']:
                     self.login_steps=[]
+            th.start()
+            self.sleep(0.1)
             self.login(login_step)
         except Exception as e:
             error('failed to open{}'.format(self.name), e)
@@ -304,11 +310,16 @@ buffer:
             # PyDeadObjectError: The C++ part of the SessionTab object has been deleted, attribute access no longer allowed.
             try:
                 if self.session_type in ['ssh']:
-                    self.session.write('exit')
+                    #self.write('exit')
+                    self.session.write('exit\r\n')
                 if self.session_type in 'telnet':
                     #self.session.write('exit')
-                    self.session.write('exit')
-            except:
+                    self.session.write('exit\r\n')
+                    #self.write('exit')
+            except Exception as e:
+                error(e)
+                self.session=None
+                self.session_status = False
                 pass
             try:
                 if self.log_file:
@@ -351,7 +362,7 @@ buffer:
         last_update_time = datetime.datetime.now()
         self.last_cmd_time_stamp = last_update_time
 
-        while self.session_status:
+        while self.session_status and self.session:
             try:
                 current_time = datetime.datetime.now()
                 if TRACE_LEVEL:
@@ -374,9 +385,11 @@ buffer:
                 if str(e) in ['error: Socket is closed']:
                     self.session_status =False
         if self.session_type in ['ssh']:
-            if self.session.client:
-                self.session.client.close()
-                self.session.client=None
+            if self.session:
+                if self.session.client:
+                    self.session.client.close()
+                    self.session.client=None
+            self.session=None
         info('session {}: Closed!!!'.format(self.name))
     def write(self, cmd='', ctrl=False):
         resp = ''
