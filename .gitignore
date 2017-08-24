@@ -3,6 +3,9 @@
 ./idea
 ./sessions
 ./src
+./dist
+./build
+./log
 
 # Compiled source #
 ###################
