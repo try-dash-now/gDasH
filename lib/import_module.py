@@ -8,4 +8,6 @@ sys.path.append(os.path.sep.join([pardir,'src']))
 sys.path.append(os.path.sep.join([pardir,'gui']))
 print('\n'.join(sys.path))
 import abc #, zeep
+import paramiko
+paramiko.SSHClient()
 

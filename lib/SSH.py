@@ -24,8 +24,17 @@ __author__ = 'Yu, Xiongwei(Sean Yu)'
 __doc__ = '''
 created 5/17/2017
 '''
+
+#todo: 2017-08-25 can't find paramiko in executable version
+# No module named paramiko,Traceback (most recent call last):
+# 	  File "lib\dut.pyo", line 126, in open
+# 	  File "lib\SSH.pyo", line 29, in <module>
+# 	ImportError: No module named paramiko
+#
+
 import os, sys,time , traceback
 import threading
+#import ssh
 import paramiko as ssh
 from dut import dut
 class SSH(object):

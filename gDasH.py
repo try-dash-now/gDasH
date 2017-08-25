@@ -28,6 +28,7 @@ created 2017-05-06 by Sean Yu
 
 from gui.DasHFrame import DasHFrame
 import wx
+import paramiko
 if __name__ == "__main__":
     app = wx.App(False)
     dash = DasHFrame(None)

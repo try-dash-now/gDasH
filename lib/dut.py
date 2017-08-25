@@ -139,7 +139,9 @@ class dut(object):
             self.sleep(0.1)
             self.login(login_step)
         except Exception as e:
-            error('failed to open{}'.format(self.name), e)
+            import traceback
+            error_msg =traceback.format_exc(e)
+            error('failed to open {}'.format(self.name), e, error_msg)
             self.session_status =False
 
 

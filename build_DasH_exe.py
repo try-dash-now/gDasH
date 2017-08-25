@@ -5,6 +5,12 @@ __mail__ = 'try.dash.now@gmail.com'
 created 2015/11/10
 '''
 import os,sys,abc
+import appdirs
+import packaging
+import packaging.version
+import packaging.specifiers
+import packaging.requirements
+from setuptools.archive_util import unpack_archive
 pardir =os.path.dirname(os.path.realpath(__file__))
 pardir= os.path.sep.join(pardir.split(os.path.sep)[:-1])
 sys.path.append(os.path.sep.join([pardir,'lib']))
@@ -17,15 +23,40 @@ import os
 import glob
 from py2exe.build_exe import py2exe as build_exe
 import zipfile
+import paramiko
+paramiko.SSHClient()
 #import zeep
+#C:/Python27/Lib/site-packages/paramiko-1.16.0-py2.7.egg!/paramiko/__init__.py
 
+import shutil
+folder = '../dist'
+
+for op in sys.argv:
+
+    indexOfd = op.find('-d')
+    if indexOfd !=-1:
+        folder = sys.argv[sys.argv.index(op)+1]
+        break
+
+targetDir = os.sep.join([folder, './tmp'])
+excludedFolder =['sessions',
+                 'src',
+                 'lib',
+                 ]
+if not os.path.exists(folder):
+    os.mkdir(folder)
+else:
+    shutil.rmtree(folder)
+    import time
+    time.sleep(1)
+    os.mkdir(folder)
 
 class tcltk(Tkinter.Tk):
     def __init__(self):
         Tkinter.Tk.__init__(self, None, None, 'Tk', 0)
 tcltk()
 from lib.dut import dut
-a =dut('base', {}, log_path='../log')
+a =dut('ssh', type='ssh',port=22, log_path='../log')
 from lib.TELNET import TELNET
 try:
     wt = TELNET('a', log_path='../log')
@@ -37,7 +68,28 @@ except:
 #     ti = TclInter('a',{}, logpath='../test/log')
 # except:
 #     pass
+eggdir = r'C:\Python27\Lib\site-packages\paramiko-1.16.0-py2.7.egg!\paramiko'
+import pkg_resources
+eggs = pkg_resources.require("paramiko")#TurboGears
 
+for egg in eggs:
+   if os.path.isdir(egg.location):
+       sys.path.insert(0, egg.location)
+       continue
+   unpack_archive(egg.location, eggdir)
+eggpacks = set()
+eggspth = open("build/eggs.pth", "w")
+for egg in eggs:
+    print egg
+    eggspth.write(os.path.basename(egg.location))
+    eggspth.write("\n")
+    try:
+        eggpacks.update(egg.get_metadata_lines("top_level.txt"))
+    except Exception as e :
+        print(e)
+eggspth.close()
+
+#eggpacks.remove("pkg_resources")
 
 
 def compressFile(infile,outfile):
@@ -166,53 +218,7 @@ except:
     print(traceback.format_exc())
 
 
-folder = '../dist'
-if not os.path.exists(folder):
-    os.mkdir(folder)
-else:
-    shutil.rmtree(folder)
-    os.mkdir(folder)
-for op in sys.argv:
-
-    indexOfd = op.find('-d')
-    if indexOfd !=-1:
-        folder = sys.argv[sys.argv.index(op)+1]
-        break
-
-
-
-
-import shutil
-targetDir = os.sep.join([folder, './dist'])
-excludedFolder =['sessions',
-                 'src',
-                 'lib',
-                 ]
-
-
-
-
-for file in os.listdir(folder):
-
-    sourceFile = os.path.join(folder,  file)
-    targetFile = os.path.join(targetDir,  file)
-    #cover the files
-    if os.path.basename(sourceFile)=='LICENSE.TXT':
-        continue
-    if os.path.isfile(sourceFile):
-        try:
-            filename = os.path.basename(sourceFile)
-            if filename not in ['ImportModule.exe']:
-                open(targetFile, "wb").write(open(sourceFile, "rb").read())
-            os.remove(sourceFile)
-            pass
-        except:
-            pass
-    elif os.path.isdir(sourceFile) and os.path.basename(sourceFile) not in excludedFolder:
-        try:
-            shutil.rmtree(targetFile)
-        except:
-            pass
-        #if os.path.basename(sourceFile) not in ['dist']:
-        shutil.copytree(sourceFile, targetFile)
-        shutil.rmtree(sourceFile)
+import zipfile
+zip_ref = zipfile.ZipFile('./build_packages/build_package.zip', 'r')
+zip_ref.extractall(folder)
+zip_ref.close()
