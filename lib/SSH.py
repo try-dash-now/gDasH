@@ -25,7 +25,8 @@ __doc__ = '''
 created 5/17/2017
 '''
 
-#todo: 2017-08-25 can't find paramiko in executable version
+#fixed:2017-08-25 2017-08-25 can't find paramiko in executable version
+#solved by copy unzip packages to distribute folder
 # No module named paramiko,Traceback (most recent call last):
 # 	  File "lib\dut.pyo", line 126, in open
 # 	  File "lib\SSH.pyo", line 29, in <module>
