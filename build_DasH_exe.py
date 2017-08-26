@@ -169,6 +169,8 @@ def copy_dir(dir_path, copy_py=False):
             print(f)
             if f.endswith('.py') and copy_py==False:
                 continue
+            elif f.endswith('.pyc'):
+                continue
             yield os.path.join(dirpath.split(os.path.sep, 1)[1], f)
 try:
     dist = setup(
