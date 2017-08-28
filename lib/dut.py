@@ -148,6 +148,9 @@ class dut(object):
                     th.start()
                     self.sleep(0.5)
                     self.login(login_step)
+                    #to make sure the connection is stable, not broken
+                    self.sleep(interval/2)
+                    self.step('','.+')
                     break
                 except Exception as e :
                     if counter< retry:
@@ -223,7 +226,8 @@ buffer:
                     if not_want_to_find:
                         success=True
                         break
-
+                if not success:
+                    raise Exception('failed in dut.step')
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
                     error(format_exc())
@@ -237,15 +241,20 @@ buffer:
         return match, buffer
     def sleep(self, sleep_time):
         #done: change condition of sleep, calculate end-time, compare current time to end-time
+        #info('{} sleeping {}:'.format(self.name, sleep_time))
         if self.session_type == 'echo':
             time.sleep(0.001)
         elif sleep_time>1.0:
             start_time = datetime.datetime.now()
             now = datetime.datetime.now()
-            delta = now -start_time
-            while delta.total_seconds() <= sleep_time and self.session_status:
-                delta = datetime.datetime.now()-start_time
-                time.sleep(0.1)
+            delta_seconds = (now -start_time).total_seconds()
+            counter = 0
+            while delta_seconds <= sleep_time and self.session_status:
+                delta_seconds = (datetime.datetime.now()-start_time).total_seconds()
+                counter+=1
+                if counter%10==0:
+                    info('{} sleep {}/{}'.format(self.name ,delta_seconds,sleep_time))
+                time.sleep(1)
         else:
             time.sleep(sleep_time)
 
