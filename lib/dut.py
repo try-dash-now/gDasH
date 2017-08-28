@@ -53,11 +53,12 @@ class dut(object):
     command_respone_json = None # a dict to record the interaction procedure
     search_buffer =None
     display_buffer =None
-    search_buffer_locker =None
+
     display_buffer_locker =None
     session_status = None
     login_done =False
     write_locker = None
+    read_locker = None
     log_path = None
     log_file =None
     last_cmd_time_stamp= None
@@ -92,11 +93,15 @@ class dut(object):
         self.new_line_during_login = new_line_during_login
         self.init_file_name = init_file_name
         self.open()
-    def open(self):
+    def open(self, retry =10, interval= 60):
         if self.session:
             #self.session_status=False
             del self.session
             self.session=None
+            if self.read_locker.locked():
+                self.read_locker.release()
+            if self.write_locker.locked():
+                self.write_locker.release()
             self.sleep(0.1)
 
         self.session_status = True
@@ -107,8 +112,9 @@ class dut(object):
             else:
                 self.log_path = os.path.abspath('../log')
             self.open_log_file()
-            self.search_buffer_locker=  threading.Lock()
+
             self.write_locker=  threading.Lock()
+            self.read_locker=  threading.Lock()
             self.display_buffer_locker = threading.Lock()
             th =threading.Thread(target=self.read_data)
 
@@ -119,25 +125,37 @@ class dut(object):
             self.login_done=False
             name = self.name
             type = self.type
-            if type == 'echo' or init_file_name !=None:
-                from lib.echo import echo
-                self.session = echo(name, init_file_name)
-            elif type.lower() =='ssh':
-                from lib.SSH import SSH
-                self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
-            elif type.lower() in ['telnet']:
-                from lib.TELNET import  TELNET
-                self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
-            if isinstance(login_step,(list, tuple)):
-                pass
-            elif login_step is None :#login_step.strip().lower() in ['none',None, "''", '""']:
-                self.login_steps =[]
-            elif  isinstance(login_step, basestring):
-                if login_step.strip().lower() in ['none',None, "''", '""']:
-                    self.login_steps=[]
-            th.start()
-            self.sleep(0.1)
-            self.login(login_step)
+            counter = 0
+            while counter<retry:
+                counter+=1
+                try:
+                    if type == 'echo' or init_file_name !=None:
+                        from lib.echo import echo
+                        self.session = echo(name, init_file_name)
+                    elif type.lower() =='ssh':
+                        from lib.SSH import SSH
+                        self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
+                    elif type.lower() in ['telnet']:
+                        from lib.TELNET import  TELNET
+                        self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
+                    if isinstance(login_step,(list, tuple)):
+                        pass
+                    elif login_step is None :#login_step.strip().lower() in ['none',None, "''", '""']:
+                        self.login_steps =[]
+                    elif  isinstance(login_step, basestring):
+                        if login_step.strip().lower() in ['none',None, "''", '""']:
+                            self.login_steps=[]
+                    th.start()
+                    self.sleep(0.5)
+                    self.login(login_step)
+                    break
+                except Exception as e :
+                    if counter< retry:
+                        info('failed to login {}'.format(self.name), retry= retry, counter = counter, interval = interval)
+                        self.sleep(interval)
+                    else:
+                        raise e
+
         except Exception as e:
             import traceback
             error_msg =traceback.format_exc(e)
@@ -179,7 +197,7 @@ buffer:
             try:
                 resp = self.write(command, ctrl)
                 time.sleep(0.001)
-                self.add_data_to_search_buffer(resp)
+                #self.add_data_to_search_buffer(resp)
                 if no_wait:
                     pass
                 else:
@@ -211,20 +229,25 @@ buffer:
                     error(format_exc())
                     e.message=error_message
                     error(pprint( e.message))
-                    #raise
+                    raise e
         return  success, match, buffer
     def match_in_buffer(self, pattern):
         buffer = self.search_buffer
         match = re.search(pattern,buffer)
         return match, buffer
     def sleep(self, sleep_time):
+        #done: change condition of sleep, calculate end-time, compare current time to end-time
         if self.session_type == 'echo':
             time.sleep(0.001)
-        else:
-            count = int(sleep_time/0.1) if sleep_time >0.1 else 0.1
-            while count >0 and self.session_status:
-                count -=1
+        elif sleep_time>1.0:
+            start_time = datetime.datetime.now()
+            now = datetime.datetime.now()
+            delta = now -start_time
+            while delta.total_seconds() <= sleep_time and self.session_status:
+                delta = datetime.datetime.now()-start_time
                 time.sleep(0.1)
+        else:
+            time.sleep(sleep_time)
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
@@ -264,6 +287,7 @@ buffer:
             if not_want_to_find:
                 success = True
         return success,match,buffer
+
     @dut_exception_handler
     def login(self, login_step_file=None, retry=1):
         login_steps =[]
@@ -322,7 +346,7 @@ buffer:
                 error(e)
                 self.session=None
                 self.session_status = False
-                pass
+                self.read_locker.release()
             try:
                 if self.log_file:
                     self.log_file.close()
@@ -334,23 +358,25 @@ buffer:
         self.write_locker.release()
         time.sleep(0.001)
 
-    def add_data_to_search_buffer(self,data):
-        if data in [None]:
-            data=''
-        if len(data):
-            self.search_buffer_locker.acquire()
-            self.search_buffer+='{}'.format(data)
-            self.search_buffer_locker.release()
+    def add_data_to_search_buffer(self, data):
 
-            self.display_buffer_locker.acquire()
+        #self.search_buffer_locker.acquire()
+        #self.display_buffer_locker.acquire()
+        #self.read_locker.acquire()
+        #data = self.read()
+        if len(data):
+            self.search_buffer+='{}'.format(data)
             self.display_buffer+='{}'.format(data)
-            self.display_buffer_locker.release()
+        #self.read_locker.release()
+        #self.search_buffer_locker.release()
+        #self.display_buffer_locker.release()
 
     def reset_search_buffer(self):
-        self.search_buffer_locker.acquire()
+        if not self.read_locker.locked():
+            self.read_locker.acquire()
         self.search_buffer=''
         debug('{}:reset search buffer'.format(self.name))
-        self.search_buffer_locker.release()
+        self.read_locker.release()
     def read_display_buffer(self, clear=True):
         self.display_buffer_locker.acquire()
         response = self.display_buffer
@@ -375,14 +401,7 @@ buffer:
                     self.last_cmd_time_stamp = current_time
                     self.write("\r\n")
                 data = self.read()
-                self.add_data_to_search_buffer(data)
-                try:
-                    if self.log_file:
-                        self.log_file.write(data)
-                except Exception as e:
-                    error('dut {}:{}'.format(self.name, e))
-                    self.log_file=None
-                time.sleep(0.001)
+                time.sleep(0.1)
             except  Exception as e:
                 if str(e) in ['error: Socket is closed']:
                     self.session_status =False
@@ -417,13 +436,29 @@ buffer:
     def read(self):
         resp =''
         if self.session_status and self.session:
+            self.read_locker.acquire()
+            debug('read::read_locker acquired')
             try:
+                debug('read::session reading')
                 resp =self.session.read()
+                debug('read::session read complete')
+                self.add_data_to_search_buffer(resp)
+                debug('read::added to search_buffer')
+                try:
+                    if self.log_file:
+                        self.log_file.write(resp)
+                        self.log_file.flush()
+                except Exception as e:
+                    error('dut {}:{}'.format(self.name, e))
+                    self.log_file=None
             except Exception as e:
                 error('session {}'.format(self.name))
                 error(pprint(format_exc()))
-            if len(resp.strip()):
+            if self.read_locker.locked():
+                self.read_locker.release()
 
+            debug('read::read_locker released')
+            if len(resp.strip()):
                 debug('-'*20+'read start'+'-'*20+'\n')
                 debug('{}'.format(resp)+os.linesep)
                 debug(''+'-'*20+'read   end'+'-'*20+'\n')
