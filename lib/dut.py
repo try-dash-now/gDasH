@@ -233,7 +233,9 @@ buffer:
                     error(format_exc())
                     e.message=error_message
                     error(pprint( e.message))
-                    raise e
+                    import traceback
+
+                    raise Exception(traceback.format_exc())
         return  success, match, buffer
     def match_in_buffer(self, pattern):
         buffer = self.search_buffer
@@ -253,7 +255,7 @@ buffer:
                 delta_seconds = (datetime.datetime.now()-start_time).total_seconds()
                 counter+=1
                 if counter%10==0:
-                    info('{} sleep {:02.1f}% {}/{} '.format(self.name , 100*delta_seconds/sleep_time,delta_seconds,sleep_time))
+                    info('{} sleep {:02.1f}% {:.1f}/{} '.format(self.name , 100*delta_seconds/sleep_time,delta_seconds,sleep_time))
                 time.sleep(1)
         else:
             time.sleep(sleep_time)
