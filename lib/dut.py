@@ -253,7 +253,7 @@ buffer:
                 delta_seconds = (datetime.datetime.now()-start_time).total_seconds()
                 counter+=1
                 if counter%10==0:
-                    info('{} sleep {}/{}'.format(self.name ,delta_seconds,sleep_time))
+                    info('{} sleep {}/{} {}%'.format(self.name ,delta_seconds,sleep_time, 100*delta_seconds/sleep_time))
                 time.sleep(1)
         else:
             time.sleep(sleep_time)
@@ -381,11 +381,14 @@ buffer:
         #self.display_buffer_locker.release()
 
     def reset_search_buffer(self):
-        if not self.read_locker.locked():
-            self.read_locker.acquire()
+        #if not self.read_locker.locked():
+        #    self.read_locker.acquire()
         self.search_buffer=''
         debug('{}:reset search buffer'.format(self.name))
-        self.read_locker.release()
+        #if self.read_locker.locked():
+           # self.read_locker.acquire()
+
+        #   self.read_locker.release()
     def read_display_buffer(self, clear=True):
         self.display_buffer_locker.acquire()
         response = self.display_buffer
@@ -465,7 +468,6 @@ buffer:
                 error(pprint(format_exc()))
             if self.read_locker.locked():
                 self.read_locker.release()
-
             debug('read::read_locker released')
             if len(resp.strip()):
                 debug('-'*20+'read start'+'-'*20+'\n')
