@@ -214,7 +214,7 @@ def combine_args(string = [], kwargs ={}):
     if type(string)in [type(''), type(1), type(1.0)]:
         stirng = [string]
     str = ','.join(['{}'.format(x) for x in string])
-    str+='\t\n'+''.join(['{}\t\t\t=\t{}\n'.format(x, kwargs[x]) for x in sorted(kwargs)])
+    str+='\t\n'+''.join(['{}\t\t\t\t=\t{}\n'.format(x, kwargs[x]) for x in sorted(kwargs)])
     return str
 def info(*string, **kwargs):
     str = combine_args(string,kwargs )

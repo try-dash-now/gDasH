@@ -65,6 +65,7 @@ class dut(object):
     new_line_during_login =None
     init_file_name =None
     type =None
+    first_login = True
     def __del__(self):
         if self.session:
             self.close_session()
@@ -149,8 +150,11 @@ class dut(object):
                     self.sleep(0.5)
                     self.login(login_step)
                     #to make sure the connection is stable, not broken
-                    self.sleep(interval/2)
-                    self.step('','.+')
+                    if not self.first_login:
+                        self.sleep(interval/2)
+                        self.step('','.+')
+                        self.first_login = False
+
                     break
                 except Exception as e :
                     if counter< retry:
@@ -230,10 +234,12 @@ buffer:
                     raise Exception('failed in dut.step')
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
-                    error(format_exc())
-                    e.message=error_message
-                    error(pprint( e.message))
                     import traceback
+                    error_msg = "{}\n{}".format(traceback.format_exc(),error_message)
+                    error(error_msg)
+                    e.message=e.message+error_message
+                    #error(pprint( e.message))
+
 
                     raise Exception(traceback.format_exc())
         return  success, match, buffer

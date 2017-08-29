@@ -2,3 +2,5 @@
 requests
 numpy
 matplotlib
+selenium
+install geckodriver for firefox
