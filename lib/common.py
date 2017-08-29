@@ -206,7 +206,7 @@ def log(string, info_type_index=3, depth = 2):
 
     str = '{}:{}\n'.format(prefix,new_string)
     if TRACE_LEVEL<=info_type_index or info_type_index==INFO_LEVEL:
-        print(str)
+        print(str.strip())
     return  str
 def combine_args(string = [], kwargs ={}):
     if string is None:

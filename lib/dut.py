@@ -253,7 +253,7 @@ buffer:
                 delta_seconds = (datetime.datetime.now()-start_time).total_seconds()
                 counter+=1
                 if counter%10==0:
-                    info('{} sleep {}/{} {}%'.format(self.name ,delta_seconds,sleep_time, 100*delta_seconds/sleep_time))
+                    info('{} sleep {}/{} {:02.1f}%'.format(self.name ,delta_seconds,sleep_time, 100*delta_seconds/sleep_time))
                 time.sleep(1)
         else:
             time.sleep(sleep_time)
