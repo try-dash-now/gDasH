@@ -213,8 +213,14 @@ def combine_args(string = [], kwargs ={}):
         string = ''
     if type(string)in [type(''), type(1), type(1.0)]:
         stirng = [string]
+
+    format_string='{n: <20}= {v}\n'
+    if len(kwargs)>0:
+        new_arg_list = list(kwargs)+['{}'.format(x) for x in string]
+        max_len = len(max(new_arg_list, key= len))+1
+        format_string = '{n: <%d}= {v}\n'%(max_len)
     str = ','.join(['{}'.format(x) for x in string])
-    str+='\t\n'+''.join(['{}\t\t\t\t=\t{}\n'.format(x, kwargs[x]) for x in sorted(kwargs)])
+    str+='\t\n'+''.join([format_string.format(n=x, v=kwargs[x]) for x in sorted(kwargs)])
     return str
 def info(*string, **kwargs):
     str = combine_args(string,kwargs )
