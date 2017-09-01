@@ -56,7 +56,7 @@ class tcltk(Tkinter.Tk):
         Tkinter.Tk.__init__(self, None, None, 'Tk', 0)
 tcltk()
 from lib.dut import dut
-a =dut('ssh', type='ssh',port=22, log_path='../log')
+a =dut('ssh', type='ssh',port=22, log_path='../log' ,retry_login = 0, retry_login_interval= 1)
 from lib.TELNET import TELNET
 try:
     wt = TELNET('a', log_path='../log')

@@ -224,16 +224,16 @@ def combine_args(string = [], kwargs ={}):
     return str
 def info(*string, **kwargs):
     str = combine_args(string,kwargs )
-    log(str, INFO_LEVEL, 3)
+    return log(str, INFO_LEVEL, 3)
 def error(*string, **kwargs):
     str = combine_args(string,kwargs )
-    log(str, ERRO_LEVEL, 3)
+    return  log(str, ERRO_LEVEL, 3)
 def debug(*string, **kwargs):
     str = combine_args(string,kwargs )
-    log(str, DEBUG_LEVEL, 3)
+    return log(str, DEBUG_LEVEL, 3)
 def warn(*string, **kwargs):
     str = combine_args(string,kwargs )
-    log(str, WARN_LEVEL, 3)
+    return  log(str, WARN_LEVEL, 3)
 
 def reload_module(instance, function_name):
     parents = type.mro(type(instance))[:-1]

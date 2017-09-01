@@ -38,7 +38,7 @@ from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
-from lib.common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME
+from common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME
 import os
 class dut(object):
     name=None
@@ -66,11 +66,13 @@ class dut(object):
     init_file_name =None
     type =None
     first_login = True
+    retry_login= 10
+    retry_login_interval = 60
     def __del__(self):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.type = type
         if login_step in [None, '']:
@@ -79,6 +81,8 @@ class dut(object):
             pass
         else:
             login_step =None
+        self.retry_login = retry_login
+        self.retry_login_interval = retry_login_interval
         self.login_steps = login_step
         self.session_type = type
         self.name = name
@@ -93,7 +97,7 @@ class dut(object):
         self.display_buffer = ''
         self.new_line_during_login = new_line_during_login
         self.init_file_name = init_file_name
-        self.open()
+        self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         if self.session:
             #self.session_status=False
@@ -170,7 +174,7 @@ class dut(object):
             self.session_status =False
 
 
-    def step(self,command, expect='.*', time_out=30, total_try =1, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.I|re.M):
+    def step(self,command, expect='.*', time_out=30, total_try =3, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.I|re.M):
         error_info = None
         init_total_try = total_try
         total_try= int(total_try)
@@ -214,10 +218,10 @@ buffer:
                     brief_buffer =buffer[:128]+'\n...\n'+buffer[-128:]
                 else:
                     brief_buffer = buffer
-                info(cmd = command, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer)
+                display_str = info(cmd = command, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer, total_try=total_try)
                 if success:
                     if not_want_to_find:
-                        raise Exception(error_message)
+                        success=False
                     else:
                         break
                 elif total_try>0:
@@ -231,13 +235,13 @@ buffer:
                         success=True
                         break
                 if not success:
-                    raise Exception('failed in dut.step')
+                    raise Exception('failed in dut.step: {}'.format(display_str))
             except Exception as e:
                 if total_try ==0:#no more chance to try again, the last chance
                     import traceback
                     error_msg = "{}\n{}".format(traceback.format_exc(),error_message)
                     error(error_msg)
-                    e.message=e.message+error_message
+                    e.message=e.message+'\n'+error_message
                     #error(pprint( e.message))
 
 
