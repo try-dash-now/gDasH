@@ -96,7 +96,7 @@ def load_bench(bench_file):
                     dict_attributes = {}
                     for attribute in row[1:]:
                         a_name,a_value = attribute.split('=')
-                        dict_attributes[a_name.strip()]=a_value.strip()
+                        dict_attributes[a_name.strip()]=a_value.strip().replace('\\r', '\r').replace('\\n','\n')
                     dict_bench[os.path.basename(bench_file)][name]=dict_attributes
     return dict_bench
 
