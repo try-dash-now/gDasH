@@ -33,7 +33,7 @@ provide functions
 #done: dut.add_data_to_search_buffer --function_step completion, add stream_buffer, search_index, to support search in buffer check
 #todo: function_step defines the output format:
 #done: 2017-09-02, build_DasH_exe.py to do that option for this script is '--verbose py2exe -d ../dist'.  build executable(exe) file for windows user, allow to distribute it without python installation
-
+#fixed: if dut is not reachable, it will hang the gDasH gui
 from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
@@ -97,7 +97,9 @@ class dut(object):
         self.display_buffer = ''
         self.new_line_during_login = new_line_during_login
         self.init_file_name = init_file_name
-        self.open(retry= self.retry_login, interval=60)
+        th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
+        th.start()
+        #self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         if self.session:
             #self.session_status=False
