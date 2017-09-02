@@ -32,7 +32,7 @@ provide functions
 '''
 #done: dut.add_data_to_search_buffer --function_step completion, add stream_buffer, search_index, to support search in buffer check
 #todo: function_step defines the output format:
-#todo: build executable(exe) file for windows user, allow to distribute it without python installation
+#done: 2017-09-02, build_DasH_exe.py to do that option for this script is '--verbose py2exe -d ../dist'.  build executable(exe) file for windows user, allow to distribute it without python installation
 
 from pprint import pprint
 from traceback import format_exc
@@ -220,10 +220,7 @@ buffer:
                     brief_buffer = buffer
                 display_str = info(cmd = command, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer, total_try=total_try)
                 if success:
-                    if not_want_to_find:
-                        success=False
-                    else:
-                        break
+                    break
                 elif total_try>0:
                     if not_want_to_find:
                         continue
@@ -477,6 +474,8 @@ buffer:
                         self.log_file.flush()
                 except Exception as e:
                     error('dut {}:{}'.format(self.name, e))
+                    self.log_file.flush()
+                    self.log_file.close()
                     self.log_file=None
             except Exception as e:
                 error('session {}'.format(self.name))
