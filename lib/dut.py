@@ -184,16 +184,16 @@ class dut(object):
         success ,match, buffer = False, None, ''
         error_message="""
     {dut_name}.step:
-    command =>{cmd},
-    expect  =>{exp},
-    time_out         : {time_out},
-    total_try        : {total_try},
-    ctrl             : {ctrl},
-    not_want_to_find : {not_want},
-    no_wait          : {no_wait},
+    command =>{cmd}
+    expect  =>{exp}
+    time_out         : {time_out}
+    total_try        : {total_try}
+    ctrl             : {ctrl}
+    not_want_to_find : {not_want}
+    no_wait          : {no_wait}
     flags            :{flags}
-buffer:
-{buffer}
+    buffer           :
+    {buffer}
     """.format(
                         dut_name = self.name,
                         cmd = command,
@@ -206,8 +206,9 @@ buffer:
                         flags = flags,
                         buffer = buffer
                     )
-        while total_try:
-            total_try -= 1
+        remaining= total_try
+        while remaining:
+            remaining -= 1
             try:
                 resp = self.write(command, ctrl)
                 time.sleep(0.001)
@@ -221,7 +222,7 @@ buffer:
                     brief_buffer =buffer[:128]+'\n...\n'+buffer[-128:]
                 else:
                     brief_buffer = buffer
-                display_str = info(cmd = command, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer, total_try=total_try)
+                display_str = info(cmd = command, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer, remaining = remaining,total_try=total_try)
                 if success:
                     break
                 elif total_try>0:
@@ -240,7 +241,7 @@ buffer:
                 if total_try ==0:#no more chance to try again, the last chance
                     import traceback
                     error_msg = "{}\n{}".format(traceback.format_exc(),error_message)
-                    error(error_msg)
+                    #error(error_msg)
                     e.message=e.message+'\n'+error_message
                     #error(pprint( e.message))
 
