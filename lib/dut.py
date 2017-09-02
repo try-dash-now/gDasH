@@ -99,6 +99,7 @@ class dut(object):
         self.init_file_name = init_file_name
         th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
         th.start()
+        self.sleep(0.1)
         #self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         if self.session:
@@ -363,7 +364,7 @@ buffer:
                     self.session.write('exit\r\n')
                     #self.write('exit')
             except Exception as e:
-                error(e)
+                error('dut({}): {}'.format(self.name, e))
                 self.session=None
                 self.session_status = False
                 self.read_locker.release()
