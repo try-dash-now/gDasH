@@ -68,13 +68,15 @@ class dut(object):
     first_login = True
     retry_login= 10
     retry_login_interval = 60
+    prompt= None
     def __del__(self):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.type = type
+        self.prompt = prompt
         if login_step in [None, '']:
             login_step = None
         if isinstance(login_step, (basestring)) and os.path.exists(login_step):
@@ -97,9 +99,12 @@ class dut(object):
         self.display_buffer = ''
         self.new_line_during_login = new_line_during_login
         self.init_file_name = init_file_name
+        self.write_locker=  threading.Lock()
+        self.read_locker=  threading.Lock()
         th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
         th.start()
-        self.sleep(0.1)
+        self.sleep(0.5)
+        th.join()
         #self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         if self.session:
@@ -121,8 +126,6 @@ class dut(object):
                 self.log_path = os.path.abspath('../log')
             self.open_log_file()
 
-            self.write_locker=  threading.Lock()
-            self.read_locker=  threading.Lock()
             self.display_buffer_locker = threading.Lock()
             th =threading.Thread(target=self.read_data)
 
@@ -210,13 +213,13 @@ class dut(object):
         while remaining:
             remaining -= 1
             try:
-                resp = self.write(command, ctrl)
-                time.sleep(0.001)
                 #self.add_data_to_search_buffer(resp)
                 if no_wait:
                     pass
                 else:
                     self.reset_search_buffer()
+                resp = self.write(command, ctrl)
+                time.sleep(0.001)
                 success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
                 if len(buffer)>256:
                     brief_buffer =buffer[:128]+'\n...\n'+buffer[-128:]
@@ -225,20 +228,11 @@ class dut(object):
                 display_str = info(cmd = command, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer, remaining = remaining,total_try=total_try)
                 if success:
                     break
-                elif total_try>0:
-                    if not_want_to_find:
-                        continue
-                    else:
-                        success=False
-                        #raise Exception(error_message)
-                else:
-                    if not_want_to_find:
-                        success=True
-                        break
-                if not success:
-                    raise Exception('failed in dut.step: {}'.format(display_str))
+                elif remaining>0:
+                    continue
+                raise Exception('failed in dut.step: {}'.format(display_str))
             except Exception as e:
-                if total_try ==0:#no more chance to try again, the last chance
+                if remaining ==0:#no more chance to try again, the last chance
                     import traceback
                     error_msg = "{}\n{}".format(traceback.format_exc(),error_message)
                     #error(error_msg)
@@ -341,7 +335,8 @@ class dut(object):
         self.login_done =True
 
     def close_session(self):
-        self.write_locker.acquire()
+        if self.write_locker:
+            self.write_locker.acquire()
         if self.session_status: #try to avoid to call this function twice
             info('session {}:close_session called Closing!!!'.format(self.name))
 
