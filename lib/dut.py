@@ -172,6 +172,9 @@ class dut(object):
                         info('failed to login {}'.format(self.name), retry= retry, counter = counter, interval = interval)
                         self.sleep(interval)
                     else:
+                        import traceback
+                        e.message +=traceback.format_exc()
+                        error(e.message)
                         raise e
 
         except Exception as e:
