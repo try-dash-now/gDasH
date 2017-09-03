@@ -102,10 +102,10 @@ class dut(object):
         self.write_locker=  threading.Lock()
         self.read_locker=  threading.Lock()
         th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
-        th.start()
+        #th.start()
         self.sleep(0.5)
-        th.join()
-        #self.open(retry= self.retry_login, interval=60)
+        #th.join()
+        self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         if self.session:
             #self.session_status=False
