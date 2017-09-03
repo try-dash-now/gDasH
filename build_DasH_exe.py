@@ -23,6 +23,12 @@ import os
 import glob
 from py2exe.build_exe import py2exe as build_exe
 import zipfile
+import sys
+if len(sys.argv)<2:
+    sys.argv.append('py2exe')
+    sys.argv.append('-d')
+    sys.argv.append('../dist')
+
 import paramiko
 paramiko.SSHClient()
 #import zeep
@@ -177,6 +183,7 @@ try:
        # windows = ['./gDasH.py'],#'../bin/dash.py'
         windows =[{"script": "./gDasH.py", "icon_resources": [(1, "./gui/dash.bmp")] }],
         console=[
+                    "./script_runner.py",
                     # "../test/cr.py",
                     # "../test/sr.py",
                     # "../test/ia.py",

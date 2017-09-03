@@ -7,10 +7,10 @@ if __name__ == "__main__":
     ini_file = './gDasH.ini'
     ini_setting = ConfigParser.ConfigParser()
     ini_setting.read(ini_file)
-    src_path = os.path.abspath(ini_setting.get('dash','src_path'))
-    lib_path = os.path.abspath(ini_setting.get('dash','lib_path'))
-    log_path = os.path.abspath(ini_setting.get('dash','log_path'))
-    paths_of_libs = [log_path, src_path,lib_path]
+    src_path = os.path.abspath(ini_setting.get('dash','src_path')).replace(',',';').split(';')
+    lib_path = os.path.abspath(ini_setting.get('dash','lib_path')).replace(',',';').split(';')
+    log_path = os.path.abspath(ini_setting.get('dash','log_path')).replace(',',';').split(';')
+    paths_of_libs = log_path+src_path+lib_path
     for p in paths_of_libs:
         path = os.path.abspath(p)
         if os.path.exists(path):
@@ -27,8 +27,8 @@ if __name__ == "__main__":
     else:
         script_name = sys.argv[1]
         argvs = sys.argv[1:]
-        cmd_line = ' '.join(sys.argv[1:])
-        pp = subprocess.Popen(args = cmd_line ,  shell =True)
+        cmd_line = 'python '+ ''.join(sys.argv[1:])
+        pp = subprocess.Popen(args = cmd_line ,  shell =True, stdin=sys.stdin,stdout=sys.stdout)
         import time
         ChildRuning = True
         while ChildRuning:
@@ -41,4 +41,4 @@ if __name__ == "__main__":
         print('{} is completed with returncode ={}'.format(cmd_line, pp.returncode))
 
         returncode = pp.returncode
-        exit(returncode)
+        sys.exit(returncode)
