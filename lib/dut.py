@@ -128,6 +128,7 @@ class dut(object):
 
             self.display_buffer_locker = threading.Lock()
             th =threading.Thread(target=self.read_data)
+            self.sleep(1)
 
             new_line_during_login = self.new_line_during_login
             self.new_line_during_login = new_line_during_login
