@@ -282,13 +282,19 @@ class dut(object):
         success= False
         while True:
             match, buffer = self.match_in_buffer(pat)
-            if match:
-                if not_want_to_find:
+            if not_want_to_find:
+                if match:
                     success = False
                 else:
                     success = True
-                break #quit the while
+                    break #quit the while
             else: #not find the pattern
+                if match:
+                    success =True
+                    break
+                else:
+                    success = False
+            if success ==False:
                 now = datetime.datetime.now()
                 remain_time = end_time - now
                 remain_seconds = remain_time.total_seconds()
@@ -300,12 +306,6 @@ class dut(object):
                 continue
             else:
                 break
-        if success:
-            if not_want_to_find:
-                success = False
-        else:
-            if not_want_to_find:
-                success = True
         return success,match,buffer
 
     @dut_exception_handler
@@ -445,6 +445,8 @@ class dut(object):
             new_line =self.new_line
             if not self.login_done:
                 new_line = self.new_line_during_login
+            elif self.new_line:
+                new_line = self.new_line
             self.write_locker.acquire()
             if ctrl:
                 ascii = ord(cmd[0]) & 0x1f
