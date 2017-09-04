@@ -27,7 +27,11 @@ if __name__ == "__main__":
     else:
         script_name = sys.argv[1]
         argvs = sys.argv[1:]
-        cmd_line = 'python '+ ' '.join(sys.argv[1:])
+        if sys.argv[0].find('.exe')!=-1:
+            opt = ''
+        else:
+            opt = ''
+        cmd_line = 'python {}'.format(opt)+ ' '.join(sys.argv[1:])
         pp = subprocess.Popen(args = cmd_line ,  shell =True, stdin=sys.stdin,stdout=sys.stdout)
         import time
         ChildRuning = True

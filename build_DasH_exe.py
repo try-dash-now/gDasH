@@ -206,7 +206,7 @@ try:
                           "unbuffered": True,
 
                           #"compressed": 2,
-                          "optimize": 2,
+                          "optimize": 0,#2,#no optimaze it, create .pyc files
                           "includes":[],# includes,
                           "excludes":[],# excludes,
                           "packages": [],#packages,
