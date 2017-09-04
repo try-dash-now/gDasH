@@ -286,3 +286,7 @@ def send_mail_smtp_without_login(USERNAME, PASSWORD, TO, SUBJECT, TEXT, SERVER, 
         mailServer.sendmail(FROM, recipient,MAIL)
         print(MAIL)
     mailServer.close()
+def run_script(script_name, args=[]):
+    import sys
+    sys.argv= [script_name]+args
+    execfile(script_name,globals(), locals() )
