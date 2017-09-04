@@ -423,7 +423,12 @@ class dut(object):
                 if (current_time-last_update_time).total_seconds()> max_idle_time:
                     last_update_time = current_time
                     self.last_cmd_time_stamp = current_time
-                    self.write("\r\n")
+                    new_line = '\r\n'
+                    if not self.login_done:
+                        new_line = self.new_line_during_login
+                    elif self.new_line:
+                        new_line = self.new_line
+                    self.write(new_line)
                 data = self.read()
                 time.sleep(0.1)
             except  Exception as e:
