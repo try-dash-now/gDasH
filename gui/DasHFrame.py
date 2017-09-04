@@ -80,8 +80,15 @@ class FileEditor(wx.Panel):
     sessions_node =None
     function_node =None
     case_suite_node =None
+    full_file_name = None
+    file_instance = None
     def on_close(self):
-        pass
+        if self.full_file_name:
+            data = self.editor.GetValue()
+            with open(self.full_file_name, 'w') as f:
+                f.write(data)
+                f.flush()
+
         #todo: handle close tab in edit_area
     def __init__(self, parent, title='pageOne', type ='grid'):
         wx.Panel.__init__(self, parent)
@@ -92,6 +99,7 @@ class FileEditor(wx.Panel):
         if type in ['text']:
 
             self.editor = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+
         else:
             self.editor= gridlib.Grid(self)
             self.editor.CreateGrid(50, 5)
@@ -262,9 +270,11 @@ class DasHFrame(MainFrame):#wx.Frame
 
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
-            if closing_page.session:
-                name = closing_page.session.name
-                self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
+            if isinstance(closing_page, (SessionTab)):
+                if closing_page.session:
+                    name = closing_page.session.name
+                    self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
+
             closing_page.on_close()
         sys.stderr =self.redir.old_stderr
         sys.stdout = self.redir.old_stdout
@@ -274,13 +284,15 @@ class DasHFrame(MainFrame):#wx.Frame
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
         closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
         closing_page.on_close()
-        ses_name = closing_page.name
-        self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
-        if globals().has_key(ses_name):
-            #g = dict(globals())
-            #globals()[ses_name]=None
-            #del g[ses_name]
-            del globals()[ses_name]
+        if isinstance(closing_page, (SessionTab)):
+            ses_name = closing_page.name
+            self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
+            if globals().has_key(ses_name):
+                #g = dict(globals())
+                #globals()[ses_name]=None
+                #del g[ses_name]
+                del globals()[ses_name]
+
 
 
     def add_item_to_subfolder_in_tree(self,node):
@@ -331,7 +343,10 @@ class DasHFrame(MainFrame):#wx.Frame
             else:
                 self.case_suite_page.ExpandAllChildren(ht_item)
         else:
-            type = 'grid'
+            if item_name.lower() in ['.csv', '.xlsx','.xls']:
+                type = 'grid'
+            else:
+                type = 'text'
             new_page = FileEditor(self.edit_area, 'a', type= type)
             self.edit_area.AddPage(new_page, item_name)
             index = self.edit_area.GetPageIndex(new_page)
