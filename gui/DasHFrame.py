@@ -431,19 +431,19 @@ class DasHFrame(MainFrame):#wx.Frame
             index = self.edit_area.GetPageIndex(new_page)
             self.edit_area.SetSelection(index)
             self.tabs_in_edit_area.append(ses_name)
-            self.sessions_alive.update({ses_name: new_page.session})
-            self.add_new_session_to_globals(new_page.session, '{}'.format(session_attribute.Data['attribute']))
+            self.sessions_alive.update({ses_name: new_page.name})
+            self.add_new_session_to_globals(new_page, '{}'.format(session_attribute.Data['attribute']))
             #globals().update({ses_name: new_page.session})
 
-    def add_new_session_to_globals(self, ses, args_str):
-        if globals().has_key(ses.name):
-            if globals()[ses.name]==None:
+    def add_new_session_to_globals(self, new_page, args_str):
+        if globals().has_key(new_page.name):
+            if globals()[new_page.name]==None:
                 pass
             else:
-                error('{} already '.format(ses.name))
+                error('{} already '.format(new_page.name))
         else:
-            globals().update({ses.name: ses})
-            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(ses.name,ses.name,args_str ), 'dut')
+            globals().update({new_page.name: new_page})
+            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str ), 'dut')
             #session  = dut(name, **attributes)
 
     def on_command_enter(self, event):
