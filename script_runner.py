@@ -26,23 +26,12 @@ if __name__ == "__main__":
         print('ERROR: please input the script name to be executed!')
     else:
         script_name = sys.argv[1]
-        argvs = sys.argv[1:]
-        if sys.argv[0].find('.exe')!=-1:
-            opt = ''
-        else:
-            opt = ''
-        cmd_line = 'python {}'.format(opt)+ ' '.join(sys.argv[1:])
-        pp = subprocess.Popen(args = cmd_line ,  shell =True, stdin=sys.stdin,stdout=sys.stdout)
-        import time
-        ChildRuning = True
-        while ChildRuning:
-            if pp.poll() is None:
-                interval = 1
-                time.sleep(interval)
-                print('{} is running'.format(cmd_line))
-            else:
-                ChildRuning = False
-        print('{} is completed with returncode ={}'.format(cmd_line, pp.returncode))
+        sys.argv= sys.argv[1:]
+        try:
+            execfile('run_ut.py',globals(), locals() )
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            raise e
 
-        returncode = pp.returncode
-        sys.exit(returncode)
+

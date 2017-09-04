@@ -24,6 +24,9 @@ __author__ = 'Yu, Xiongwei(Sean Yu)'
 __doc__ = '''
 created 5/9/2017
 '''
+import sys
+print sys.argv
+
 from lib.dut import dut
 import lib.common
 import unittest
