@@ -19,7 +19,7 @@ if __name__ == "__main__":
         else:
             Exception("path is not exist, can't be added to SYSTEM PATH(PYTHON PATH\n\t{}".format(path))
     import subprocess
-    DEBUG = True
+    DEBUG = False
     if DEBUG:
         sys.argv.append('run_ut.py')
     if len(sys.argv)<2:
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     else:
         script_name = sys.argv[1]
         argvs = sys.argv[1:]
-        cmd_line = 'python '+ ''.join(sys.argv[1:])
+        cmd_line = 'python '+ ' '.join(sys.argv[1:])
         pp = subprocess.Popen(args = cmd_line ,  shell =True, stdin=sys.stdin,stdout=sys.stdout)
         import time
         ChildRuning = True

@@ -274,13 +274,13 @@ class DasHFrame(MainFrame):#wx.Frame
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
         closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
         closing_page.on_close()
-        ses_name = closing_page.session.name
+        ses_name = closing_page.name
         self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
         if globals().has_key(ses_name):
             #g = dict(globals())
-            globals()[ses_name]=None
+            #globals()[ses_name]=None
             #del g[ses_name]
-            #del globals()[ses_name]
+            del globals()[ses_name]
 
 
     def add_item_to_subfolder_in_tree(self,node):

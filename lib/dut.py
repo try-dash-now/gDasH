@@ -287,7 +287,7 @@ class dut(object):
                     success = False
                 else:
                     success = True
-                    break #quit the while
+                    #quit the while
             else: #not find the pattern
                 if match:
                     success =True
