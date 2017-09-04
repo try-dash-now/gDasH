@@ -26,9 +26,9 @@ if __name__ == "__main__":
         print('ERROR: please input the script name to be executed!')
     else:
         script_name = sys.argv[1]
-        sys.argv= sys.argv[1:]
+        sys.argv= sys.argv[2:]
         try:
-            execfile('run_ut.py',globals(), locals() )
+            execfile(script_name,globals(), locals() )
         except Exception as e:
             import traceback
             print(traceback.format_exc())
