@@ -289,4 +289,9 @@ def send_mail_smtp_without_login(USERNAME, PASSWORD, TO, SUBJECT, TEXT, SERVER, 
 def run_script(script_name, args=[]):
     import sys
     sys.argv= [script_name]+args
-    execfile(script_name,globals(), locals() )
+    info('script is running',script_name = script_name, args = args)
+    try:
+        execfile(script_name,globals(), locals() )
+    except SystemExit:
+        pass
+    info('script is completed',script_name = script_name, args = args)

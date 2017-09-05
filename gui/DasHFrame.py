@@ -90,15 +90,20 @@ class FileEditor(wx.Panel):
                 f.flush()
 
         #todo: handle close tab in edit_area
-    def __init__(self, parent, title='pageOne', type ='grid'):
+    def __init__(self, parent, title='pageOne', type ='grid', file_name = None):
         wx.Panel.__init__(self, parent)
         self.parent = parent
         self.type = type
-
+        self.full_file_name = file_name
         #self.editor = wx.TextCtrl(self, style = wx.TE_MULTILINE|wx.TE_RICH2|wx.EXPAND|wx.ALL, size=(-1,-1))
         if type in ['text']:
 
-            self.editor = wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+            self.editor = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))
+            #wx.richtext.RichTextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.WANTS_CHARS )
+            with open(self.full_file_name, 'r') as f:
+                for line in f.readlines():
+                    self.editor.AppendText(line)
+
 
         else:
             self.editor= gridlib.Grid(self)
@@ -241,7 +246,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.session_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Session_tab)
         self.function_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Function_tab)
         self.function_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_function_tab)
-
+        self.case_suite_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_case_tab)
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
         nav_sizer = wx.BoxSizer()
@@ -337,6 +342,7 @@ class DasHFrame(MainFrame):#wx.Frame
         ht_item =self.case_suite_page.GetSelection()
         #ht_item = self.HitTest(event.GetPosition())
         item_name = self.case_suite_page.GetItemText(ht_item)
+        item_data = self.case_suite_page.GetItemData(ht_item)
         if self.case_suite_page.ItemHasChildren(ht_item):
             if self.case_suite_page.IsExpanded(ht_item):
                 self.case_suite_page.Collapse(ht_item)
@@ -345,9 +351,11 @@ class DasHFrame(MainFrame):#wx.Frame
         else:
             if item_name.lower() in ['.csv', '.xlsx','.xls']:
                 type = 'grid'
+                file_name = item_data.Data['path_name']
             else:
                 type = 'text'
-            new_page = FileEditor(self.edit_area, 'a', type= type)
+                file_name = item_data.Data['path_name']
+            new_page = FileEditor(self.edit_area, 'a', type= type,file_name=file_name)
             self.edit_area.AddPage(new_page, item_name)
             index = self.edit_area.GetPageIndex(new_page)
             self.edit_area.SetSelection(index)
@@ -652,6 +660,23 @@ if __name__ == "__main__":
         if not no_operation:
             with open(file_name, 'a+') as f:
                 f.write(str_code)
+
+    def on_right_down_in_case_tab(self, event):
+        menu = wx.Menu()
+        item = wx.MenuItem(menu, wx.NewId(), "Run")
+        #acc = wx.AcceleratorEntry()
+        #acc.Set(wx.ACCEL_NORMAL, ord('O'), self.popupID1)
+        #item.SetAccel(acc)
+        menu.AppendItem(item)
+
+        self.Bind(wx.EVT_MENU, self.on_run_script,item)
+        self.PopupMenu(menu,event.GetPosition())
+    def on_run_script(self,event):
+        hit_item = self.case_suite_page.GetSelection()
+        item_name = self.case_suite_page.GetItemText(hit_item)
+        item_data = self.case_suite_page.GetItemData(hit_item).Data['path_name']
+        from lib.common import run_script
+        run_script(item_data)
 
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
