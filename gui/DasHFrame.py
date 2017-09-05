@@ -75,6 +75,10 @@ class RedirectText(object):
             self.log_file.write(string)
             self.log_file.flush()
         self.write_lock.release()
+    def close(self):
+        if self.log_file:
+            self.log_file.flush()
+            self.log_file.close()
 
 class FileEditor(wx.Panel):
     editor =None
@@ -285,6 +289,7 @@ class DasHFrame(MainFrame):#wx.Frame
                     self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
 
             closing_page.on_close()
+        self.redir.close()
         sys.stderr =self.redir.old_stderr
         sys.stdout = self.redir.old_stdout
         event.Skip()
@@ -709,6 +714,9 @@ if __name__ == "__main__":
                 cmd = ['python', script_name ]+script_and_args
             #os.system("start cmd /K ")
             p = subprocess.Popen(cmd,  stderr=self.redir, stdout= self.redir,creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)#,stderr= subprocess.PIPE, stdout= subprocess.PIPE)#, bufsize=1, universal_newlines=True, creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)
+            p.stderr=self.redir
+            p.stdout= self.redir
+
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
             info('start process {} :{}'.format(item_name,  p.pid))
             #p.join() # this blocks until the process terminates
