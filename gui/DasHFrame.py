@@ -49,14 +49,17 @@ class RedirectText(object):
     old_stderr = None
     write_lock = None
     log_file    = None
+
     def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize
         self.write_lock = threading.Lock()
+
         if log_path:
             name = '{}/dash.log'.format(log_path)
-            self.log_file = open(name, 'a+')
+            self.log_file = open(name, 'w+')
+            self.fileno = self.log_file.fileno
     def write(self,string):
         self.write_lock.acquire()
         self.old_stdout.write(string)
@@ -70,6 +73,7 @@ class RedirectText(object):
         wx.CallAfter(self.out.AppendText, string)
         if self.log_file:
             self.log_file.write(string)
+            self.log_file.flush()
         self.write_lock.release()
 
 class FileEditor(wx.Panel):
@@ -698,23 +702,25 @@ if __name__ == "__main__":
             if os.path.exists('script_runner.exe'):
                 #sys.executable
                 execute = 'script_runner.exe'
-                cmd = ['', execute,script_name ]+script_and_args
+                cmd = [execute,script_name ]+script_and_args
 
             else:
 
-                cmd = [sys.executable,script_name ]+script_and_args
-            p = subprocess.Popen(cmd, shell=True, creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)#,stderr= subprocess.PIPE, stdout= subprocess.PIPE)#, bufsize=1, universal_newlines=True, creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)
+                cmd = ['python', script_name ]+script_and_args
+            #os.system("start cmd /K ")
+            p = subprocess.Popen(cmd,  stderr=self.redir, stdout= self.redir,creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)#,stderr= subprocess.PIPE, stdout= subprocess.PIPE)#, bufsize=1, universal_newlines=True, creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)
+            self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
+            info('start process {} :{}'.format(item_name,  p.pid))
+            #p.join() # this blocks until the process terminates
+            time.sleep(1)
         except Exception as e :
             import traceback
-            info(traceback.format_exc())
+            error(traceback.format_exc())
 
         #p = Process(target=run_script, args=[script_name,  script_and_args])
         #p.start()
 
-        self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
-        info('start process {} :{}'.format(item_name,  p.pid))
-        #p.join() # this blocks until the process terminates
-        time.sleep(1)
+
 
         #p.terminate()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
