@@ -287,11 +287,14 @@ def send_mail_smtp_without_login(USERNAME, PASSWORD, TO, SUBJECT, TEXT, SERVER, 
         print(MAIL)
     mailServer.close()
 def run_script(script_name, args=[]):
+
     import sys
     sys.argv= [script_name]+args
+    oo, oe = sys.stdout, sys.stderr
     info('script is running',script_name = script_name, args = args)
     try:
-        execfile(script_name,globals(), locals() )
+        execfile(script_name,globals() )
     except SystemExit:
         pass
+    sys.stdout, sys.stderr = oo,oe
     info('script is completed',script_name = script_name, args = args)

@@ -674,10 +674,49 @@ if __name__ == "__main__":
     def on_run_script(self,event):
         hit_item = self.case_suite_page.GetSelection()
         item_name = self.case_suite_page.GetItemText(hit_item)
-        item_data = self.case_suite_page.GetItemData(hit_item).Data['path_name']
-        from lib.common import run_script
-        run_script(item_data)
+        import shlex
+        lex = shlex.shlex(item_name)
+        lex.quotes = '"'
+        lex.whitespace_split = True
+        script_and_args =list(lex)[1:]
+        item_data = self.case_suite_page.GetItemData(hit_item).Data
+        script_name = self.case_suite_page.GetItemData(hit_item).Data['path_name']
 
+        from lib.common import run_script
+        from multiprocessing import Process, Queue
+        import subprocess
+
+
+
+        if item_data.has_key('PROCESS'):
+            p = item_data['PROCESS']
+            #if p.is_alive():
+            info('Terminate alive process {}:{}'.format(item_name, p.pid))
+            p.terminate()
+        #queue = Queue()
+        try:
+            if os.path.exists('script_runner.exe'):
+                #sys.executable
+                execute = 'script_runner.exe'
+                cmd = ['', execute,script_name ]+script_and_args
+
+            else:
+
+                cmd = [sys.executable,script_name ]+script_and_args
+            p = subprocess.Popen(cmd, shell=True, creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)#,stderr= subprocess.PIPE, stdout= subprocess.PIPE)#, bufsize=1, universal_newlines=True, creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)
+        except Exception as e :
+            import traceback
+            info(traceback.format_exc())
+
+        #p = Process(target=run_script, args=[script_name,  script_and_args])
+        #p.start()
+
+        self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
+        info('start process {} :{}'.format(item_name,  p.pid))
+        #p.join() # this blocks until the process terminates
+        time.sleep(1)
+
+        #p.terminate()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
