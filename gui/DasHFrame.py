@@ -699,25 +699,23 @@ if __name__ == "__main__":
 
         if item_data.has_key('PROCESS'):
             p = item_data['PROCESS']
+            name= item_data['FULL_NAME']
+            info('script:{}, returncode:{}'.format(name,p.returncode))
             #if p.is_alive():
             info('Terminate alive process {}:{}'.format(item_name, p.pid))
             p.terminate()
         #queue = Queue()
         try:
             if os.path.exists('script_runner.exe'):
-                #sys.executable
                 execute = 'script_runner.exe'
                 cmd = [execute,script_name ]+script_and_args
-
+                #p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
             else:
-
-                cmd = ['python', script_name ]+script_and_args
-            #os.system("start cmd /K ")
-            p = subprocess.Popen(cmd,  stderr=self.redir, stdout= self.redir,creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)#,stderr= subprocess.PIPE, stdout= subprocess.PIPE)#, bufsize=1, universal_newlines=True, creationflags = subprocess.CREATE_NEW_CONSOLE|subprocess.STARTF_USESHOWWINDOW)
-            p.stderr=self.redir
-            p.stdout= self.redir
+                cmd = [sys.executable, script_name ]+script_and_args
+            p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
 
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
+            self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
             info('start process {} :{}'.format(item_name,  p.pid))
             #p.join() # this blocks until the process terminates
             time.sleep(1)
