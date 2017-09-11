@@ -79,6 +79,19 @@ class RedirectText(object):
         if self.log_file:
             self.log_file.flush()
             self.log_file.close()
+class process_info(object):
+    process = None
+    pid=None
+    full_name=None
+    returncode = None
+    def __init__(self,name, process):
+        self.process= process
+        self.pid = process.pid
+        self.full_name =name
+        self.returncode = process.returncode
+    @property
+    def returncode(self):
+        return  self.process.returncode
 
 class FileEditor(wx.Panel):
     editor =None
@@ -180,8 +193,10 @@ class DasHFrame(MainFrame):#wx.Frame
     lib_path ='./lib'
     log_path = '../log'
     session_path = './sessions'
+    running_process=None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        self.running_process = list()
         self.tabs_in_edit_area=[]
         self.sessions_alive={}
         MainFrame.__init__(self, parent=parent)
@@ -280,7 +295,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.SetIcon(ico)
     def on_close(self, event):
         self.generate_code(file_name='{}/test_script.py'.format(self.ini_setting.get('dash', 'log_path')))
-
+        self.generate_report(filename='{}/dash_report.txt'.format(self.ini_setting.get('dash', 'log_path')))
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
             if isinstance(closing_page, (SessionTab)):
@@ -289,10 +304,31 @@ class DasHFrame(MainFrame):#wx.Frame
                     self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
 
             closing_page.on_close()
+
+
         self.redir.close()
         sys.stderr =self.redir.old_stderr
         sys.stdout = self.redir.old_stdout
         event.Skip()
+    def generate_report(self, filename):
+        report = '''Test Report
+RESULT\tScript Name\n'''
+
+        if len(self.running_process):
+
+            with open(filename, 'a+') as f:
+                f.write(report)
+                for pi in self.running_process:
+                    name, pro= pi[:2]
+                    if pro.returncode is None:
+                        result = 'RUNNING'
+                    else:
+                        result = 'PASS' if pro.returncode else 'FAIL'
+                    pid = pro.pid
+                    record = '\t'.join(['{}'.format(x) for x in [result,name]])
+                    report+=record+'\n'
+                    f.write(record+'\n')
+
 
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
@@ -672,14 +708,33 @@ if __name__ == "__main__":
 
     def on_right_down_in_case_tab(self, event):
         menu = wx.Menu()
-        item = wx.MenuItem(menu, wx.NewId(), "Run")
+        item1 = wx.MenuItem(menu, wx.NewId(), "Run Test")
+        item2 = wx.MenuItem(menu, wx.NewId(), "Kill Test")
         #acc = wx.AcceleratorEntry()
         #acc.Set(wx.ACCEL_NORMAL, ord('O'), self.popupID1)
         #item.SetAccel(acc)
-        menu.AppendItem(item)
+        menu.AppendItem(item1)
+        menu.AppendItem(item2)
 
-        self.Bind(wx.EVT_MENU, self.on_run_script,item)
+        self.Bind(wx.EVT_MENU, self.on_run_script,item1)
+        self.Bind(wx.EVT_MENU, self.on_kill_script,item2)
         self.PopupMenu(menu,event.GetPosition())
+    def on_kill_script(self,event):
+        hit_item = self.case_suite_page.GetSelection()
+        item_name = self.case_suite_page.GetItemText(hit_item)
+        item_data = self.case_suite_page.GetItemData(hit_item).Data
+
+        if item_data.has_key('PROCESS'):
+            p = item_data['PROCESS']
+            name= item_data['FULL_NAME']
+            info('script:{}, returncode:{}'.format(name,p.returncode))
+            if p.returncode is None:
+            #if p.is_alive():
+                info('Terminate alive process {}:{}'.format(item_name, p.pid))
+                p.terminate()
+            else:
+                result ='FAIL' if p.returncode else 'PASS'
+                info('{}:{} completed with returncode {}'.format(item_name, p.pid, result))
     def on_run_script(self,event):
         hit_item = self.case_suite_page.GetSelection()
         item_name = self.case_suite_page.GetItemText(hit_item)
@@ -697,13 +752,7 @@ if __name__ == "__main__":
 
 
 
-        if item_data.has_key('PROCESS'):
-            p = item_data['PROCESS']
-            name= item_data['FULL_NAME']
-            info('script:{}, returncode:{}'.format(name,p.returncode))
-            #if p.is_alive():
-            info('Terminate alive process {}:{}'.format(item_name, p.pid))
-            p.terminate()
+        self.on_kill_script(event)
         #queue = Queue()
         try:
             if os.path.exists('script_runner.exe'):
@@ -717,6 +766,8 @@ if __name__ == "__main__":
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
             self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
             info('start process {} :{}'.format(item_name,  p.pid))
+
+            self.running_process.append([item_name, p])
             #p.join() # this blocks until the process terminates
             time.sleep(1)
         except Exception as e :

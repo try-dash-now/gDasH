@@ -4,3 +4,4 @@ numpy
 matplotlib
 selenium
 install geckodriver for firefox
+pip install xlrd

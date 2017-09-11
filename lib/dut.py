@@ -40,6 +40,7 @@ import time,datetime, re, math, datetime
 import threading
 from common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME
 import os
+
 class dut(object):
     name=None
     session_type= None
@@ -68,6 +69,7 @@ class dut(object):
     first_login = True
     retry_login= 10
     retry_login_interval = 60
+    reading_thread_lock = None
     prompt= None
     def __del__(self):
         if self.session:
@@ -77,6 +79,7 @@ class dut(object):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.type = type
         self.prompt = prompt
+        self.reading_thread_lock=threading.Lock()
         if login_step in [None, '']:
             login_step = None
         if isinstance(login_step, (basestring)) and os.path.exists(login_step):
@@ -111,11 +114,12 @@ class dut(object):
             #self.session_status=False
             del self.session
             self.session=None
+            self.sleep(1)
             if self.read_locker.locked():
                 self.read_locker.release()
             if self.write_locker.locked():
                 self.write_locker.release()
-            self.sleep(0.1)
+
 
         self.session_status = True
         try:
@@ -127,7 +131,7 @@ class dut(object):
             self.open_log_file()
 
             self.display_buffer_locker = threading.Lock()
-            th =threading.Thread(target=self.read_data)
+
             self.sleep(1)
 
             new_line_during_login = self.new_line_during_login
@@ -157,6 +161,7 @@ class dut(object):
                     elif  isinstance(login_step, basestring):
                         if login_step.strip().lower() in ['none',None, "''", '""']:
                             self.login_steps=[]
+                    th =threading.Thread(target=self.read_data)
                     th.start()
                     self.sleep(0.5)
                     self.login(login_step)
@@ -169,11 +174,11 @@ class dut(object):
                     break
                 except Exception as e :
                     if counter< retry:
-                        info('failed to login {}'.format(self.name), retry= retry, counter = counter, interval = interval)
+                        info('failed to login {}\n\t{}'.format(self.name, format_exc()), retry= retry, counter = counter, interval = interval)
                         self.sleep(interval)
                     else:
-                        import traceback
-                        e.message +=traceback.format_exc()
+
+                        e.message +=format_exc()
                         error(e.message)
                         raise e
 
@@ -239,12 +244,8 @@ class dut(object):
                 if remaining ==0:#no more chance to try again, the last chance
                     import traceback
                     error_msg = "{}\n{}".format(traceback.format_exc(),error_message)
-                    #error(error_msg)
-                    e.message=e.message+'\n'+error_message
-                    #error(pprint( e.message))
 
-
-                    raise Exception(traceback.format_exc())
+                    raise Exception(error_msg)
         return  success, match, buffer
     def match_in_buffer(self, pattern):
         buffer = self.search_buffer
@@ -321,7 +322,7 @@ class dut(object):
                 for row in self.login_steps:
                     login_steps.append(row)
         for row in login_steps:
-            cmd,expect, time_out, total_try ='', '.*',30,1
+            cmd,expect, time_out, total_try ='3', '.*',30,1
             if len(row)==1:
                 cmd= row[0]
             elif len(row)==2:
@@ -370,6 +371,7 @@ class dut(object):
                 self.read_locker.release()
             try:
                 if self.log_file:
+                    self.log_file.flush()
                     self.log_file.close()
                     self.log_file=None
             except:
@@ -413,7 +415,7 @@ class dut(object):
         max_idle_time = 60
         last_update_time = datetime.datetime.now()
         self.last_cmd_time_stamp = last_update_time
-
+        self.reading_thread_lock.acquire()
         while self.session_status and self.session:
             try:
                 current_time = datetime.datetime.now()
@@ -432,7 +434,9 @@ class dut(object):
                 data = self.read()
                 time.sleep(0.1)
             except  Exception as e:
+                import traceback
                 if str(e) in ['error: Socket is closed']:
+                    error(traceback.format_exc())
                     self.session_status =False
         if self.session_type in ['ssh']:
             if self.session:
@@ -444,6 +448,7 @@ class dut(object):
                     error(e)
             self.session=None
         info('session {}: Closed!!!'.format(self.name))
+        self.reading_thread_lock.release()
     def write(self, cmd='', ctrl=False):
         resp = ''
         if self.session_status:
@@ -488,8 +493,9 @@ class dut(object):
                     self.log_file.close()
                     self.log_file=None
             except Exception as e:
-                error('session {}'.format(self.name))
-                error(pprint(format_exc()))
+                if e.message not in ['timed out']:
+                    error('session {}'.format(self.name))
+                    error(pprint(format_exc()))
             if self.read_locker.locked():
                 self.read_locker.release()
             debug('read::read_locker released')
