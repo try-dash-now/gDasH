@@ -317,7 +317,7 @@ def create_dir(log_path):
             os.mkdir(tmp)
     return  tmp
 def create_case_folder():
-    import sys, os
+    import sys, os, re
     arg_numbers = len(sys.argv)
     case_name ="TestCase"
     log_path = '../log/tmp'
@@ -326,12 +326,19 @@ def create_case_folder():
     if arg_numbers>=3:
         if sys.argv[-2].lower().strip() == '-l':
             log_path = sys.argv[-1]
-
+            os.path.basename(sys.argv[0])+'-{}'.format(sys.argv[1:-2])
+        else:
+            os.path.basename(sys.argv[0])+'-{}'.format(sys.argv[1:arg_numbers])
+    else:
+        case_name= os.path.basename(sys.argv[0])+'-{}'.format(sys.argv[1:arg_numbers])
     import datetime
     timestamps = datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-')
-
+    removelist = '\-_.'
+    pat = r'[^\w'+removelist+']'
+    case_name = re.sub(pat, '', case_name)
     MAX_FILE_NAME_LENGTH=256
-    folder_name = '{}-{}'.format(case_name, timestamps)[:MAX_FILE_NAME_LENGTH]
+    folder_name = '{}{}'.format(case_name, timestamps)[:MAX_FILE_NAME_LENGTH]
+
     full_path = '{}/{}'.format(log_path, folder_name)
     return create_dir(full_path)
 
