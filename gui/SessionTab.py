@@ -145,11 +145,14 @@ class SessionTab(wx.Panel, dut):
     def __init__(self, parent, name,attributes, seq_queue=None, log_path = '../log'):
         #init a session, and stdout, stderr, redirected to
         wx.Panel.__init__(self, parent)
+        attributes['log_path']= log_path
+        attributes['not_call_open']=True
+        dut.__init__(self, name, **attributes)
         self.name = name
         self.history_cmd=[]
         self.history_cmd_index = 0
         self.parent = parent
-        self.type = type
+        #self.type = attributes['type']
         self.sequence_queue= seq_queue
         self.output_lock = threading.Lock()
         #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
@@ -174,10 +177,7 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.SetFocus()
 
 
-        attributes['log_path']= log_path
-        attributes['not_call_open']=True
 
-        dut.__init__(self, name, **attributes)
         #self.session  = self
         self.alive =True
         th =threading.Thread(target=self.update_output)

@@ -531,7 +531,7 @@ class dut(object):
             else:
                 line = '{},'.format(data)
                 return line
-            #return line
+            return line
         print(populate_data_string(data))
 
         with open(data_file_name, 'a+') as data_file:

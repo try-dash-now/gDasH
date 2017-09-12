@@ -103,7 +103,7 @@ class TELNET(object):#, spawn
         self.debuglevel = DEBUGLEVEL
         self.host = host
         self.port = int(port)
-        timeout=0.5
+        timeout=5
         self.timeout = timeout
         self.sock = None
         self.rawq = ''
