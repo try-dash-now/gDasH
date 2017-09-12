@@ -514,7 +514,7 @@ RESULT\tScript Name\n'''
                 error('{} already '.format(new_page.name))
         else:
             globals().update({new_page.name: new_page})
-            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path') ), 'dut')
+            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path').replace("'not_call_open': True,", "'not_call_open': False,") ), 'dut')
             #session  = dut(name, **attributes)
 
     def on_command_enter(self, event):
