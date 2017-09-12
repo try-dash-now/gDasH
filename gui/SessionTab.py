@@ -56,24 +56,18 @@ class SessionTab(wx.Panel, dut):
     sequence_queue =None
     log_path =None
     name = None
-    open =None
-    step= None
+
     def on_close(self):
         self.alive = False
-
-        if self.session:
-            self.session.close_session()
-        #self.session.sleep(0.001)
+        th = threading.Thread(target=self.close_session)
+        th.start()
+        #self.close_session()
+        self.sleep(0.001)
         info('tab {} closed!!!'.format(self.name))
 
     def update_output(self):
-        if self.session:
-            if self.open :
-                pass
-            else:
-                self.open = self.session.open
-                self.step = self.session.step
-                self.sleep = self.session.sleep
+
+
         status =True
         ansi_escape = re.compile(r'\x1b[^m]*m*|'+r'\x1b(' \
              r'(\[\??\d+[hl])|' \
@@ -92,19 +86,21 @@ class SessionTab(wx.Panel, dut):
              , flags=re.IGNORECASE)
         while( status):
             try:
-                status = self.alive and self.session
+                status = self.alive #and self.session
             except Exception as e :
                 time.sleep(0.001)
                 break
             time.sleep(0.05)
-            self.output_lock.acquire()
-            response = self.session.read_display_buffer()
-            if True:
-                response = ansi_escape.sub('', response)
-            BACKSPACE = chr(8)
-            #response = re.sub(chr(32)+BACKSPACE,'',response)
+            response=''
+            if self.alive:
+                self.output_lock.acquire()
+                response = self.read_display_buffer()
+                if True:
+                    response = ansi_escape.sub('', response)
+                BACKSPACE = chr(8)
+                #response = re.sub(chr(32)+BACKSPACE,'',response)
 
-            BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
+                BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
             if len(response)!=0:
                 if False:
                     whole_text = self.output_window.GetValue()
@@ -146,7 +142,7 @@ class SessionTab(wx.Panel, dut):
             time.sleep(0.5)
 
 
-    def __init__(self, parent, name,attributes, seq_queue=None, log_path = None):
+    def __init__(self, parent, name,attributes, seq_queue=None, log_path = '../log'):
         #init a session, and stdout, stderr, redirected to
         wx.Panel.__init__(self, parent)
         self.name = name
@@ -176,15 +172,20 @@ class SessionTab(wx.Panel, dut):
         self.output_window.SetBackgroundColour('Black')
         self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
-        def create_dut( name, **kwargs):
 
-            self.session  = dut(name, **attributes)
-            self.alive =True
-            th =threading.Thread(target=self.update_output)
-            th.start()
+
         attributes['log_path']= log_path
-        th = threading.Thread(target=create_dut, args= [name], kwargs=attributes)
+        attributes['not_call_open']=True
+
+        dut.__init__(self, name, **attributes)
+        #self.session  = self
+        self.alive =True
+        th =threading.Thread(target=self.update_output)
         th.start()
+        self.sleep(0.1)
+        th = threading.Thread(target=self.open, args= [self.retry_login,60])#, kwargs=attributes)
+        th.start()
+        self.sleep(0.1)
     def on_key_up(self, event):
         keycode = event.KeyCode
 
@@ -214,18 +215,18 @@ class SessionTab(wx.Panel, dut):
         self.add_cmd_to_history(cmd)
 
         try:
-            if self.session.session_status:
-                th = threading.Thread(target=self.session.write,args=( cmd,ctrl))
+            if self.session_status:
+                th = threading.Thread(target=self.write,args=( cmd,ctrl))
                 th.start()
 
 
                 self.sequence_queue.put(['TC.step({}, "{}")'.format(self.name,cmd),  datetime.now()])#
             else:
-                self.alive= self.session#.session_status
-                #self.session.write(cmd,ctrl=ctrl)
+                pass #self.alive= self.session#.session_status
+                #self.write(cmd,ctrl=ctrl)
         except Exception as e:
             self.on_close()
-            self.session.close_session()
+            self.close_session()
             error ('{} closed unexpected'.format(self.name))
             self.alive= False
         self.cmd_window.SetFocus()

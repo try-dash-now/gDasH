@@ -55,7 +55,7 @@ class dut(object):
     search_buffer =None
     display_buffer =None
 
-    display_buffer_locker =None
+    display_buffer_locker = threading.Lock()#None
     session_status = None
     login_done =False
     write_locker = None
@@ -75,7 +75,7 @@ class dut(object):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>'):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.type = type
         self.prompt = prompt
@@ -108,7 +108,10 @@ class dut(object):
         #th.start()
         self.sleep(0.5)
         #th.join()
-        self.open(retry= self.retry_login, interval=60)
+        if not_call_open:
+            pass
+        else:
+            self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         if self.session:
             #self.session_status=False
@@ -130,7 +133,7 @@ class dut(object):
                 self.log_path = os.path.abspath('../log')
             self.open_log_file()
 
-            self.display_buffer_locker = threading.Lock()
+
 
             self.sleep(1)
 
@@ -379,7 +382,7 @@ class dut(object):
             self.session_status=False
 
         self.write_locker.release()
-        time.sleep(0.001)
+        time.sleep(1)
 
     def add_data_to_search_buffer(self, data):
 
@@ -493,7 +496,9 @@ class dut(object):
                     self.log_file.close()
                     self.log_file=None
             except Exception as e:
-                if e.message not in ['timed out']:
+                if e.errno ==10053: #'An established connection was aborted by the software in your host machine'
+                    self.close_session()
+                elif e.message not in ['timed out']:
                     error('session {}'.format(self.name))
                     error(pprint(format_exc()))
             if self.read_locker.locked():
@@ -517,8 +522,17 @@ class dut(object):
         self.log_file = open(file_name, r"w+")
     def save_data_to_csv(self, data, file_name_prefix= ''):
         data_file_name = '{}/{}_{}_{}.csv'.format(self.log_path, file_name_prefix, self.name, datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-'))[:256]
+        def populate_data_string(data):
+            line =''
+            if isinstance(data, (list)):
+                for i in data:
+                    line += populate_data_string(i)
+                line+='\n'
+            else:
+                line = '{},'.format(data)
+                return line
+            #return line
+        print(populate_data_string(data))
+
         with open(data_file_name, 'a+') as data_file:
-            for record in data:
-                data_file.write(','.join(['{}'.format(x) for x in record]))
-                data_file.write('\n')
-                data_file.flush()
+            data_file.write(populate_data_string(data))

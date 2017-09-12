@@ -299,8 +299,8 @@ class DasHFrame(MainFrame):#wx.Frame
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
             if isinstance(closing_page, (SessionTab)):
-                if closing_page.session:
-                    name = closing_page.session.name
+                if closing_page:
+                    name = closing_page.name
                     self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
 
             closing_page.on_close()
