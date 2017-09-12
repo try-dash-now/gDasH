@@ -299,16 +299,40 @@ def run_script(script_name, args=[]):
     sys.stdout, sys.stderr = oo,oe
     info('script is completed',script_name = script_name, args = args)
 def create_dir(log_path):
+
     log_path = os.path.normpath(log_path)
     log_path = os.path.abspath(log_path)
     log_path = log_path.split(os.sep)
+
     print(log_path)
-    tmp=''
-    for dir in log_path:
-        tmp= os.sep.join(tmp, dir)
+    tmp=None
+    for d in log_path:
+        if tmp is None:
+            tmp = d
+        else:
+            tmp= os.sep.join([tmp, d])
         if os.path.exists(tmp):
             pass
         else:
             os.mkdir(tmp)
+    return  tmp
+def create_case_folder():
+    import sys, os
+    arg_numbers = len(sys.argv)
+    case_name ="TestCase"
+    log_path = '../log/tmp'
+    if arg_numbers >0:
+        case_name = os.path.basename(sys.argv[0])
+    if arg_numbers>=3:
+        if sys.argv[-2].lower().strip() == '-l':
+            log_path = sys.argv[-1]
+
+    import datetime
+    timestamps = datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-')
+
+    MAX_FILE_NAME_LENGTH=256
+    folder_name = '{}-{}'.format(case_name, timestamps)[:MAX_FILE_NAME_LENGTH]
+    full_path = '{}/{}'.format(log_path, folder_name)
+    return create_dir(full_path)
 
 

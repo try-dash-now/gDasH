@@ -110,7 +110,7 @@ class FileEditor(wx.Panel):
                 f.write(data)
                 f.flush()
 
-        #todo: handle close tab in edit_area
+        #done 2017-9-12: handle close tab in edit_area
     def __init__(self, parent, title='pageOne', type ='grid', file_name = None):
         wx.Panel.__init__(self, parent)
         self.parent = parent
@@ -500,7 +500,10 @@ RESULT\tScript Name\n'''
             self.edit_area.SetSelection(index)
             self.tabs_in_edit_area.append(ses_name)
             self.sessions_alive.update({ses_name: new_page.name})
-            self.add_new_session_to_globals(new_page, '{}'.format(session_attribute.Data['attribute']))
+            attribute = session_attribute.Data['attribute']
+            log_path='a_fake_log_path_for_auto_script'
+            attribute['log_path']=log_path
+            self.add_new_session_to_globals(new_page, '{}'.format(attribute))
             #globals().update({ses_name: new_page.session})
 
     def add_new_session_to_globals(self, new_page, args_str):
@@ -511,7 +514,7 @@ RESULT\tScript Name\n'''
                 error('{} already '.format(new_page.name))
         else:
             globals().update({new_page.name: new_page})
-            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str ), 'dut')
+            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path') ), 'dut')
             #session  = dut(name, **attributes)
 
     def on_command_enter(self, event):
@@ -679,19 +682,24 @@ RESULT\tScript Name\n'''
     def generate_code(self, file_name ):
         str_code ="""#created by DasH
 if __name__ == "__main__":
-    import sys
+    import sys, traceback
     sys.path.insert(0,r'{}')
     sys.path.insert(0,r'{}')
+    import lib.common
+
+    log_path= '../log/tmp'
+    log_path= lib.common.create_case_folder()
+    try:
 
 """.format(self.src_path,self.lib_path )
         sessions =[]
         for module in self.import_modules:
-            str_code+='    import {mod}\n'.format(mod=module)#\n    {mod}_instance = {mod}()
+            str_code+='        import {mod}\n'.format(mod=module)#\n    {mod}_instance = {mod}()
         no_operation = True
         while True:
             try:
                 cmd, timestamp =self.sequence_queue.get(block=False)[:2]
-                str_code +='    {} #{}\n'.format(cmd, timestamp.isoformat( ' '))
+                str_code +='        {} #{}\n'.format(cmd, timestamp.isoformat( ' '))
                 if cmd.find('dut.dut(')!=-1:
                     sessions.append(cmd.split('=')[0].strip())
                 no_operation=False
@@ -699,8 +707,14 @@ if __name__ == "__main__":
             except Exception as e:
                 break
         close_session=''
+        str_code+='''    except Exception as e:
+        print(traceback.traceback.format_exc())\n'''
         for ses in sessions:
-            str_code+='    {}.close_session()\n'.format(ses)
+            str_code+='''        {}.close_session()\n'''.format(ses)
+        str_code+='        sys.exit(-1)\n'#, sys.exit(-1)
+        for ses in sessions:
+            str_code+='''    {}.close_session()\n'''.format(ses)
+
         info(str_code)
         if not no_operation:
             with open(file_name, 'a+') as f:

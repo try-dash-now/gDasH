@@ -38,7 +38,7 @@ from pprint import pprint
 from traceback import format_exc
 import time,datetime, re, math, datetime
 import threading
-from common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME
+from common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME, create_dir
 import os
 
 class dut(object):
@@ -366,17 +366,19 @@ class dut(object):
             # PyDeadObjectError: The C++ part of the SessionTab object has been deleted, attribute access no longer allowed.
             try:
                 if self.session_type in ['ssh']:
-                    #self.write('exit')
-                    self.session.write('exit\r\n')
+                    if self.session:
+                        self.session.write('exit\r\n')
                 if self.session_type in 'telnet':
                     #self.session.write('exit')
-                    self.session.write('exit\r\n')
+                    if self.session:
+                        self.session.write('exit\r\n')
                     #self.write('exit')
             except Exception as e:
                 error('dut({}): {}'.format(self.name, e))
                 self.session=None
                 self.session_status = False
-                self.read_locker.release()
+                if self.read_locker.locked():
+                    self.read_locker.release()
             try:
                 if self.log_file:
                     self.log_file.flush()
@@ -517,12 +519,7 @@ class dut(object):
 
         #print('{}:{}.{}:{}'.format(log_type_name[log_type_index],self.name, caller, string))
     def open_log_file(self):
-        if not os.path.exists(self.log_path):
-            try:
-                os.mkdir(self.log_path)
-            except Exception as e:
-                error('dut{}:{}'.format(self.name, e))
-
+        create_dir(self.log_path)
         file_name = '{}/{}-{}.log'.format(self.log_path,self.name, datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-'))[0:256]
         self.log_file = open(file_name, r"w+")
     def save_data_to_csv(self, data, file_name_prefix= ''):
