@@ -207,6 +207,10 @@ class DasHFrame(MainFrame):#wx.Frame
         self.src_path = os.path.abspath(self.ini_setting.get('dash','src_path'))
         self.lib_path = os.path.abspath(self.ini_setting.get('dash','lib_path'))
         self.log_path = os.path.abspath(self.ini_setting.get('dash','log_path'))
+        from  lib.common import create_case_folder
+        sys.argv.append('-l')
+        sys.argv.append('{}'.format(self.log_path))
+        self.log_path = create_case_folder(self.log_path)
         if not os.path.exists(self.log_path):
             os.mkdir(self.log_path)
         self.add_src_path_to_python_path(self.src_path)
