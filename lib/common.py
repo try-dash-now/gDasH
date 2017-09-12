@@ -298,3 +298,17 @@ def run_script(script_name, args=[]):
         pass
     sys.stdout, sys.stderr = oo,oe
     info('script is completed',script_name = script_name, args = args)
+def create_dir(log_path):
+    log_path = os.path.normpath(log_path)
+    log_path = os.path.abspath(log_path)
+    log_path = log_path.split(os.sep)
+    print(log_path)
+    tmp=''
+    for dir in log_path:
+        tmp= os.sep.join(tmp, dir)
+        if os.path.exists(tmp):
+            pass
+        else:
+            os.mkdir(tmp)
+
+

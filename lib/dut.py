@@ -192,7 +192,7 @@ class dut(object):
             self.session_status =False
 
 
-    def step(self,command, expect='.*', time_out=30, total_try =3, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.I|re.M):
+    def step(self,command, expect='.*', time_out=30, total_try =3, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.DOTALL|re.I|re.M):
         error_info = None
         init_total_try = total_try
         total_try= int(total_try)
@@ -231,7 +231,7 @@ class dut(object):
                 else:
                     self.reset_search_buffer()
                 resp = self.write(command, ctrl)
-                time.sleep(0.001)
+                self.sleep(0.5)
                 success, match, buffer = self.wait_for(expect, time_out,flags,not_want_to_find)
                 if len(buffer)>256:
                     brief_buffer =buffer[:128]+'\n...\n'+buffer[-128:]
@@ -250,10 +250,17 @@ class dut(object):
 
                     raise Exception(error_msg)
         return  success, match, buffer
-    def match_in_buffer(self, pattern):
-        buffer = self.search_buffer
-        match = re.search(pattern,buffer)
-        return match, buffer
+    def match_in_buffer(self, pattern, flags = re.DOTALL|re.IGNORECASE|re.MULTILINE):
+        p =None
+        m =None
+        #self.read_locker.acquire()
+        import re
+        p = re.compile(pattern, flags=flags)#, flags)
+        m = p.search(self.search_buffer)
+        #print(m)
+        #print(self.search_buffer)
+        #self.read_locker.release()
+        return m, self.search_buffer
     def sleep(self, sleep_time):
         #done: change condition of sleep, calculate end-time, compare current time to end-time
         #info('{} sleeping {}:'.format(self.name, sleep_time))
@@ -273,19 +280,17 @@ class dut(object):
         else:
             time.sleep(sleep_time)
 
-    def wait_for(self, pattern='.*', time_out=30, flags=re.I|re.M, not_want_to_find=False):
+    def wait_for(self, pattern='.*', time_out=30, flags=re.DOTALL|re.IGNORECASE|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
         if self.session_type == 'echo':
             time_out = 0.01
         time_out=float(time_out)
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=math.ceil(time_out))
-        pat =re.compile(pattern=pattern,flags=flags)
-        match = None
-        buffer = ''
-        success= False
+
         while True:
-            match, buffer = self.match_in_buffer(pat)
+            #print(self.search_buffer)
+            match, buffer = self.match_in_buffer(pattern=pattern, flags=flags)
             if not_want_to_find:
                 if match:
                     success = False
@@ -419,7 +424,7 @@ class dut(object):
         last_update_time = datetime.datetime.now()
         self.last_cmd_time_stamp = last_update_time
         self.reading_thread_lock.acquire()
-        while self.session_status and self.session:
+        while self.session_status :#and self.session:
             try:
                 current_time = datetime.datetime.now()
                 if TRACE_LEVEL:
