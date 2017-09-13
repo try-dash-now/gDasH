@@ -304,7 +304,7 @@ def create_dir(log_path):
     log_path = os.path.abspath(log_path)
     log_path = log_path.split(os.sep)
 
-    print(log_path)
+    print('create dir: {}'.format('{}'.format(os.sep).join(log_path)))
     tmp=None
     for d in log_path:
         if tmp is None:
@@ -343,7 +343,7 @@ def create_case_folder(log_path = None):
     pat = r'[^\w'+removelist+']'
     case_name = re.sub(pat, '', case_name)
     MAX_FILE_NAME_LENGTH=256
-    folder_name = '{}{}'.format(case_name, timestamps)[:MAX_FILE_NAME_LENGTH]
+    folder_name = '{}-{}'.format(case_name, timestamps)[:MAX_FILE_NAME_LENGTH]
 
     full_path = '{}/{}'.format(log_path, folder_name)
     return create_dir(full_path)

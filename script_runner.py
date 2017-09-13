@@ -26,8 +26,10 @@ if __name__ == "__main__":
         print('ERROR: please input the script name to be executed!')
     else:
         script_name = sys.argv[1]
-        sys.argv= sys.argv[2:]
+        sys.argv= sys.argv[1:]
         try:
+            sys.argv.append('-l')
+            sys.argv.append(log_path)
             execfile(script_name,globals(), locals() )
         except Exception as e:
             import traceback
