@@ -472,7 +472,7 @@ class dut(object):
                 ascii = ord(cmd[0]) & 0x1f
                 cmd = chr(ascii)
                 resp = self.session.write(cmd, ctrl=ctrl)
-                resp +=self.session.write(new_line)
+                resp +='{}'.format(self.session.write(new_line))
             else:
                 try:
                     resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line= new_line), ctrl=ctrl)

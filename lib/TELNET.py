@@ -163,6 +163,7 @@ class TELNET(object):#, spawn
         if self.sock:
             self.sock.sendall(buffer)
         #super(TELNET, self).write()
+        return ''
 
     def msg(self, msg, *args):
         """Print a debug message, when the debug level is > 0.
