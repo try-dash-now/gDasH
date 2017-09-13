@@ -464,14 +464,14 @@ class dut(object):
                 if str(e) in ['error: Socket is closed']:
                     error(traceback.format_exc())
                     self.session_status =False
-        if self.session_type in ['ssh']:
-            if self.session:
-                try:
+        try:
+            if self.session_type in ['ssh']:
+                if self.session:
                     if self.session.client:
                         self.session.client.close()
                         self.session.client=None
-                except Exception as e:
-                    error(e)
+        except Exception as e:
+            error(e)
             self.session=None
         info('session {}: Closed!!!'.format(self.name))
         self.reading_thread_lock.release()

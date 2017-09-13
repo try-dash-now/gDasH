@@ -347,6 +347,7 @@ RESULT\tScript Name\n'''
                 #g = dict(globals())
                 #globals()[ses_name]=None
                 #del g[ses_name]
+                globals()[ses_name].close_session()
                 del globals()[ses_name]
 
 
