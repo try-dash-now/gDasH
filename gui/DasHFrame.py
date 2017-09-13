@@ -194,8 +194,10 @@ class DasHFrame(MainFrame):#wx.Frame
     log_path = '../log'
     session_path = './sessions'
     running_process=None
+    dict_test_report= None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        self.dict_test_report={}
         self.running_process = list()
         self.tabs_in_edit_area=[]
         self.sessions_alive={}
@@ -795,7 +797,32 @@ if __name__ == "__main__":
         #p = Process(target=run_script, args=[script_name,  script_and_args])
         #p.start()
 
+    def polling_running_cases(self):
+        for pid in self.dict_test_report:
+            for case_name in self.dict_test_report[pid]:
+                start_time, end_time, duration, tmp_return_code ,proc= [case_name]
+                #todo: polling proc status and fill report
 
+
+
+    def add_newe_case_to_report(self, pid, case_name, proc):
+        start_time=datetime.now()
+        duration = 0
+        end_time = None
+        return_code = None
+        if pid in self.dict_test_report:
+            self.dict_test_report[pid].update({case_name:[start_time,end_time, duration, return_code, proc]})
+        else:
+            self.dict_test_report[pid]={case_name:[start_time, end_time, duration,return_code, proc ]}
+    def update_case_status(self, pid,case_name, return_code=None):
+        now = datetime.now()
+        start_time, end_time, duration, tmp_return_code ,proc= self.dict_test_report[pid][case_name]
+        if return_code is None:
+            duration = (now-start_time).total_seconds()
+            self.dict_test_report[pid][case_name]=[start_time, end_time, duration, tmp_return_code, proc]
+        else:
+            duration = (now-start_time).total_seconds()
+            self.dict_test_report[case_name][pid]=[start_time, now, duration, return_code, proc]
 
         #p.terminate()
 #done: 2017-08-22, 2017-08-19 save main log window to a file

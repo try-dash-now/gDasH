@@ -136,7 +136,8 @@ class SessionTab(wx.Panel, dut):
                 wx.CallAfter(self.output_window.SetInsertionPoint,last)#wx.CallAfter(
                 wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)#wx.CallAfter(
             try:
-                self.output_lock.release()
+                if self.output_lock.locked():
+                    self.output_lock.release()
             except Exception as e:
                 error('{}'.format(e))
             time.sleep(0.5)
