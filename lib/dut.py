@@ -242,7 +242,9 @@ class dut(object):
                     break
                 elif remaining>0:
                     continue
-                raise Exception('failed in dut.step: {}'.format(display_str))
+                fail_msg = 'failed in dut.step: {}'.format(display_str)
+                error(fail_msg)
+                raise Exception(fail_msg)
             except Exception as e:
                 if remaining ==0:#no more chance to try again, the last chance
                     import traceback

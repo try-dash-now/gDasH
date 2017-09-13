@@ -322,16 +322,19 @@ def create_case_folder(log_path = None):
     case_name ="TestCase"
     if log_path is None:
         log_path = '../log/tmp'
+    base_name = os.path.basename(sys.argv[0])
     if arg_numbers >0:
-        case_name = os.path.basename(sys.argv[0])
+        case_name = base_name
     if arg_numbers>=3:
         if sys.argv[-2].lower().strip() == '-l':
             log_path = sys.argv[-1]
-            case_name = os.path.basename(sys.argv[0])+'-{}'.format(sys.argv[1:-2])
+            case_name = base_name+'-{}'.format(sys.argv[1:-2])
         else:
-            case_name =os.path.basename(sys.argv[0])+'-{}'.format(sys.argv[1:arg_numbers])
+            case_name =base_name+'-{}'.format(sys.argv[1:arg_numbers])
+    elif arg_numbers==2:
+        case_name= base_name+'-{}'.format(sys.argv[1:arg_numbers])
     else:
-        case_name= os.path.basename(sys.argv[0])+'-{}'.format(sys.argv[1:arg_numbers])
+        case_name= base_name
     import datetime
     timestamps = datetime.datetime.now().isoformat('-').split('.')[0].replace(':','-')
     removelist = '\-_.'
