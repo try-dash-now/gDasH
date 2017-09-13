@@ -51,7 +51,6 @@ class dut(object):
     new_line_during_login =None
     login_steps= None
     session =None
-    command_respone_json = None # a dict to record the interaction procedure
     search_buffer =None
     display_buffer =None
 
@@ -71,12 +70,15 @@ class dut(object):
     retry_login_interval = 60
     reading_thread_lock = None
     prompt= None
+    dry_run_json=None#a dict to record the interaction procedure
+    last_write=None
     def __del__(self):
         if self.session:
             self.close_session()
 
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False):
         #expected types are [echo, telnet, ssh, shell, web_brower]
+        self.dry_run_json={}
         self.type = type
         self.prompt = prompt
         self.reading_thread_lock=threading.Lock()
@@ -386,6 +388,7 @@ class dut(object):
                     self.log_file.flush()
                     self.log_file.close()
                     self.log_file=None
+                self.save_dry_run_json()
             except:
                 pass
             self.session_status=False
@@ -409,6 +412,7 @@ class dut(object):
     def reset_search_buffer(self):
         #if not self.read_locker.locked():
         #    self.read_locker.acquire()
+        self.add_new_data_to_dry_run_json(self.search_buffer)
         self.search_buffer=''
         debug('{}:reset search buffer'.format(self.name))
         #if self.read_locker.locked():
@@ -428,13 +432,23 @@ class dut(object):
         last_update_time = datetime.datetime.now()
         self.last_cmd_time_stamp = last_update_time
         self.reading_thread_lock.acquire()
-        while self.session_status :#and self.session:
+        while True:#and self.session:
             try:
+                try:
+                    if self.session_status :
+                        pass
+                    else:
+                        break
+                except Exception as e:
+                    error(e)
+                    break
                 current_time = datetime.datetime.now()
                 if TRACE_LEVEL:
                     pass
                 last_update_time = self.last_cmd_time_stamp        #self.log('session {name} alive'.format(name =self.name))
                 if (current_time-last_update_time).total_seconds()> max_idle_time:
+                    th = threading.Thread(target=self.save_dry_run_json)
+                    th.start()
                     last_update_time = current_time
                     self.last_cmd_time_stamp = current_time
                     new_line = '\r\n'
@@ -463,6 +477,7 @@ class dut(object):
         self.reading_thread_lock.release()
     def write(self, cmd='', ctrl=False):
         resp = ''
+        self.add_new_command_to_dry_run_json(cmd, ctrl)
         if self.session_status:
             new_line =self.new_line
             if not self.login_done:
@@ -540,3 +555,26 @@ class dut(object):
 
         with open(data_file_name, 'a+') as data_file:
             data_file.write(populate_data_string(data))
+    def add_new_command_to_dry_run_json(self,cmd, ctrl):
+        if ctrl:
+            self.last_write= "^{}".format(cmd)
+        else:
+            self.last_write=cmd
+        if cmd in self.dry_run_json:
+            pass
+        else:
+            self.dry_run_json[self.last_write]=[]
+    def add_new_data_to_dry_run_json(self,data):
+        if self.last_write:
+            self.dry_run_json[self.last_write].append(data)
+
+    def save_dry_run_json(self):
+        try:
+            with open('{}/{}'.format(self.log_path, self.name), 'w') as jsonfile:
+                import json
+                jsonfile.write(json.dumps(self.dry_run_json).encode())
+        except Exception as e:
+            error(format_exc())
+
+
+

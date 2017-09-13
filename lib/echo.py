@@ -35,6 +35,7 @@ class echo (object):
         self.load(io_data_file)
     def load(self, io_data_file):
         import json
+
         json_data = ''.join([x.strip() for x in open(io_data_file).readlines()])
         self.io_map =json.loads(json_data)
 
