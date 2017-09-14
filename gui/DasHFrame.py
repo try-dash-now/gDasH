@@ -763,7 +763,7 @@ if __name__ == "__main__":
         lex = shlex.shlex(item_name)
         lex.quotes = '"'
         lex.whitespace_split = True
-        script_and_args =list(lex)[1:]
+        script_and_args =list(lex)[0:]
         item_data = self.case_suite_page.GetItemData(hit_item).Data
         script_name = self.case_suite_page.GetItemData(hit_item).Data['path_name']
 
@@ -778,10 +778,10 @@ if __name__ == "__main__":
         try:
             if os.path.exists('script_runner.exe'):
                 execute = 'script_runner.exe'
-                cmd = [execute,script_name ]+script_and_args
+                cmd = [execute,script_name ]+script_and_args + ['-l','{}'.format(self.log_path)]
                 #p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
             else:
-                cmd = [sys.executable, script_name ]+script_and_args
+                cmd = [sys.executable, script_name ]+script_and_args+ ['-l','{}'.format(self.log_path)]
             p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
 
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
