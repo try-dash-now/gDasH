@@ -576,7 +576,7 @@ class dut(object):
 
     def save_dry_run_json(self):
         try:
-            with open('{}/{}'.format(self.log_path, self.name), 'w') as jsonfile:
+            with open('{}/{}.json'.format(self.log_path, self.name), 'w') as jsonfile:
                 import json
                 jsonfile.write(json.dumps(self.dry_run_json).encode())
         except Exception as e:
