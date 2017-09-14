@@ -25,7 +25,7 @@ if __name__ == "__main__":
     if len(sys.argv)<2:
         print('ERROR: please input the script name to be executed!')
     else:
-        script_name = sys.argv[1]
+        script_name = sys.argv[0]
         sys.argv= sys.argv[1:]
         try:
             sys.argv.append('-l')

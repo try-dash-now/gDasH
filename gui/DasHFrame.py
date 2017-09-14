@@ -763,7 +763,7 @@ if __name__ == "__main__":
         lex = shlex.shlex(item_name)
         lex.quotes = '"'
         lex.whitespace_split = True
-        script_and_args =list(lex)[0:]
+        script_and_args =list(lex)[1:]
         item_data = self.case_suite_page.GetItemData(hit_item).Data
         script_name = self.case_suite_page.GetItemData(hit_item).Data['path_name']
 
