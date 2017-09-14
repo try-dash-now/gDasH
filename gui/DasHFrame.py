@@ -26,7 +26,7 @@ created 2017-05-06 by Sean Yu
 '''
 from datetime import datetime
 import wx.grid as gridlib
-
+import traceback
 import wx
 from gui.MainFrame import MainFrame
 import os
@@ -197,6 +197,9 @@ class DasHFrame(MainFrame):#wx.Frame
 
     dict_test_report= None
     alive =True
+    mail_server=None
+    mail_to_list=None
+    mail_from=None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.dict_test_report={}
@@ -212,6 +215,9 @@ class DasHFrame(MainFrame):#wx.Frame
         self.lib_path = os.path.abspath(self.ini_setting.get('dash','lib_path'))
         self.log_path = os.path.abspath(self.ini_setting.get('dash','log_path'))
         self.suite_path = os.path.abspath(self.ini_setting.get('dash', 'test_suite_path'))
+        self.mail_server= self.ini_setting.get('dash', 'mail_server')
+        self.mail_from =self.ini_setting.get('dash', 'mail_from')
+        self.mail_to_list=self.ini_setting.get('dash', 'mail_to_list')
 
         from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
@@ -313,7 +319,7 @@ class DasHFrame(MainFrame):#wx.Frame
         time.sleep(0.01)
         self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
 
-        test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
+        self.mail_test_report("DASH TEST REPORT")
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
             if isinstance(closing_page, (SessionTab)):
@@ -329,7 +335,6 @@ class DasHFrame(MainFrame):#wx.Frame
         sys.stdout = self.redir.old_stdout
         event.Skip()
     def generate_report(self, filename):
-        self.check_case_status()
         report = '''Test Report
 RESULT\tStart_Time\tEnd_Time\tPID\tDuration\tCase_Name\Log\n'''
         if len(self.dict_test_report):
@@ -727,7 +732,7 @@ if __name__ == "__main__":
                 break
         close_session=''
         str_code+='''    except Exception as e:
-        print(traceback.traceback.format_exc())\n'''
+        print(traceback.format_exc())\n'''
         for ses in sessions:
             str_code+='''        {}.close_session()\n'''.format(ses)
         str_code+='        sys.exit(-1)\n'#, sys.exit(-1)
@@ -812,12 +817,12 @@ if __name__ == "__main__":
             #p.join() # this blocks until the process terminates
             time.sleep(1)
         except Exception as e :
-            import traceback
             error(traceback.format_exc())
 
         #p = Process(target=run_script, args=[script_name,  script_and_args])
         #p.start()
     def check_case_status(self):
+        changed=False
         for pid in self.dict_test_report:
             for case_name in self.dict_test_report[pid]:
                 start_time, end_time, duration, return_code ,proc, log_path= self.dict_test_report[pid][case_name]
@@ -826,8 +831,13 @@ if __name__ == "__main__":
                         pass
                         debug('RUNNING', start_time, end_time, duration, return_code ,proc, log_path)
                     else:
+                        changed=True
                         return_code = 'FAIL' if proc.returncode else 'PASS'
                     self.update_case_status(pid,case_name,return_code)
+        if changed:
+            test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
+            self.mail_test_report(test_report)
+        return  changed
     def polling_running_cases(self):
         while True:
             time.sleep(10)
@@ -861,7 +871,15 @@ if __name__ == "__main__":
         else:
             duration = (now-start_time).total_seconds()
             self.dict_test_report[pid][case_name]=[start_time, now, duration, return_code, proc, log_path]
-
+    def mail_test_report(self, subject="DASH TEST REPORT"):
+        try:
+            from lib.common import send_mail_smtp_without_login
+            self.check_case_status()
+            test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
+            #TO, SUBJECT, TEXT, SERVER, FROM
+            send_mail_smtp_without_login(self.mail_to_list, subject,test_report,self.mail_server,self.mail_from)
+        except Exception as e:
+            error(traceback.format_exc())
         #p.terminate()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message

@@ -276,7 +276,7 @@ def get_next_in_ring_list(current_index,the_list,increase=True):
         value=the_list[index]
     return index, value
 import smtplib
-def send_mail_smtp_without_login(USERNAME, PASSWORD, TO, SUBJECT, TEXT, SERVER, FROM  ):#msg, FROM, TO, SUBJECT, USER, LOGIN, type='smtp', ):
+def send_mail_smtp_without_login( TO, SUBJECT, TEXT, SERVER, FROM  ):#msg, FROM, TO, SUBJECT, USER, LOGIN, type='smtp', ):
     if isinstance(TO, (basestring)):
         TO = TO.replace(',',';').split(';')
     mailServer = smtplib.SMTP(SERVER) #~~~SMTP server for outgoing mail
@@ -304,7 +304,7 @@ def create_dir(log_path):
     log_path = os.path.abspath(log_path)
     log_path = log_path.split(os.sep)
 
-    print('create dir: {}'.format('{}'.format(os.sep).join(log_path)))
+
     tmp=None
     for d in log_path:
         if tmp is None:
@@ -315,6 +315,7 @@ def create_dir(log_path):
             pass
         else:
             os.mkdir(tmp)
+            info('create dir: {}'.format('{}'.format(os.sep).join(log_path)))
     return  tmp
 def get_log_folder_from_sys_argv(log_path= None):
     import sys, os, re
