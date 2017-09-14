@@ -117,6 +117,8 @@ class dut(object):
     def open(self, retry =10, interval= 60):
         if self.session:
             #self.session_status=False
+            self.close_session()
+            self.sleep(0.01)
             del self.session
             self.session=None
             self.sleep(1)
@@ -190,8 +192,11 @@ class dut(object):
         except Exception as e:
             import traceback
             error_msg =traceback.format_exc(e)
-            error('failed to open {}'.format(self.name), e, error_msg)
-            self.session_status =False
+            try:
+                error('failed to open {}'.format(self.name), e, error_msg)
+                self.session_status =False
+            except:
+                pass
 
 
     def step(self,command, expect='.*', time_out=30, total_try =3, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.DOTALL|re.I|re.M):
