@@ -241,8 +241,10 @@ class DasHFrame(MainFrame):#wx.Frame
         fileMenu = wx.Menu()
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
+        mail_test_report = fileMenu.Append(wx.NewId(), "Mail Test Report", "Mail Test Report")
         self.m_menubar_main.Append(fileMenu, "&Open")
 
+        self.Bind(wx.EVT_MENU,self.on_mail_test_report ,mail_test_report)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
         self.m_command_box.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -336,7 +338,7 @@ class DasHFrame(MainFrame):#wx.Frame
         event.Skip()
     def generate_report(self, filename):
         report = '''Test Report
-RESULT\tStart_Time\tEnd_Time\tPID\tDuration\tCase_Name\Log\n'''
+RESULT\tStart_Time\tEnd_Time\tPID\tDuration\tCase_Name\tLog\n'''
         if len(self.dict_test_report):
             with open(filename, 'a+') as f:
                 f.write(report)
@@ -880,6 +882,8 @@ if __name__ == "__main__":
             send_mail_smtp_without_login(self.mail_to_list, subject,test_report,self.mail_server,self.mail_from)
         except Exception as e:
             error(traceback.format_exc())
+    def on_mail_test_report(self,event):
+        self.mail_test_report('DasH Test Report')
         #p.terminate()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
