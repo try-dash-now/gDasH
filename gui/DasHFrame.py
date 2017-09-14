@@ -194,13 +194,13 @@ class DasHFrame(MainFrame):#wx.Frame
     log_path = '../log'
     session_path = './sessions'
     suite_path = '../test_suite'
-    running_process=None
-    dict_test_report= None
 
+    dict_test_report= None
+    alive =True
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.dict_test_report={}
-        self.running_process = list()
+
         self.tabs_in_edit_area=[]
         self.sessions_alive={}
         MainFrame.__init__(self, parent=parent)
@@ -306,9 +306,14 @@ class DasHFrame(MainFrame):#wx.Frame
 
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
+        th= threading.Thread(target=self.polling_running_cases)
+        th.start()
     def on_close(self, event):
+        self.alive =False
+        time.sleep(0.01)
         self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
-        self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
+
+        test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
             if isinstance(closing_page, (SessionTab)):
@@ -324,24 +329,24 @@ class DasHFrame(MainFrame):#wx.Frame
         sys.stdout = self.redir.old_stdout
         event.Skip()
     def generate_report(self, filename):
+        self.check_case_status()
         report = '''Test Report
-RESULT\tScript Name\n'''
-
-        if len(self.running_process):
-
+RESULT\tStart_Time\tEnd_Time\tPID\tDuration\tCase_Name\Log\n'''
+        if len(self.dict_test_report):
             with open(filename, 'a+') as f:
                 f.write(report)
-                for pi in self.running_process:
-                    name, pro= pi[:2]
-                    if pro.returncode is None:
-                        result = 'RUNNING'
-                    else:
-                        result = 'PASS' if pro.returncode else 'FAIL'
-                    pid = pro.pid
-                    record = '\t'.join(['{}'.format(x) for x in [result,name]])
-                    report+=record+'\n'
-                    f.write(record+'\n')
+                for pi in self.dict_test_report:
+                    for case_name in self.dict_test_report[pi]:
+                        start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][case_name][:6]
+                        if return_code is None:
+                            result = 'RUNNING'
+                        else:
+                            result = return_code # 'FAIL' if return_code else 'PASS'
+                        record = '\t'.join(['{}'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,log_path ]])
+                        report+=record+'\n'
+                        f.write(record+'\n')
 
+        return report
 
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
@@ -755,14 +760,17 @@ if __name__ == "__main__":
         if item_data.has_key('PROCESS'):
             p = item_data['PROCESS']
             name= item_data['FULL_NAME']
+
             info('script:{}, returncode:{}'.format(name,p.returncode))
             if p.returncode is None:
             #if p.is_alive():
                 info('Terminate alive process {}:{}'.format(item_name, p.pid))
+                result ='KILL'
                 p.terminate()
             else:
                 result ='FAIL' if p.returncode else 'PASS'
                 info('{}:{} completed with returncode {}'.format(item_name, p.pid, result))
+            self.update_case_status(p.pid,item_name,result)
     def on_run_script(self,event):
         hit_item = self.case_suite_page.GetSelection()
         item_name = self.case_suite_page.GetItemText(hit_item)
@@ -770,7 +778,7 @@ if __name__ == "__main__":
         lex = shlex.shlex(item_name)
         lex.quotes = '"'
         lex.whitespace_split = True
-        script_and_args =list(lex)[1:]
+        script_args =list(lex)[1:]
         item_data = self.case_suite_page.GetItemData(hit_item).Data
         script_name = self.case_suite_page.GetItemData(hit_item).Data['path_name']
 
@@ -782,20 +790,25 @@ if __name__ == "__main__":
 
         self.on_kill_script(event)
         #queue = Queue()
+        from lib.common import create_case_folder
+        old_sys_argv = sys.argv
+        sys.argv= [script_name]+script_args
+        case_log_path = create_case_folder()
+        sys.argv= old_sys_argv
         try:
             if os.path.exists('script_runner.exe'):
                 execute = 'script_runner.exe'
-                cmd = [execute,script_name ]+script_and_args + ['-l','{}'.format(self.log_path)]
+                cmd = [execute,script_name ]+script_args + ['-l','{}'.format(case_log_path)]
                 #p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
             else:
-                cmd = [sys.executable, script_name ]+script_and_args+ ['-l','{}'.format(self.log_path)]
+                cmd = [sys.executable, script_name ]+script_args+ ['-l','{}'.format(case_log_path)]
             p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
 
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
             self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
             info('start process {} :{}'.format(item_name,  p.pid))
 
-            self.running_process.append([item_name, p])
+            self.add_newe_case_to_report(p.pid,item_name,p,self.log_path)
             #p.join() # this blocks until the process terminates
             time.sleep(1)
         except Exception as e :
@@ -804,33 +817,50 @@ if __name__ == "__main__":
 
         #p = Process(target=run_script, args=[script_name,  script_and_args])
         #p.start()
-
-    def polling_running_cases(self):
+    def check_case_status(self):
         for pid in self.dict_test_report:
             for case_name in self.dict_test_report[pid]:
-                start_time, end_time, duration, tmp_return_code ,proc= [case_name]
-                #todo: polling proc status and fill report
+                start_time, end_time, duration, return_code ,proc, log_path= self.dict_test_report[pid][case_name]
+                if return_code is None:
+                    if proc.poll() is None:
+                        pass
+                        debug('RUNNING', start_time, end_time, duration, return_code ,proc, log_path)
+                    else:
+                        return_code = 'FAIL' if proc.returncode else 'PASS'
+                    self.update_case_status(pid,case_name,return_code)
+    def polling_running_cases(self):
+        while True:
+            time.sleep(10)
+            try:
+                if not self.alive:
+                    break
+            except:
+                break
+            self.check_case_status()
 
 
 
-    def add_newe_case_to_report(self, pid, case_name, proc):
+
+    def add_newe_case_to_report(self, pid, case_name, proc, log_path):
         start_time=datetime.now()
         duration = 0
         end_time = None
         return_code = None
+
         if pid in self.dict_test_report:
-            self.dict_test_report[pid].update({case_name:[start_time,end_time, duration, return_code, proc]})
+            self.dict_test_report[pid].update({case_name:[start_time,end_time, duration, return_code, proc,log_path]})
         else:
-            self.dict_test_report[pid]={case_name:[start_time, end_time, duration,return_code, proc ]}
+            self.dict_test_report[pid]={case_name:[start_time, end_time, duration,return_code, proc, log_path ]}
+
     def update_case_status(self, pid,case_name, return_code=None):
         now = datetime.now()
-        start_time, end_time, duration, tmp_return_code ,proc= self.dict_test_report[pid][case_name]
+        start_time, end_time, duration, tmp_return_code ,proc,log_path= self.dict_test_report[pid][case_name]
         if return_code is None:
             duration = (now-start_time).total_seconds()
-            self.dict_test_report[pid][case_name]=[start_time, end_time, duration, tmp_return_code, proc]
+            self.dict_test_report[pid][case_name]=[start_time, end_time, duration, tmp_return_code, proc, log_path]
         else:
             duration = (now-start_time).total_seconds()
-            self.dict_test_report[case_name][pid]=[start_time, now, duration, return_code, proc]
+            self.dict_test_report[pid][case_name]=[start_time, now, duration, return_code, proc, log_path]
 
         #p.terminate()
 #done: 2017-08-22, 2017-08-19 save main log window to a file

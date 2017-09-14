@@ -19,17 +19,21 @@ if __name__ == "__main__":
         else:
             Exception("path is not exist, can't be added to SYSTEM PATH(PYTHON PATH\n\t{}".format(path))
     import subprocess
-    DEBUG = False
+    DEBUG = True
     if DEBUG:
         sys.argv.append('run_ut.py')
     if len(sys.argv)<2:
         print('ERROR: please input the script name to be executed!')
     else:
+        old_sys_argv = sys.argv
         script_name = sys.argv[0]
         sys.argv= sys.argv[1:]
         try:
+            from lib.common import create_case_folder
+            case_log_path = create_case_folder()
             sys.argv.append('-l')
-            sys.argv.append(log_path)
+            sys.argv.append(case_log_path)
+
             execfile(script_name,globals(), locals() )
         except Exception as e:
             import traceback

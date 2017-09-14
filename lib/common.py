@@ -316,6 +316,16 @@ def create_dir(log_path):
         else:
             os.mkdir(tmp)
     return  tmp
+def get_log_folder_from_sys_argv(log_path= None):
+    import sys, os, re
+    arg_numbers = len(sys.argv)
+    if log_path is None:
+        log_path = '../log/tmp'
+    if arg_numbers>=3:
+        if sys.argv[-2].lower().strip() == '-l':
+            log_path = sys.argv[-1]
+    return log_path
+
 def create_case_folder(log_path = None):
     import sys, os, re
     arg_numbers = len(sys.argv)
