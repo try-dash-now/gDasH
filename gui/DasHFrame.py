@@ -193,8 +193,10 @@ class DasHFrame(MainFrame):#wx.Frame
     lib_path ='./lib'
     log_path = '../log'
     session_path = './sessions'
+    suite_path = '../test_suite'
     running_process=None
     dict_test_report= None
+
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.dict_test_report={}
@@ -209,10 +211,15 @@ class DasHFrame(MainFrame):#wx.Frame
         self.src_path = os.path.abspath(self.ini_setting.get('dash','src_path'))
         self.lib_path = os.path.abspath(self.ini_setting.get('dash','lib_path'))
         self.log_path = os.path.abspath(self.ini_setting.get('dash','log_path'))
-        from  lib.common import create_case_folder
+        self.suite_path = os.path.abspath(self.ini_setting.get('dash', 'test_suite_path'))
+
+        from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
         sys.argv.append('{}'.format(self.log_path))
         self.log_path = create_case_folder(self.log_path)
+        self.suite_path = create_dir(self.suite_path)
+        self.lib_path = create_dir(self.lib_path)
+        self.src_path = create_dir(self.src_path)
         if not os.path.exists(self.log_path):
             os.mkdir(self.log_path)
         self.add_src_path_to_python_path(self.src_path)
@@ -300,8 +307,8 @@ class DasHFrame(MainFrame):#wx.Frame
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
     def on_close(self, event):
-        self.generate_code(file_name='{}/test_script.py'.format(self.ini_setting.get('dash', 'log_path')))
-        self.generate_report(filename='{}/dash_report.txt'.format(self.ini_setting.get('dash', 'log_path')))
+        self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
+        self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
             if isinstance(closing_page, (SessionTab)):
@@ -373,7 +380,7 @@ RESULT\tScript Name\n'''
                 #self.m_case_tree.InsertItem(new_item,new_item,'')
 
     def build_suite_tree(self):
-        suite_path = os.path.abspath(self.ini_setting.get('dash','test_suite_path'))
+        suite_path = self.suite_path #os.path.abspath(self.ini_setting.get('dash','test_suite_path'))
         if not os.path.exists(suite_path):
             suite_path= os.path.abspath(os.path.curdir)
         base_name = os.path.basename(suite_path)
