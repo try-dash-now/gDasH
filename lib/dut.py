@@ -377,11 +377,12 @@ class dut(object):
                 if self.session_type in ['ssh']:
                     if self.session:
                         self.session.write('exit\r\n')
+                        self.session.client.close()
                 if self.session_type in 'telnet':
                     #self.session.write('exit')
                     if self.session:
                         self.session.write('exit\r\n')
-                    #self.write('exit')
+                    self.session.sock.close()
             except Exception as e:
                 error('dut({}): {}'.format(self.name, e))
                 self.session=None
