@@ -325,6 +325,7 @@ def get_log_folder_from_sys_argv(log_path= None):
     if arg_numbers>=3:
         if sys.argv[-2].lower().strip() == '-l':
             log_path = sys.argv[-1]
+    info(log_path)
     return log_path
 
 def create_case_folder(log_path = None):
@@ -358,5 +359,6 @@ def create_case_folder(log_path = None):
 
     full_path = '{}/{}'.format(log_path, folder_name)
     return create_dir(full_path)
+
 
 

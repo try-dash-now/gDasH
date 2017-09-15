@@ -200,6 +200,9 @@ class DasHFrame(MainFrame):#wx.Frame
     mail_server=None
     mail_to_list=None
     mail_from=None
+    mail_read_url= 'outlook.office365.com'
+    mail_password = None
+    mail_usre =None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.dict_test_report={}
@@ -209,16 +212,18 @@ class DasHFrame(MainFrame):#wx.Frame
         MainFrame.__init__(self, parent=parent)
         self.sequence_queue= Queue.Queue()
         #self.sequence_queue.put()
-        self.ini_setting = ConfigParser.ConfigParser()
+        self.ini_setting    = ConfigParser.ConfigParser()
         self.ini_setting.read(ini_file)
-        self.src_path = os.path.abspath(self.ini_setting.get('dash','src_path'))
-        self.lib_path = os.path.abspath(self.ini_setting.get('dash','lib_path'))
-        self.log_path = os.path.abspath(self.ini_setting.get('dash','log_path'))
-        self.suite_path = os.path.abspath(self.ini_setting.get('dash', 'test_suite_path'))
-        self.mail_server= self.ini_setting.get('dash', 'mail_server')
-        self.mail_from =self.ini_setting.get('dash', 'mail_from')
-        self.mail_to_list=self.ini_setting.get('dash', 'mail_to_list')
-
+        self.src_path       = os.path.abspath(self.ini_setting.get('dash','src_path'))
+        self.lib_path       = os.path.abspath(self.ini_setting.get('dash','lib_path'))
+        self.log_path       = os.path.abspath(self.ini_setting.get('dash','log_path'))
+        self.suite_path     = os.path.abspath(self.ini_setting.get('dash', 'test_suite_path'))
+        self.mail_server    = self.ini_setting.get('dash', 'mail_server')
+        self.mail_from      =self.ini_setting.get('dash', 'mail_from')
+        self.mail_to_list   =self.ini_setting.get('dash', 'mail_to_list')
+        self.mail_read_url  =self.ini_setting.get('dash', 'mail_read_url')
+        self.mail_user      = self.ini_setting.get('dash','mail_user')
+        self.mail_password  =self.ini_setting.get('dash', 'mail_password')
         from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
         sys.argv.append('{}'.format(self.log_path))
@@ -778,7 +783,7 @@ if __name__ == "__main__":
             else:
                 result ='FAIL' if p.returncode else 'PASS'
                 info('{}:{} completed with returncode {}'.format(item_name, p.pid, result))
-            self.update_case_status(p.pid,item_name,result)
+            #self.update_case_status(p.pid,item_name,result)
     def on_run_script(self,event):
         hit_item = self.case_suite_page.GetSelection()
         item_name = self.case_suite_page.GetItemText(hit_item)
@@ -867,7 +872,7 @@ if __name__ == "__main__":
 
     def update_case_status(self, pid,case_name, return_code=None):
         now = datetime.now()
-        start_time, end_time, duration, tmp_return_code ,proc,log_path= self.dict_test_report[pid][case_name]
+
         if return_code is None:
             duration = (now-start_time).total_seconds()
             self.dict_test_report[pid][case_name]=[start_time, end_time, duration, tmp_return_code, proc, log_path]
@@ -886,6 +891,48 @@ if __name__ == "__main__":
     def on_mail_test_report(self,event):
         self.mail_test_report('DasH Test Report-updating')
         #p.terminate()
+    def on_handle_request_via_mail(self):
+        import imaplib
+        url, user, password = self.mail_read_url,self.mail_user, self.mail_password
+        conn = imaplib.IMAP4_SSL(url,993)
+        conn.login(user,password)
+        conn.select('INBOX')
+        results,data = conn.search(None,'(UNSEEN)') # #'ALL')
+        msg_ids = data[0]
+        msg_id_list = msg_ids.split()
+        from email.parser import Parser
+        def process_multipart_message(message):
+            if isinstance(message, basestring) or isinstance(message , list):
+                return message
+            rtn = ''
+            try:
+                if message.is_multipart():
+                    for m in message.get_payload():
+                        rtn += process_multipart_message(m)
+                else:
+                    rtn += message.get_payload()
+            except Exception as e:
+                pass
+            return rtn
+        MAX_UNREAD_MAIL = 50
+        for unread_mail_id in msg_id_list[::-1][:MAX_UNREAD_MAIL]:
+            result,data = conn.fetch(unread_mail_id,"(RFC822)")
+            raw_email = data[0][1]
+            p = Parser()
+            msg = p.parsestr(raw_email)
+            #msg = process_multipart_message(msg )
+            from1 = msg.get('From')
+            if from1 in ['dash@calix.com', 'yu_silence@163.com']:
+                conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                #conn.uid('STORE', '-FLAGS', '(\Seen)')
+            sub = msg.get('Subject')
+            pat_dash_request= re.compile('dash\s*request', flags=re.IGNORECASE)
+
+
+            payload = msg.get_payload()
+            print(payload)
+            payload = process_multipart_message(payload )
+            print(payload)
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
