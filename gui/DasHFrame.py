@@ -338,7 +338,7 @@ class DasHFrame(MainFrame):#wx.Frame
         event.Skip()
     def generate_report(self, filename):
         report = '''Test Report
-RESULT\tStart_Time\tEnd_Time\tPID\tDuration\tCase_Name\tLog\n'''
+RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
         if len(self.dict_test_report):
             with open(filename, 'a+') as f:
                 f.write(report)
@@ -346,10 +346,10 @@ RESULT\tStart_Time\tEnd_Time\tPID\tDuration\tCase_Name\tLog\n'''
                     for case_name in self.dict_test_report[pi]:
                         start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][case_name][:6]
                         if return_code is None:
-                            result = 'RUNNING'
+                            result = 'IP'
                         else:
                             result = return_code # 'FAIL' if return_code else 'PASS'
-                        record = '\t'.join(['{}'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,log_path ]])
+                        record = '\t'.join(['{},'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,log_path ]])
                         report+=record+'\n'
                         f.write(record+'\n')
 
@@ -773,6 +773,7 @@ if __name__ == "__main__":
             #if p.is_alive():
                 info('Terminate alive process {}:{}'.format(item_name, p.pid))
                 result ='KILL'
+                self.mail_test_report("DASH TEST REPORT-updating")
                 p.terminate()
             else:
                 result ='FAIL' if p.returncode else 'PASS'
@@ -838,7 +839,7 @@ if __name__ == "__main__":
                     self.update_case_status(pid,case_name,return_code)
         if changed:
             #test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
-            self.mail_test_report('DasH Test Report-updated')
+            self.mail_test_report('DasH Test Report-updating')
         return  changed
     def polling_running_cases(self):
         while True:
@@ -873,7 +874,7 @@ if __name__ == "__main__":
         else:
             duration = (now-start_time).total_seconds()
             self.dict_test_report[pid][case_name]=[start_time, now, duration, return_code, proc, log_path]
-    def mail_test_report(self, subject="DASH TEST REPORT-updated"):
+    def mail_test_report(self, subject="DASH TEST REPORT-updating"):
         try:
             from lib.common import send_mail_smtp_without_login
             self.check_case_status()
@@ -883,7 +884,7 @@ if __name__ == "__main__":
         except Exception as e:
             error(traceback.format_exc())
     def on_mail_test_report(self,event):
-        self.mail_test_report('DasH Test Report-updated')
+        self.mail_test_report('DasH Test Report-updating')
         #p.terminate()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
