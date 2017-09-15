@@ -348,15 +348,14 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
             with open(filename, 'a+') as f:
                 f.write(report)
                 for pi in self.dict_test_report:
-                    for case_name in self.dict_test_report[pi]:
-                        start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][case_name][:6]
-                        if return_code is None:
-                            result = 'IP'
-                        else:
-                            result = return_code # 'FAIL' if return_code else 'PASS'
-                        record = '\t'.join(['{},'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,log_path ]])
-                        report+=record+'\n'
-                        f.write(record+'\n')
+                    case_name, start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][:7]
+                    if return_code is None:
+                        result = 'IP'
+                    else:
+                        result = return_code # 'FAIL' if return_code else 'PASS'
+                    record = '\t'.join(['{},'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,'<{}>'.format(log_path) ]])
+                    report+=record+'\n'
+                    f.write(record+'\n')
 
         return report
 
@@ -783,7 +782,7 @@ if __name__ == "__main__":
             else:
                 result ='FAIL' if p.returncode else 'PASS'
                 info('{}:{} completed with returncode {}'.format(item_name, p.pid, result))
-            #self.update_case_status(p.pid,item_name,result)
+            self.update_case_status(p.pid, result)
     def on_run_script(self,event):
         hit_item = self.case_suite_page.GetSelection()
         item_name = self.case_suite_page.GetItemText(hit_item)
@@ -832,16 +831,15 @@ if __name__ == "__main__":
     def check_case_status(self):
         changed=False
         for pid in self.dict_test_report:
-            for case_name in self.dict_test_report[pid]:
-                start_time, end_time, duration, return_code ,proc, log_path= self.dict_test_report[pid][case_name]
-                if return_code is None:
-                    if proc.poll() is None:
-                        pass
-                        debug('RUNNING', start_time, end_time, duration, return_code ,proc, log_path)
-                    else:
-                        changed=True
-                        return_code = 'FAIL' if proc.returncode else 'PASS'
-                    self.update_case_status(pid,case_name,return_code)
+            case_name, start_time, end_time, duration, return_code ,proc, log_path= self.dict_test_report[pid]
+            if return_code is None:
+                if proc.poll() is None:
+                    pass
+                    debug('RUNNING', start_time, end_time, duration, return_code ,proc, log_path)
+                else:
+                    changed=True
+                    return_code = 'FAIL' if proc.returncode else 'PASS'
+                self.update_case_status(pid,return_code)
         if changed:
             #test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
             self.mail_test_report('DasH Test Report-updating')
@@ -866,19 +864,21 @@ if __name__ == "__main__":
         return_code = None
 
         if pid in self.dict_test_report:
-            self.dict_test_report[pid].update({case_name:[start_time,end_time, duration, return_code, proc,log_path]})
+            self.dict_test_report[pid].update([case_name,start_time,end_time, duration, return_code, proc,log_path])
         else:
-            self.dict_test_report[pid]={case_name:[start_time, end_time, duration,return_code, proc, log_path ]}
+            self.dict_test_report[pid]=[case_name, start_time, end_time, duration,return_code, proc, log_path ]
 
-    def update_case_status(self, pid,case_name, return_code=None):
+    def update_case_status(self, pid,return_code=None):
+
         now = datetime.now()
-
+        case_name, start_time, end_time, duration, tmp_return_code ,proc,log_path= self.dict_test_report[pid]
         if return_code is None:
             duration = (now-start_time).total_seconds()
-            self.dict_test_report[pid][case_name]=[start_time, end_time, duration, tmp_return_code, proc, log_path]
+            self.dict_test_report[pid]=[case_name,start_time, end_time, duration, tmp_return_code, proc, log_path]
         else:
             duration = (now-start_time).total_seconds()
-            self.dict_test_report[pid][case_name]=[start_time, now, duration, return_code, proc, log_path]
+            self.dict_test_report[pid]=[case_name,start_time, now, duration, return_code, proc, log_path]
+
     def mail_test_report(self, subject="DASH TEST REPORT-updating"):
         try:
             from lib.common import send_mail_smtp_without_login
