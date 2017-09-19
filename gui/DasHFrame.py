@@ -347,7 +347,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
         if len(self.dict_test_report):
             with open(filename, 'a+') as f:
                 f.write(report)
-                for pi in self.dict_test_report:
+                for pi in sorted(self.dict_test_report, key = lambda x: self.dict_test_report[x][1]):
                     case_name, start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][:7]
                     if return_code is None:
                         result = 'IP'
