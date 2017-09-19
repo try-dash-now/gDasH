@@ -153,13 +153,13 @@ class dut(object):
                 counter+=1
                 try:
                     if type == 'echo' or init_file_name !=None:
-                        from lib.echo import echo
+                        from echo import echo
                         self.session = echo(name, init_file_name)
                     elif type.lower() =='ssh':
-                        from lib.SSH import SSH
+                        from SSH import SSH
                         self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
                     elif type.lower() in ['telnet']:
-                        from lib.TELNET import  TELNET
+                        from TELNET import  TELNET
                         self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
                     if isinstance(login_step,(list, tuple)):
                         pass

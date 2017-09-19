@@ -777,12 +777,13 @@ if __name__ == "__main__":
             #if p.is_alive():
                 info('Terminate alive process {}:{}'.format(item_name, p.pid))
                 result ='KILL'
+                self.update_case_status(p.pid, result)
                 self.mail_test_report("DASH TEST REPORT-updating")
                 p.terminate()
             else:
                 result ='FAIL' if p.returncode else 'PASS'
                 info('{}:{} completed with returncode {}'.format(item_name, p.pid, result))
-            self.update_case_status(p.pid, result)
+                self.update_case_status(p.pid, result)
     def on_run_script(self,event):
         hit_item = self.case_suite_page.GetSelection()
         item_name = self.case_suite_page.GetItemText(hit_item)
@@ -872,7 +873,7 @@ if __name__ == "__main__":
 
         now = datetime.now()
         case_name, start_time, end_time, duration, tmp_return_code ,proc,log_path= self.dict_test_report[pid]
-        if return_code is None:
+        if tmp_return_code is None:
             duration = (now-start_time).total_seconds()
             self.dict_test_report[pid]=[case_name,start_time, end_time, duration, tmp_return_code, proc, log_path]
         else:

@@ -37,7 +37,7 @@ import os, sys,time , traceback
 import threading
 #import ssh
 import paramiko as ssh
-from dut import dut
+#from dut import dut
 class SSH(object):
     chan=None
     client=None

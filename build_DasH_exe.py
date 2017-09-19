@@ -156,7 +156,8 @@ import py2exe
 dll_excludes = ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll',
                 #'tcl84.dll',
                 #'tk84.dll',
-                'MSVCP90.dll']
+                'MSVCP90.dll'
+                 ]
 py2exe_options = {
         #'cmdclass': {'py2exe': MediaCollector},
         # [...] Other py2exe options here.
