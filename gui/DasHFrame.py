@@ -353,7 +353,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
                         result = 'IP'
                     else:
                         result = return_code # 'FAIL' if return_code else 'PASS'
-                    record = '\t'.join(['{},'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,'<{}>'.format(log_path) ]])
+                    record = '\t'.join(['{},\t'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,'<{}>'.format(log_path) ]])
                     report+=record+'\n'
                     f.write(record+'\n')
 

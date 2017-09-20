@@ -578,7 +578,7 @@ class dut(object):
         try:
             with open('{}/{}.json'.format(self.log_path, self.name), 'w') as jsonfile:
                 import json
-                jsonfile.write(json.dumps(self.dry_run_json).encode())
+                jsonfile.write(unicode(json.dumps( self.dry_run_json), "utf-8"))
         except Exception as e:
             error(format_exc())
 
