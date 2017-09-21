@@ -870,15 +870,14 @@ if __name__ == "__main__":
             self.dict_test_report[pid]=[case_name, start_time, end_time, duration,return_code, proc, log_path ]
 
     def update_case_status(self, pid,return_code=None):
-
         now = datetime.now()
         case_name, start_time, end_time, duration, tmp_return_code ,proc,log_path= self.dict_test_report[pid]
+
         if tmp_return_code is None:
             duration = (now-start_time).total_seconds()
-            self.dict_test_report[pid]=[case_name,start_time, end_time, duration, tmp_return_code, proc, log_path]
+            self.dict_test_report[pid]=[case_name,start_time, end_time, duration, return_code, proc, log_path]
         else:
-            duration = (now-start_time).total_seconds()
-            self.dict_test_report[pid]=[case_name,start_time, now, duration, return_code, proc, log_path]
+            pass# don't update one case result twice
 
     def mail_test_report(self, subject="DASH TEST REPORT-updating"):
         try:
