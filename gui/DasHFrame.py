@@ -799,23 +799,24 @@ if __name__ == "__main__":
         from multiprocessing import Process, Queue
         import subprocess
 
-
-
         self.on_kill_script(event)
         #queue = Queue()
         from lib.common import create_case_folder
         old_sys_argv = sys.argv
         sys.argv= [script_name]+script_args
-        case_log_path = create_case_folder()
+        case_log_path = self.log_path #create_case_folder()
         sys.argv= old_sys_argv
+
+
         try:
             if os.path.exists('script_runner.exe'):
                 execute = 'script_runner.exe'
                 cmd = [execute,script_name ]+script_args + ['-l','{}'.format(case_log_path)]
                 #p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
             else:
-                cmd = [sys.executable, script_name ]+script_args+ ['-l','{}'.format(case_log_path)]
-            p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
+                cmd = [sys.executable,'./script_runner.py', script_name ]+script_args+ ['-l','{}'.format(case_log_path)]
+
+            p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)#, stdin=pipe_input, stdout=pipe_output,stderr=pipe_output)
 
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
             self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
