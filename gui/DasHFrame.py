@@ -203,8 +203,10 @@ class DasHFrame(MainFrame):#wx.Frame
     mail_read_url= 'outlook.office365.com'
     mail_password = None
     mail_usre =None
+    case_queue =None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        self.case_queue = Queue.Queue()
         self.dict_test_report={}
 
         self.tabs_in_edit_area=[]
@@ -320,6 +322,8 @@ class DasHFrame(MainFrame):#wx.Frame
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
         th= threading.Thread(target=self.polling_running_cases)
+        th.start()
+        th = threading.Thread(target=self.polling_request_via_mail)
         th.start()
     def on_close(self, event):
         self.alive =False
@@ -784,30 +788,27 @@ if __name__ == "__main__":
                 result ='FAIL' if p.returncode else 'PASS'
                 info('{}:{} completed with returncode {}'.format(item_name, p.pid, result))
                 self.update_case_status(p.pid, result)
-    def on_run_script(self,event):
-        hit_item = self.case_suite_page.GetSelection()
-        item_name = self.case_suite_page.GetItemText(hit_item)
-        import shlex
-        lex = shlex.shlex(item_name)
-        lex.quotes = '"'
-        lex.whitespace_split = True
-        script_args =list(lex)[1:]
-        item_data = self.case_suite_page.GetItemData(hit_item).Data
-        script_name = self.case_suite_page.GetItemData(hit_item).Data['path_name']
-
+    def run_script(self, script_name):
         from lib.common import run_script
         from multiprocessing import Process, Queue
         import subprocess
+        import shlex
+        lex = shlex.shlex(script_name)
+        lex.quotes = '"'
+        lex.whitespace_split = True
+        script_name_and_args = list(lex)
 
-        self.on_kill_script(event)
-        #queue = Queue()
+        script_args = script_name_and_args[1:]
+        script_name = script_name_and_args[0]
+        if script_name.find(os.path.sep)!=-1:
+            pass
+        else:
+            script_name= '{}/{}'.format(self.suite_path,script_name)
         from lib.common import create_case_folder
         old_sys_argv = sys.argv
         sys.argv= [script_name]+script_args
         case_log_path = self.log_path #create_case_folder()
         sys.argv= old_sys_argv
-
-
         try:
             if os.path.exists('script_runner.exe'):
                 execute = 'script_runner.exe'
@@ -817,12 +818,23 @@ if __name__ == "__main__":
                 cmd = [sys.executable,'./script_runner.py', script_name ]+script_args+ ['-l','{}'.format(case_log_path)]
 
             p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)#, stdin=pipe_input, stdout=pipe_output,stderr=pipe_output)
+        except:
+            error(traceback.format_exc())
 
+        return p, case_log_path
+    def on_run_script(self,event):
+        hit_item = self.case_suite_page.GetSelection()
+        item_name = self.case_suite_page.GetItemText(hit_item)
+
+        item_data = self.case_suite_page.GetItemData(hit_item).Data
+        script_name = self.case_suite_page.GetItemData(hit_item).Data['path_name']
+        self.on_kill_script(event)
+        try:
+            p, case_log_path = self.run_script('{} {}'.format(script_name, item_name))
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
             self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
             info('start process {} :{}'.format(item_name,  p.pid))
-
-            self.add_newe_case_to_report(p.pid,item_name,p,case_log_path)
+            self.add_new_case_to_report(p.pid, item_name, p, case_log_path)
             #p.join() # this blocks until the process terminates
             time.sleep(1)
         except Exception as e :
@@ -832,19 +844,27 @@ if __name__ == "__main__":
         #p.start()
     def check_case_status(self):
         changed=False
+        running_case = 0
         for pid in self.dict_test_report:
             case_name, start_time, end_time, duration, return_code ,proc, log_path= self.dict_test_report[pid]
             if return_code is None:
                 if proc.poll() is None:
-                    pass
+                    running_case+=1
                     debug('RUNNING', start_time, end_time, duration, return_code ,proc, log_path)
                 else:
                     changed=True
                     return_code = 'FAIL' if proc.returncode else 'PASS'
+
                 self.update_case_status(pid,return_code)
         if changed:
             #test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
             self.mail_test_report('DasH Test Report-updating')
+        if running_case:
+            pass
+        else:
+            if self.case_queue.qsize():
+                case_name_with_args = self.case_queue.get()
+                p, case_log_path = self.run_script(case_name_with_args)
         return  changed
     def polling_running_cases(self):
         while True:
@@ -859,7 +879,7 @@ if __name__ == "__main__":
 
 
 
-    def add_newe_case_to_report(self, pid, case_name, proc, log_path):
+    def add_new_case_to_report(self, pid, case_name, proc, log_path):
         start_time=datetime.now()
         duration = 0
         end_time = None
@@ -923,17 +943,38 @@ if __name__ == "__main__":
             msg = p.parsestr(raw_email)
             #msg = process_multipart_message(msg )
             from1 = msg.get('From')
-            if from1 in ['dash@calix.com', 'yu_silence@163.com']:
-                conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
-                #conn.uid('STORE', '-FLAGS', '(\Seen)')
             sub = msg.get('Subject')
-            pat_dash_request= re.compile('dash\s*request', flags=re.IGNORECASE)
+            if sub.strip().lower() in ['dash-request-run']:
+                if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
+                    conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                #conn.uid('STORE', '-FLAGS', '(\Seen)')
+                payload = msg.get_payload()
+                print(payload)
+                payload = process_multipart_message(payload )
+                print(payload)
+                from lib.html2text import html2text
+                txt = html2text(payload)
+                cases = txt.replace('\r\n','\n').split('\n')
+                for line in cases:
+                    line = line.strip()
+                    if line.strip().startswith('#') or len(line)==0:
+                        pass
+                    else:
+                        self.case_queue.put(line)
+                        info('adding case to queue: {}'.format(line))
 
-
-            payload = msg.get_payload()
-            print(payload)
-            payload = process_multipart_message(payload )
-            print(payload)
+    def polling_request_via_mail(self):
+        while True:
+            time.sleep(10)
+            try:
+                if not self.alive:
+                    break
+            except:
+                break
+            try:
+                self.on_handle_request_via_mail()
+            except:
+                pass
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
