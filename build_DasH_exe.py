@@ -213,7 +213,7 @@ try:
                           "packages": [],#packages,
                           "dll_excludes": dll_excludes,
                           #"bundle_files": 1,
-                          "dist_dir": "dist",
+                          "dist_dir": "DasH",
                           "xref": False,
                           "skip_archive": True,
                           "ascii": False,

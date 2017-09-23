@@ -51,8 +51,9 @@ if __name__ == "__main__":
                     except Exception as e:
                         print(traceback.format_exc())
             stdout = redir(pipe_output, sys.stdout)
+            stderr = redir(pipe_output, sys.stderr)
             sys.stdout= stdout
-            sys.stderr= stdout
+            sys.stderr= stderr
             execfile(script_name,globals(), locals() )
         except Exception as e:
             print(traceback.format_exc())
