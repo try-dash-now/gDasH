@@ -11,6 +11,7 @@ import packaging.version
 import packaging.specifiers
 import packaging.requirements
 from setuptools.archive_util import unpack_archive
+from lib.common import create_dir
 pardir =os.path.dirname(os.path.realpath(__file__))
 pardir= os.path.sep.join(pardir.split(os.path.sep)[:-1])
 sys.path.append(os.path.sep.join([pardir,'lib']))
@@ -27,7 +28,7 @@ import sys
 if len(sys.argv)<2:
     sys.argv.append('py2exe')
     sys.argv.append('-d')
-    sys.argv.append('../dist')
+    sys.argv.append('../DasH')
 
 import paramiko
 paramiko.SSHClient()
@@ -35,7 +36,7 @@ paramiko.SSHClient()
 #C:/Python27/Lib/site-packages/paramiko-1.16.0-py2.7.egg!/paramiko/__init__.py
 
 import shutil
-folder = '../dist'
+folder = '../DasH'
 
 for op in sys.argv:
 
@@ -43,7 +44,8 @@ for op in sys.argv:
     if indexOfd !=-1:
         folder = sys.argv[sys.argv.index(op)+1]
         break
-
+folder =os.path.abspath(folder)
+create_dir(folder)
 targetDir = os.sep.join([folder, './tmp'])
 excludedFolder =['sessions',
                  'src',
@@ -232,3 +234,7 @@ import zipfile
 zip_ref = zipfile.ZipFile('./build_packages/build_package.zip', 'r')
 zip_ref.extractall(folder)
 zip_ref.close()
+
+folder = os.path.abspath(os.path.normpath(os.path.expanduser(folder)))
+dash_zipfile = os.path.abspath('{}/../DasH'.format(folder))
+shutil.make_archive(dash_zipfile, 'zip', folder)
