@@ -176,7 +176,6 @@ class FileEditor(wx.Panel):
                     self.editor.SetCellFont(r, c, f)
             self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
-
 #DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
 class DasHFrame(MainFrame):#wx.Frame
     ini_setting = None
@@ -204,11 +203,12 @@ class DasHFrame(MainFrame):#wx.Frame
     mail_password = None
     mail_usre =None
     case_queue =None
+    check_case_running_status_lock = None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.case_queue = Queue.Queue()
         self.dict_test_report={}
-
+        self.check_case_running_status_lock = threading.Lock()
         self.tabs_in_edit_area=[]
         self.sessions_alive={}
         MainFrame.__init__(self, parent=parent)
@@ -249,9 +249,13 @@ class DasHFrame(MainFrame):#wx.Frame
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
         mail_test_report = fileMenu.Append(wx.NewId(), "Mail Test Report", "Mail Test Report")
+        get_case_queue = fileMenu.Append(wx.NewId(), "Get Case Queue", "Get Case Queue")
+        clear_case_queue = fileMenu.Append(wx.NewId(), "Clear Case Queue", "Clear Case Queue")
+        kill_running_case = fileMenu.Append(wx.NewId(), "Kill Running Case(s)", "Kill Running Case(s)")
         self.m_menubar_main.Append(fileMenu, "&Open")
 
         self.Bind(wx.EVT_MENU,self.on_mail_test_report ,mail_test_report)
+        self.Bind(wx.EVT_MENU,self.get_case_queue ,get_case_queue)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
         self.m_command_box.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -793,6 +797,7 @@ if __name__ == "__main__":
         from multiprocessing import Process, Queue
         import subprocess
         import shlex
+        old_script_name = script_name
         lex = shlex.shlex(script_name)
         lex.quotes = '"'
         lex.whitespace_split = True
@@ -818,6 +823,7 @@ if __name__ == "__main__":
                 cmd = [sys.executable,'./script_runner.py', script_name ]+script_args+ ['-l','{}'.format(case_log_path)]
 
             p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)#, stdin=pipe_input, stdout=pipe_output,stderr=pipe_output)
+            self.add_new_case_to_report(p.pid, old_script_name, p, case_log_path)
         except:
             error(traceback.format_exc())
 
@@ -834,7 +840,7 @@ if __name__ == "__main__":
             self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
             self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
             info('start process {} :{}'.format(item_name,  p.pid))
-            self.add_new_case_to_report(p.pid, item_name, p, case_log_path)
+
             #p.join() # this blocks until the process terminates
             time.sleep(1)
         except Exception as e :
@@ -843,9 +849,11 @@ if __name__ == "__main__":
         #p = Process(target=run_script, args=[script_name,  script_and_args])
         #p.start()
     def check_case_status(self):
+        self.check_case_running_status_lock.acquire()
         changed=False
         running_case = 0
-        for pid in self.dict_test_report:
+
+        for pid in self.dict_test_report.keys():
             case_name, start_time, end_time, duration, return_code ,proc, log_path= self.dict_test_report[pid]
             if return_code is None:
                 if proc.poll() is None:
@@ -854,18 +862,18 @@ if __name__ == "__main__":
                 else:
                     changed=True
                     return_code = 'FAIL' if proc.returncode else 'PASS'
-
                 self.update_case_status(pid,return_code)
+        if running_case:
+            pass
+        elif not self.case_queue.empty():#self.case_queue.qsize():
+                case_name_with_args = self.case_queue.get()
+                p, case_log_path = self.run_script(case_name_with_args)
+        self.check_case_running_status_lock.release()
         if changed:
             #test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
             self.mail_test_report('DasH Test Report-updating')
-        if running_case:
-            pass
-        else:
-            if self.case_queue.qsize():
-                case_name_with_args = self.case_queue.get()
-                p, case_log_path = self.run_script(case_name_with_args)
-        return  changed
+
+        return changed
     def polling_running_cases(self):
         while True:
             time.sleep(10)
@@ -874,8 +882,9 @@ if __name__ == "__main__":
                     break
             except:
                 break
+            #self.check_case_running_status_lock.acquire()
             self.check_case_status()
-
+            #self.check_case_running_status_lock.release()
 
 
 
@@ -884,12 +893,12 @@ if __name__ == "__main__":
         duration = 0
         end_time = None
         return_code = None
-
+        #self.check_case_running_status_lock.acquire()
         if pid in self.dict_test_report:
-            self.dict_test_report[pid].update([case_name,start_time,end_time, duration, return_code, proc,log_path])
+            self.dict_test_report[pid].update([case_name, start_time, end_time, duration, return_code, proc, log_path])
         else:
-            self.dict_test_report[pid]=[case_name, start_time, end_time, duration,return_code, proc, log_path ]
-
+            self.dict_test_report[pid]=       [case_name, start_time, end_time, duration, return_code, proc, log_path ]
+        #self.check_case_running_status_lock.release()
     def update_case_status(self, pid,return_code=None):
         now = datetime.now()
         case_name, start_time, end_time, duration, tmp_return_code ,proc,log_path= self.dict_test_report[pid]
@@ -903,7 +912,7 @@ if __name__ == "__main__":
     def mail_test_report(self, subject="DASH TEST REPORT-updating"):
         try:
             from lib.common import send_mail_smtp_without_login
-            self.check_case_status()
+            #self.check_case_status()
             test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
             #TO, SUBJECT, TEXT, SERVER, FROM
             send_mail_smtp_without_login(self.mail_to_list, subject,test_report,self.mail_server,self.mail_from)
@@ -975,6 +984,21 @@ if __name__ == "__main__":
                 self.on_handle_request_via_mail()
             except:
                 pass
+
+    def get_case_queue(self, item):
+        case_in_queue = list(self.case_queue.queue)
+        number_in_queue= len(case_in_queue)
+        if number_in_queue:
+            str_case_in_queue='\ntotal {} case(s) in Queue\n'.format(number_in_queue)+'\n'.join('{}'.format(x) for x in case_in_queue)
+        else:
+            str_case_in_queue='\nNo Case in Queue'
+        info('Case(s) in Queue', str_case_in_queue)
+
+        return str_case_in_queue
+
+
+
+
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
