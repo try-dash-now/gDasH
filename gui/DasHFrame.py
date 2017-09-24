@@ -963,7 +963,7 @@ if __name__ == "__main__":
             msg = p.parsestr(raw_email)
             #msg = process_multipart_message(msg )
             from1 = msg.get('From')
-            sub = msg.get('Subject')
+            sub = '{}'.format(msg.get('Subject'))
             sub = sub.strip().lower()
             support_list='''
 ###############################
