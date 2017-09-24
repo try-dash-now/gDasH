@@ -41,6 +41,7 @@ import Queue
 from SessionTab import  SessionTab
 import imp
 import types
+from lib.common import send_mail_smtp_without_login
 #from dut import  dut
 
 class RedirectText(object):
@@ -204,8 +205,10 @@ class DasHFrame(MainFrame):#wx.Frame
     mail_usre =None
     case_queue =None
     check_case_running_status_lock = None
+    case_list=None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        self.case_list= []
         self.case_queue = Queue.Queue()
         self.dict_test_report={}
         self.check_case_running_status_lock = threading.Lock()
@@ -249,13 +252,15 @@ class DasHFrame(MainFrame):#wx.Frame
         open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
         mail_test_report = fileMenu.Append(wx.NewId(), "Mail Test Report", "Mail Test Report")
-        get_case_queue = fileMenu.Append(wx.NewId(), "Get Case Queue", "Get Case Queue")
+        get_case_queue = fileMenu.Append(wx.NewId(), "Get Case Queue", "Get Case Queue") #done
         clear_case_queue = fileMenu.Append(wx.NewId(), "Clear Case Queue", "Clear Case Queue")
         kill_running_case = fileMenu.Append(wx.NewId(), "Kill Running Case(s)", "Kill Running Case(s)")
         self.m_menubar_main.Append(fileMenu, "&Open")
 
         self.Bind(wx.EVT_MENU,self.on_mail_test_report ,mail_test_report)
         self.Bind(wx.EVT_MENU,self.get_case_queue ,get_case_queue)
+        self.Bind(wx.EVT_MENU,self.on_clear_case_queue ,clear_case_queue)
+        self.Bind(wx.EVT_MENU,self.on_kill_running_case ,kill_running_case)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
         self.m_command_box.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -395,6 +400,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
 
             base_name = os.path.basename(i)
             item_info = wx.TreeItemData({'path_name':path_name})
+            self.case_list.append(path_name)
             new_item = self.case_suite_page.InsertItem(node, node, base_name)
             self.case_suite_page.SetItemData(new_item, item_info)
 
@@ -911,7 +917,7 @@ if __name__ == "__main__":
 
     def mail_test_report(self, subject="DASH TEST REPORT-updating"):
         try:
-            from lib.common import send_mail_smtp_without_login
+
             #self.check_case_status()
             test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
             #TO, SUBJECT, TEXT, SERVER, FROM
@@ -953,7 +959,16 @@ if __name__ == "__main__":
             #msg = process_multipart_message(msg )
             from1 = msg.get('From')
             sub = msg.get('Subject')
-            if sub.strip().lower() in ['dash-request-run']:
+            sub = sub.strip().lower()
+            if sub in ['dash-request-case-queue']:
+                case_in_queue =self.get_case_queue(None)
+                send_mail_smtp_without_login(self.mail_to_list, 'DasH:Case In Queue',case_in_queue,self.mail_server,self.mail_from)
+            elif sub in ['dash-requesst-case']:
+                cases_string = '\n\t'.join(self.case_list)
+                send_mail_smtp_without_login(self.mail_to_list, 'DasH:Case List',cases_string,self.mail_server,self.mail_from)
+            elif sub in ['dash-request-report']:
+                self.mail_test_report('DasH Test Report-requested')
+            elif sub in ['dash-request-run']:
                 if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
                     conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
                 #conn.uid('STORE', '-FLAGS', '(\Seen)')
@@ -985,7 +1000,7 @@ if __name__ == "__main__":
             except:
                 pass
 
-    def get_case_queue(self, item):
+    def get_case_queue(self, item=None):
         case_in_queue = list(self.case_queue.queue)
         number_in_queue= len(case_in_queue)
         if number_in_queue:
@@ -998,6 +1013,18 @@ if __name__ == "__main__":
 
 
 
+    def on_clear_case_queue(self, event=None):
+        self.case_queue.queue.clear()
+        self.get_case_queue(None)
+    def on_kill_running_case(self,event=None):
+        for case in self.dict_test_report:
+            case_name,start_time, end_time, duration, return_code, proc, log_path = self.dict_test_report[:7]
+            if return_code is None:
+                if proc.poll() is None:
+                    info('Terminate alive process {}:{}'.format(case_name, proc.pid))
+                    result ='KILL'
+                    self.update_case_status(proc.pid, result)
+                    proc.terminate()
 
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
