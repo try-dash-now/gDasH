@@ -960,22 +960,41 @@ if __name__ == "__main__":
             from1 = msg.get('From')
             sub = msg.get('Subject')
             sub = sub.strip().lower()
-            if sub in ['dash-request-case-queue']:
+            support_list='''
+###############################
+mail subject below is supported:
+    dash-request-case-queue    : request the cases in queue which to be executed
+    dash-request-case          : request cases which are under suite_path
+    dash-request-report        : request a test report by now
+    dash-request-kill-running  : to kill all running test cases
+    dash-request-clear-queue   : to clear/remove all cases which are in case queue
+    dash-request-run           : to run script(s), each line is a script with arguments if it has
+--------------------------------
+***non-case-sensitive***
+###############################
+                '''
+            if sub in ['dash']:
+                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH Support List',support_list,self.mail_server,self.mail_from)
+            elif sub in ['dash-request-case-queue']:
                 case_in_queue =self.get_case_queue(None)
-                send_mail_smtp_without_login(self.mail_to_list, 'DasH:Case In Queue',case_in_queue,self.mail_server,self.mail_from)
-            elif sub in ['dash-requesst-case']:
+                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case In Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
+            elif sub in ['dash-request-case']:
                 cases_string = '\n\t'.join(self.case_list)
-                send_mail_smtp_without_login(self.mail_to_list, 'DasH:Case List',cases_string,self.mail_server,self.mail_from)
+                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case List',cases_string+support_list,self.mail_server,self.mail_from)
             elif sub in ['dash-request-report']:
                 self.mail_test_report('DasH Test Report-requested')
+            elif sub in ['dash-request-kill-running']:
+                killed= self.on_kill_running_case()
+                send_mail_smtp_without_login(self.mail_to_list, 'DONE-[DasH]:Killed Running Case(s)',killed+support_list,self.mail_server,self.mail_from)
+            elif sub in ['dash-request-clear-queue']:
+                case_in_queue = self.on_clear_case_queue()
+                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Clear Case Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
             elif sub in ['dash-request-run']:
                 if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
                     conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
                 #conn.uid('STORE', '-FLAGS', '(\Seen)')
                 payload = msg.get_payload()
-                print(payload)
                 payload = process_multipart_message(payload )
-                print(payload)
                 from lib.html2text import html2text
                 txt = html2text(payload)
                 cases = txt.replace('\r\n','\n').split('\n')
@@ -1014,18 +1033,23 @@ if __name__ == "__main__":
 
 
     def on_clear_case_queue(self, event=None):
+        case_in_queue = self.get_case_queue(None)
         self.case_queue.queue.clear()
         self.get_case_queue(None)
+        return  case_in_queue
     def on_kill_running_case(self,event=None):
+        killed_case= ''
         for case in self.dict_test_report:
             case_name,start_time, end_time, duration, return_code, proc, log_path = self.dict_test_report[:7]
             if return_code is None:
                 if proc.poll() is None:
+                    killed_case+='{}:{}\n'.format(case_name, proc.pid)
                     info('Terminate alive process {}:{}'.format(case_name, proc.pid))
                     result ='KILL'
                     self.update_case_status(proc.pid, result)
                     proc.terminate()
-
+        info('Killed All Running cases', killed_case)
+        return killed_case
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
