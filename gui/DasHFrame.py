@@ -42,6 +42,10 @@ from SessionTab import  SessionTab
 import imp
 import types
 from lib.common import send_mail_smtp_without_login
+from lib.common import run_script
+from multiprocessing import Process
+import subprocess
+import shlex
 #from dut import  dut
 
 class RedirectText(object):
@@ -799,10 +803,7 @@ if __name__ == "__main__":
                 info('{}:{} completed with returncode {}'.format(item_name, p.pid, result))
                 self.update_case_status(p.pid, result)
     def run_script(self, script_name):
-        from lib.common import run_script
-        from multiprocessing import Process, Queue
-        import subprocess
-        import shlex
+
         old_script_name = script_name
         lex = shlex.shlex(script_name)
         lex.quotes = '"'
@@ -840,17 +841,21 @@ if __name__ == "__main__":
 
         item_data = self.case_suite_page.GetItemData(hit_item).Data
         script_name = self.case_suite_page.GetItemData(hit_item).Data['path_name']
-        self.on_kill_script(event)
-        try:
-            p, case_log_path = self.run_script('{} {}'.format(script_name, item_name))
-            self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
-            self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
-            info('start process {} :{}'.format(item_name,  p.pid))
+        if script_name.lower().split('.')[-1] in ['txt','csv']:#test suite file, not a single script
+            self.run_a_test_suite(script_name)
+        else:#a single test case
 
-            #p.join() # this blocks until the process terminates
-            time.sleep(1)
-        except Exception as e :
-            error(traceback.format_exc())
+            self.on_kill_script(event)
+            try:
+                p, case_log_path = self.run_script('{} {}'.format(script_name, item_name))
+                self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
+                self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
+                info('start process {} :{}'.format(item_name,  p.pid))
+
+                #p.join() # this blocks until the process terminates
+                time.sleep(1)
+            except Exception as e :
+                error(traceback.format_exc())
 
         #p = Process(target=run_script, args=[script_name,  script_and_args])
         #p.start()
@@ -991,7 +996,7 @@ mail subject below is supported:
                 send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Clear Case Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
             elif sub in ['dash-request-run']:
                 if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
-                    conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                    conn.uid('STORE', unread_mail_id, '-FLAGS', '\SEEN')
                 #conn.uid('STORE', '-FLAGS', '(\Seen)')
                 payload = msg.get_payload()
                 payload = process_multipart_message(payload )
@@ -1003,8 +1008,21 @@ mail subject below is supported:
                     if line.strip().startswith('#') or len(line)==0:
                         pass
                     else:
-                        self.case_queue.put(line)
+                        type_case, case_name, args = self.check_case_type(line)
+                        if type_case in ['txt','csv']:
+                            self.run_a_test_suite(line)
+                        else:
+                            self.case_queue.put(line)
                         info('adding case to queue: {}'.format(line))
+            else:
+                conn.uid('STORE', unread_mail_id, '-FLAGS', '\SEEN')
+    def check_case_type(self, str_line):
+        lex = shlex.shlex(str_line)
+        lex.quotes = '"'
+        lex.whitespace_split = True
+        script_name_and_args = list(lex)
+        script_name = script_name_and_args[0]
+        return script_name.lower().split('.')[-1],script_name_and_args[0] ,script_name_and_args[1:]
 
     def polling_request_via_mail(self):
         while True:
@@ -1016,7 +1034,8 @@ mail subject below is supported:
                 break
             try:
                 self.on_handle_request_via_mail()
-            except:
+            except Exception as e:
+                error(traceback.format_exc())
                 pass
 
     def get_case_queue(self, item=None):
@@ -1050,6 +1069,32 @@ mail subject below is supported:
                     proc.terminate()
         info('Killed All Running cases', killed_case)
         return killed_case
+    def run_a_test_suite(self, csv_file_name, clear_queue=False, kill_running =False):
+        try:
+            case_type, suite_file_name, args =self.check_case_type(csv_file_name)
+            if clear_queue:
+                self.on_clear_case_queue()
+            if kill_running:
+                self.on_kill_running_case()
+            import csv
+            if suite_file_name.find(os.path.sep)!=-1:
+                pass
+            else:
+                suite_file_name= '{}/{}'.format(self.suite_path,suite_file_name)
+            with open(suite_file_name) as bench:
+                reader = csv.reader(bench,delimiter=',')
+                for row in reader:
+                    if len(row)<1:
+                        continue
+                    else:
+                        name = row[0]
+                        args.insert(0,0)
+                        for index in range(1,len(args)):
+                            name =name.replace('{{index}}'.format(index =index), '{}'.format(args[index]))
+                        self.case_queue.put(name)
+                        info('adding case to queue: {}'.format(name))
+        except Exception as e:
+            error(traceback.format_exc())
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #todo: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
