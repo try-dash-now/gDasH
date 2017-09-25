@@ -952,8 +952,11 @@ if __name__ == "__main__":
         conn = imaplib.IMAP4_SSL(url,993)
         conn.login(user,password)
         conn.select('INBOX')#, readonly=True)
+        try:
 
-        authorized_mail_address = self.mail_to_list.replace(',',';').split(';')
+            authorized_mail_address = self.mail_to_list.replace(',',';').split(';')
+        except Exception as e:
+            return
 
         for mail_address  in authorized_mail_address:
             results,data = conn.search(None,'(UNSEEN)', '(FROM "{}")'.format(mail_address)) # #'ALL')
