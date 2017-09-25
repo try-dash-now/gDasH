@@ -311,6 +311,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.function_page.Bind(wx.EVT_LEFT_DCLICK, self.on_LeftDClick_in_Function_tab)
         self.function_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_function_tab)
         self.case_suite_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_case_tab)
+        self.session_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_session_tab)
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
         nav_sizer = wx.BoxSizer()
@@ -706,6 +707,24 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
             wx.CallAfter(self.m_command_box.SetInsertionPointEnd)
             wx.CallAfter(self.m_command_box.Refresh)
 
+    def on_refresh_case_page(self, event):
+        self.case_suite_page.DeleteAllItems()
+        self.build_suite_tree()
+        info('Refresh Case tab done!')
+    def on_right_down_in_session_tab(self, event):
+        menu = wx.Menu()
+        item = wx.MenuItem(menu, wx.NewId(), "Refresh")
+        #acc = wx.AcceleratorEntry()
+        #acc.Set(wx.ACCEL_NORMAL, ord('O'), self.popupID1)
+        #item.SetAccel(acc)
+        menu.AppendItem(item)
+
+        self.Bind(wx.EVT_MENU, self.on_refresh_session_page,item)
+        self.PopupMenu(menu,event.GetPosition())
+    def on_refresh_session_page(self, event):
+        self.session_page.DeleteAllItems()
+        self.build_session_tab()
+        info('Refresh Session tab done!')
     def on_right_down_in_function_tab(self, event):
         menu = wx.Menu()
         item = wx.MenuItem(menu, wx.NewId(), "Refresh")
@@ -716,6 +735,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
 
         self.Bind(wx.EVT_MENU, self.on_refresh_function_page,item)
         self.PopupMenu(menu,event.GetPosition())
+
     def on_refresh_function_page(self, event):
         self.function_page.DeleteAllItems()
         self.build_function_tab()
@@ -772,14 +792,17 @@ if __name__ == "__main__":
         menu = wx.Menu()
         item1 = wx.MenuItem(menu, wx.NewId(), "Run Test")
         item2 = wx.MenuItem(menu, wx.NewId(), "Kill Test")
+        item3 = wx.MenuItem(menu, wx.NewId(), "Refresh")
+
         #acc = wx.AcceleratorEntry()
         #acc.Set(wx.ACCEL_NORMAL, ord('O'), self.popupID1)
         #item.SetAccel(acc)
         menu.AppendItem(item1)
         menu.AppendItem(item2)
-
+        menu.AppendItem(item3)
         self.Bind(wx.EVT_MENU, self.on_run_script,item1)
         self.Bind(wx.EVT_MENU, self.on_kill_script,item2)
+        self.Bind(wx.EVT_MENU, self.on_refresh_case_page,item3)
         self.PopupMenu(menu,event.GetPosition())
     def on_kill_script(self,event):
         hit_item = self.case_suite_page.GetSelection()
