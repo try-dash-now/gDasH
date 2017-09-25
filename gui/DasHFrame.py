@@ -934,13 +934,6 @@ if __name__ == "__main__":
         #p.terminate()
     def on_handle_request_via_mail(self):
         import imaplib
-        url, user, password = self.mail_read_url,self.mail_user, self.mail_password
-        conn = imaplib.IMAP4_SSL(url,993)
-        conn.login(user,password)
-        conn.select('INBOX')
-        results,data = conn.search(None,'(UNSEEN)') # #'ALL')
-        msg_ids = data[0]
-        msg_id_list = msg_ids.split()
         from email.parser import Parser
         def process_multipart_message(message):
             if isinstance(message, basestring) or isinstance(message , list):
@@ -955,67 +948,88 @@ if __name__ == "__main__":
             except Exception as e:
                 pass
             return rtn
-        MAX_UNREAD_MAIL = 50
-        for unread_mail_id in msg_id_list[::-1][:MAX_UNREAD_MAIL]:
-            result,data = conn.fetch(unread_mail_id,"(RFC822)")
-            raw_email = data[0][1]
-            p = Parser()
-            msg = p.parsestr(raw_email)
-            #msg = process_multipart_message(msg )
-            from1 = msg.get('From')
-            sub = '{}'.format(msg.get('Subject'))
-            sub = sub.strip().lower()
-            support_list='''
-###############################
-mail subject below is supported:
-    dash-request-case-queue    : request the cases in queue which to be executed
-    dash-request-case          : request cases which are under suite_path
-    dash-request-report        : request a test report by now
-    dash-request-kill-running  : to kill all running test cases
-    dash-request-clear-queue   : to clear/remove all cases which are in case queue
-    dash-request-run           : to run script(s), each line is a script with arguments if it has
---------------------------------
-***non-case-sensitive***
-###############################
-                '''
-            if sub in ['dash']:
-                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH Support List',support_list,self.mail_server,self.mail_from)
-            elif sub in ['dash-request-case-queue']:
-                case_in_queue =self.get_case_queue(None)
-                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case In Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
-            elif sub in ['dash-request-case']:
-                cases_string = '\n\t'.join(self.case_list)
-                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case List',cases_string+support_list,self.mail_server,self.mail_from)
-            elif sub in ['dash-request-report']:
-                self.mail_test_report('DasH Test Report-requested')
-            elif sub in ['dash-request-kill-running']:
-                killed= self.on_kill_running_case()
-                send_mail_smtp_without_login(self.mail_to_list, 'DONE-[DasH]:Killed Running Case(s)',killed+support_list,self.mail_server,self.mail_from)
-            elif sub in ['dash-request-clear-queue']:
-                case_in_queue = self.on_clear_case_queue()
-                send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Clear Case Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
-            elif sub in ['dash-request-run']:
-                if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
-                    conn.uid('STORE', unread_mail_id, '-FLAGS', '\SEEN')
-                #conn.uid('STORE', '-FLAGS', '(\Seen)')
-                payload = msg.get_payload()
-                payload = process_multipart_message(payload )
-                from lib.html2text import html2text
-                txt = html2text(payload)
-                cases = txt.replace('\r\n','\n').split('\n')
-                for line in cases:
-                    line = line.strip()
-                    if line.strip().startswith('#') or len(line)==0:
-                        pass
-                    else:
-                        type_case, case_name, args = self.check_case_type(line)
-                        if type_case in ['txt','csv']:
-                            self.run_a_test_suite(line)
+        url, user, password = self.mail_read_url,self.mail_user, self.mail_password
+        conn = imaplib.IMAP4_SSL(url,993)
+        conn.login(user,password)
+        conn.select('INBOX')#, readonly=True)
+
+        authorized_mail_address = self.mail_to_list.replace(',',';').split(';')
+
+        for mail_address  in authorized_mail_address:
+            results,data = conn.search(None,'(UNSEEN)', '(FROM "{}")'.format(mail_address)) # #'ALL')
+            msg_ids = data[0]
+            msg_id_list = msg_ids.split()
+
+            MAX_UNREAD_MAIL = 50
+            for unread_mail_id in msg_id_list[::-1][:MAX_UNREAD_MAIL]:
+                result,data = conn.fetch(unread_mail_id,"(RFC822)")#'(BODY.PEEK[TEXT])')#
+                raw_email = data[0][1]
+                p = Parser()
+                msg = p.parsestr(raw_email)
+                #msg = process_multipart_message(msg )
+                from1 = msg.get('From')
+                sub = '{}'.format(msg.get('Subject'))
+                sub = sub.strip().lower()
+                support_list='''
+    ###############################
+    mail subject below is supported:
+        dash-request-case-queue    : request the cases in queue which to be executed
+        dash-request-case          : request cases which are under suite_path
+        dash-request-report        : request a test report by now
+        dash-request-kill-running  : to kill all running test cases
+        dash-request-clear-queue   : to clear/remove all cases which are in case queue
+        dash-request-run           : to run script(s), each line is a script with arguments if it has
+    --------------------------------
+    ***non-case-sensitive***
+    ###############################
+                    '''
+                flags = '+FLAGS'
+                if sub in ['dash']:
+                    send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH Support List',support_list,self.mail_server,self.mail_from)
+                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                elif sub in ['dash-request-case-queue']:
+                    case_in_queue =self.get_case_queue(None)
+                    send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case In Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
+                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                elif sub in ['dash-request-case']:
+                    cases_string = '\n\t'.join(self.case_list)
+                    send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case List',cases_string+support_list,self.mail_server,self.mail_from)
+                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                elif sub in ['dash-request-report']:
+                    self.mail_test_report('DasH Test Report-requested')
+                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                elif sub in ['dash-request-kill-running']:
+                    killed= self.on_kill_running_case()
+                    send_mail_smtp_without_login(self.mail_to_list, 'DONE-[DasH]:Killed Running Case(s)',killed+support_list,self.mail_server,self.mail_from)
+                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                elif sub in ['dash-request-clear-queue']:
+                    case_in_queue = self.on_clear_case_queue()
+                    send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Clear Case Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
+                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                elif sub in ['dash-request-run']:
+                    #if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
+                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                    #conn.uid('STORE', '-FLAGS', '(\Seen)')
+                    payload = msg.get_payload()
+                    payload = process_multipart_message(payload )
+                    from lib.html2text import html2text
+                    txt = html2text(payload)
+                    cases = txt.replace('\r\n','\n').split('\n')
+                    for line in cases:
+                        line = line.strip()
+                        if line.strip().startswith('#') or len(line)==0:
+                            pass
                         else:
-                            self.case_queue.put(line)
-                        info('adding case to queue: {}'.format(line))
-            else:
-                conn.uid('STORE', unread_mail_id, '-FLAGS', '\SEEN')
+                            type_case, case_name, args = self.check_case_type(line)
+                            if type_case in ['txt','csv']:
+                                self.run_a_test_suite(line)
+                            else:
+                                self.case_queue.put(line)
+                            info('adding case to queue: {}'.format(line))
+                else:
+                    conn.uid('STORE', unread_mail_id, '-FLAGS', r"(\SEEN)")
+                    #todo: 2017-09-25 failed to set unmatched mail to unread
+
     def check_case_type(self, str_line):
         lex = shlex.shlex(str_line)
         lex.quotes = '"'
