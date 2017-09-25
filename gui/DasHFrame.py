@@ -962,7 +962,7 @@ if __name__ == "__main__":
 
             MAX_UNREAD_MAIL = 50
             for unread_mail_id in msg_id_list[::-1][:MAX_UNREAD_MAIL]:
-                result,data = conn.fetch(unread_mail_id,"(RFC822)")#'(BODY.PEEK[TEXT])')#
+                result,data = conn.fetch(unread_mail_id,'(BODY.PEEK[HEADER])')#"(RFC822)")#
                 raw_email = data[0][1]
                 p = Parser()
                 msg = p.parsestr(raw_email)
@@ -983,32 +983,40 @@ if __name__ == "__main__":
     ***non-case-sensitive***
     ###############################
                     '''
-                flags = '+FLAGS'
+                handled =False
                 if sub in ['dash']:
                     send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH Support List',support_list,self.mail_server,self.mail_from)
+                    handled = True
                     #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
                 elif sub in ['dash-request-case-queue']:
                     case_in_queue =self.get_case_queue(None)
                     send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case In Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
                     #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                    handled = True
                 elif sub in ['dash-request-case']:
                     cases_string = '\n\t'.join(self.case_list)
                     send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Case List',cases_string+support_list,self.mail_server,self.mail_from)
+                    handled = True
                     #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
                 elif sub in ['dash-request-report']:
                     self.mail_test_report('DasH Test Report-requested')
                     #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                    handled = True
                 elif sub in ['dash-request-kill-running']:
                     killed= self.on_kill_running_case()
                     send_mail_smtp_without_login(self.mail_to_list, 'DONE-[DasH]:Killed Running Case(s)',killed+support_list,self.mail_server,self.mail_from)
+                    handled = True
                     #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
                 elif sub in ['dash-request-clear-queue']:
                     case_in_queue = self.on_clear_case_queue()
                     send_mail_smtp_without_login(self.mail_to_list, 'DONE-DasH:Clear Case Queue',case_in_queue+support_list,self.mail_server,self.mail_from)
+                    handled = True
                     #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
                 elif sub in ['dash-request-run']:
                     #if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
-                    #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
+                    conn.uid('STORE', unread_mail_id, '+FLAGS', r'(\SEEN)')
+                    handled = True
+
                     #conn.uid('STORE', '-FLAGS', '(\Seen)')
                     payload = msg.get_payload()
                     payload = process_multipart_message(payload )
@@ -1026,10 +1034,13 @@ if __name__ == "__main__":
                             else:
                                 self.case_queue.put(line)
                             info('adding case to queue: {}'.format(line))
+                    result,data = conn.fetch(unread_mail_id,'(RFC822)')#"(RFC822)")#
                 else:
-                    conn.uid('STORE', unread_mail_id, '-FLAGS', r"(\SEEN)")
-                    #todo: 2017-09-25 failed to set unmatched mail to unread
 
+                    conn.uid('STORE', unread_mail_id, '-FLAGS', r"(\SEEN)")
+                    #fixed : 2017-09-25 failed to set unmatched mail to unread, to fetch it again with RFC822
+                if handled:
+                    result,data = conn.fetch(unread_mail_id,'(RFC822)')#"(RFC822)")#
     def check_case_type(self, str_line):
         lex = shlex.shlex(str_line)
         lex.quotes = '"'
