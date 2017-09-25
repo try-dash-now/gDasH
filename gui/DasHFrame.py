@@ -342,8 +342,8 @@ class DasHFrame(MainFrame):#wx.Frame
         self.alive =False
         time.sleep(0.01)
         self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
-
-        self.mail_test_report("DASH TEST REPORT")
+        if len(self.dict_test_report):
+            self.mail_test_report("DASH TEST REPORT")
         for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
             closing_page = self.edit_area.GetPage(index)
             if isinstance(closing_page, (SessionTab)):
