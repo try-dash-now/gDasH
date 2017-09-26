@@ -289,7 +289,6 @@ class DasHFrame(MainFrame):#wx.Frame
 
 
         self.edit_area = AuiNotebook(self.m_file_editor, style = wx.aui.AUI_NB_DEFAULT_STYLE)
-        self.edit_area.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.on_close_tab_in_edit_area, self.edit_area)
         if False:
             new_page = FileEditor(self.edit_area, 'a', type= type)
             self.edit_area.AddPage(new_page, 'test')
@@ -360,8 +359,16 @@ class DasHFrame(MainFrame):#wx.Frame
         sys.stdout = self.redir.old_stdout
         event.Skip()
     def generate_report(self, filename):
+        def GetTime(duration):
+            from datetime import timedelta
+            sec = timedelta(seconds=int(duration))
+            d = datetime(1,1,1) + sec
+
+            print("DAYS:HOURS:MIN:SEC")
+
+            return "%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second)
         report = '''Test Report
-RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
+RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Name,\tLog\n'''
         if len(self.dict_test_report):
             with open(filename, 'a+') as f:
                 f.write(report)
@@ -371,7 +378,8 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration,\tCase_Name,\tLog\n'''
                         result = 'IP'
                     else:
                         result = return_code # 'FAIL' if return_code else 'PASS'
-                    record = '\t'.join(['{},\t'.format(x) for x in [result,start_time,end_time,pi,duration,case_name,'<{}>'.format(log_path) ]])
+
+                    record = '\t'.join(['{},\t'.format(x) for x in [result,start_time,end_time,pi,duration,GetTime(duration),case_name,'<{}>'.format(log_path) ]])
                     report+=record+'\n'
                     f.write(record+'\n')
 
