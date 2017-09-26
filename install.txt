@@ -5,3 +5,4 @@ matplotlib
 selenium
 install geckodriver for firefox
 pip install xlrd
+pip install openpyxl
