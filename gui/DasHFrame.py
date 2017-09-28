@@ -947,9 +947,13 @@ if __name__ == "__main__":
 
         if tmp_return_code is None:
             duration = (now-start_time).total_seconds()
+            if return_code is not None:
+                end_time=now
             self.dict_test_report[pid]=[case_name,start_time, end_time, duration, return_code, proc, log_path]
+
         else:
             pass# don't update one case result twice
+
 
     def mail_test_report(self, subject="DASH TEST REPORT-updating"):
         try:
