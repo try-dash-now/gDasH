@@ -33,8 +33,16 @@ if __name__ == "__main__":
         try:
             from lib.common import create_case_folder
             case_log_path = create_case_folder()
-            sys.argv.append('-l')
-            sys.argv.append(case_log_path)
+            log_option = '-l'
+            if log_option in sys.argv:
+                log_index = sys.argv.index(log_option)
+                if len(sys.argv)> log_index+1:
+                    sys.argv[log_index+1]=case_log_path
+                else:
+                    sys.argv.append(case_log_path)
+            else:
+                sys.argv.append('-l')
+                sys.argv.append(case_log_path)
             import tempfile
             pipe_input ,file_name_in =tempfile.mkstemp(prefix='stdin_', suffix='.log',dir=case_log_path)
             pipe_output ,file_name_out =tempfile.mkstemp(prefix='stdout_',suffix='.log' ,dir=case_log_path)

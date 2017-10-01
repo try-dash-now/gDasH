@@ -364,7 +364,7 @@ class DasHFrame(MainFrame):#wx.Frame
             sec = timedelta(seconds=int(duration))
             d = datetime(1,1,1) + sec
 
-            print("DAYS:HOURS:MIN:SEC")
+            #print("DAYS:HOURS:MIN:SEC")
 
             return "%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second)
         report = '''Test Report
@@ -1159,15 +1159,25 @@ if __name__ == "__main__":
         except Exception as e:
             error(traceback.format_exc())
 #done: 2017-08-22, 2017-08-19 save main log window to a file
-#todo: 2017-08-19 add timestamps to log message
+#done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
-#todo: 2017-08-19 run a script in DasH
-#todo: 2017-08-19 generate test report
+#done: 2017-08-19 run a script in DasH
+#done: 2017-08-19 generate test report
 #todo: 2017-08-19 publish all test cases in a web page
 #todo: 2017-08-19 trigger a test remote via web page
 #todo: 2017-08-19 re-run failed cases
-#todo: 2017-08-19 build executable packege for DasH
+#done: 2017-08-19 build executable packege for DasH
 #todo: 2017-08-19 a popup window to get email address/password/mail_server...
-#todo: 2017-08-22 output in m_log window has a lot of empty line, need remove them
+#done: 2017-08-22 output in m_log window has a lot of empty line, need remove them
 #todo: 2017-08-23 in common.call_function_in_module, should end all threads which are started in previous instance
 #todo: 2017-08-23 add tips for all tree item in teh left
+#todo: 2017-09-30 failed to send command to a session whose name start with numbers e.g. 1_session
+    # Traceback (most recent call last):
+    #   File "C:/workspace/gDasH\gui\DasHFrame.py", line 588, in on_command_enter
+    #     instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,args, globals())
+    #   File "C:/workspace/gDasH\lib\common.py", line 153, in call_function_in_module
+    #     eval('GetFunArgs({args})'.format(args=args_string))
+    #   File "<string>", line 1
+    #     GetFunArgs(35b)
+    #                  ^
+    # SyntaxError: invalid syntax

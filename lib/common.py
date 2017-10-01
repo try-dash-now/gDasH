@@ -360,5 +360,16 @@ def create_case_folder(log_path = None):
     full_path = '{}/{}'.format(log_path, folder_name)
     return create_dir(full_path)
 
+def csvfile2array(csvfile, Delimiter = ',', Newline = '', Quoting=csv.QUOTE_ALL):
+    a=[]
+    import os
+    if os.name!='nt':
+        f= open(csvfile, 'r', newline= Newline )
+    else:
+        f = open(csvfile,'r')
+    reader = csv.reader(f, delimiter=Delimiter, quoting=Quoting)
+    for row in reader:
+        a.append(row)
+    return a
 
 
