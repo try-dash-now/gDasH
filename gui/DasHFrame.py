@@ -233,6 +233,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.mail_read_url  =self.ini_setting.get('dash', 'mail_read_url')
         self.mail_user      = self.ini_setting.get('dash','mail_user')
         self.mail_password  =self.ini_setting.get('dash', 'mail_password')
+        self.web_port       =int(self.ini_setting.get('dash', 'web_port'))
         from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
         sys.argv.append('{}'.format(self.log_path))
@@ -338,6 +339,9 @@ class DasHFrame(MainFrame):#wx.Frame
         th.start()
         th = threading.Thread(target=self.polling_request_via_mail)
         th.start()
+
+        threading.Thread(target=self.web_server_start).start()
+
     def on_close(self, event):
         self.alive =False
         time.sleep(0.01)
@@ -1066,12 +1070,8 @@ if __name__ == "__main__":
                         if line.strip().startswith('#') or len(line)==0:
                             pass
                         else:
-                            type_case, case_name, args = self.check_case_type(line)
-                            if type_case in ['txt','csv']:
-                                self.run_a_test_suite(line)
-                            else:
-                                self.case_queue.put(line)
-                            info('adding case to queue: {}'.format(line))
+                            #done: replace lines below with a function
+                            self.add_line_to_case_queue(line)
                     result,data = conn.fetch(unread_mail_id,'(RFC822)')#"(RFC822)")#
                 else:
 
@@ -1158,6 +1158,352 @@ if __name__ == "__main__":
                         info('adding case to queue: {}'.format(name))
         except Exception as e:
             error(traceback.format_exc())
+
+    def web_server_start(self):
+        from SocketServer import ThreadingMixIn
+        from BaseHTTPServer import HTTPServer,BaseHTTPRequestHandler
+        import  cgi , urllib#StringIO
+        class HttpHandler(BaseHTTPRequestHandler):
+            runner_proc =self.add_line_to_case_queue
+            root = os.path.dirname(__file__)+ '/html/'
+            home = root
+            suite_path = self.suite_path
+            log_path = self.log_path
+            session_path = self.session_path
+
+            def __del__(self):
+                #self.hdrlog.close()
+                #print('end http server')
+                pass
+
+            def list_dir(self, path, related_path):
+                """Helper to produce a directory listing (absent index.html).
+
+                Return value is either a file object, or None (indicating an
+                error).  In either case, the headers are sent, making the
+                interface the same as for send_head().
+
+                """
+                content =""
+                try:
+                    list = os.listdir(path)
+                except os.error:
+                    self.send_error(404, "No permission to list directory")
+                    return ""
+                list.sort(key=lambda a: a.lower())
+                #f = StringIO()
+                displaypath = cgi.escape(urllib.unquote(self.path))
+                content='<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
+                content+="<html>\n<title>Directory listing for %s</title>\n" % displaypath
+                content+="<body>\n<h2>Directory listing for %s</h2>\n" % displaypath
+                content+="<hr>\n<ul>\n"
+                content+='''
+                <SCRIPT>
+            function post( id, script, dest )
+                {
+                    element = document.getElementById(id);
+                    value = element.value
+                    params = 'script='+encodeURI(script)+'&arg='+encodeURI(value)
+                    var xmlhttp;
+
+                    if (window.XMLHttpRequest)
+                    {// code for IE7+, Firefox, Chrome, Opera, Safari
+                        xmlhttp=new XMLHttpRequest();
+                    }
+                    else
+                    {// code for IE6, IE5
+                        xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+                    }
+
+                    xmlhttp.onreadystatechange=function()
+                    {
+                        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                        {
+                            alert(xmlhttp.responseText);
+                            newHTML( xmlhttp.responseText);
+                            setTimeout("window.close()",3000);
+                        }
+                    }
+                    xmlhttp.open("POST",dest,true);
+                    xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+                    xmlhttp.send( params );
+                }
+            function newHTML(HTMLstring) {
+                //var checkitem = mygetCheckedItem();
+                //HTMLstring=post( 'manualtest','/cgi-bin/onSUTLIST.py', 'bedname='+encodeURI(checkitem) );
+                var newwindow=window.open();
+                var newdocument=newwindow.document;
+                newdocument.write(HTMLstring);
+                newdocument.close();
+            }
+                </SCRIPT>
+                '''
+
+                for name in list:
+                    fullname = os.path.join(path, name)
+                    displayname = linkname = name
+                    # Append / for directories or @ for symbolic links
+                    if os.path.isdir(fullname):
+                        displayname = name + "/"
+                        linkname = name + "/"
+                    if os.path.islink(fullname):
+                        displayname = name + "@"
+                        # Note: a link to a directory displays with @ and links with /
+                    input_button =""
+                    filename = urllib.quote(linkname)
+                    if not related_path.endswith('/'):
+                        related_path+='/'
+                    fullfilename =related_path+urllib.quote(linkname)
+                    if related_path.startswith('/case') and os.path.isfile(fullname):
+                        input_button = """
+                        <input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on">
+                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunCase')";>"""%(filename,filename,fullfilename)
+                    elif related_path.startswith('/suite') and os.path.isfile(fullname):
+                        input_button = """
+                        <input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on">
+                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunSuite')";>"""%(filename,filename,fullfilename)
+                    content+='<li><a href="%s">%s</a>\n'% (related_path+urllib.quote(linkname), cgi.escape(displayname))+input_button
+                content+="</ul>\n<hr>\n</body>\n</html>\n"
+
+                return content
+            def array2htmltable(self,Array):
+                content = "<table   border='1' align='left' width=autofit  >"
+
+                for index , sublist in enumerate( Array):
+                    content += '  <tr><td>\n%d</td><td>'%(index+1)
+                    content += '    </td><td>'.join([x if x!='' else '&nbsp;' for x in sublist ])
+                    content += '  \n</td></tr>\n'
+                content += ' \n </table><br>'
+                return  content
+            def show_content_by_path(self, path, type='csv'):
+                header = '''
+<table   border="0" align='center' width="100%"  >
+<tr>    <td align=center valign=middle><a href="/">Back to DasH</a></td>		</tr>
+</table>'''
+                footer = header
+                if  os.path.isfile(path):
+                    indexpage= open(path)
+                    encoded=indexpage.read()
+                    html = []
+                    for line in encoded.split('\n'):
+                        html.append('<p>%s</p>'%line.replace('\r', '').replace('\n',''))
+                    encoded= ''.join(html)
+                    if type in ['csv']:
+                        ar =[]
+                        for line in html:
+                            row = line.split(',')
+                            ar.append(row)
+                        encoded = self.array2htmltable(ar)
+                else:
+                    encoded =self.list_dir(path, self.path)
+
+                encoded =header+encoded + footer
+                return  encoded
+            def do_GET(self):
+
+                root = self.root
+                home = self.home
+                suite_path = self.suite_path
+                log_path = self.log_path
+
+                response = 200
+                type = 'text/html'
+                if self.path=='/':
+                    indexpage= open(home+ 'index.html', 'r')
+                    encoded=indexpage.read()
+                    encoded = encoded.encode(encoding='utf_8')
+                elif self.path =='/favicon.ico':
+                    indexpage= open(home+'dash.bmp', 'r')
+                    encoded=indexpage.read()
+                    type =  "application/x-ico"
+                elif self.path=='/home':
+                    path = os.path.abspath(self.suite_path)
+                    encoded =self.list_dir(path, './')
+                elif self.path.startswith('/sessions'):
+                    path = os.path.abspath(self.session_path)
+                    path = path+ self.path[9:]#replace('/log/','/')
+                    encoded = self.show_content_by_path(path)
+                elif self.path.startswith('/suite'):
+                    path = os.path.abspath(self.suite_path)
+                    path = path+ self.path[6:]#replace('/log/','/')
+                    encoded = self.show_content_by_path(path)
+                elif self.path.startswith('/log'):
+                    path = os.path.abspath(self.log_path)
+                    path = path+ self.path[4:]#replace('/log/','/')
+                    encoded = self.show_content_by_path(path)
+                else:
+                    path = os.path.abspath(root)
+                    path = path+ self.path.replace('//','/')
+                    if  os.path.isfile(path):
+                        from lib.common import csvfile2array
+                        arrary = csvfile2array(path)
+                        encoded = self.array2htmltable(arrary)
+                    else:
+                        encoded =self.list_dir(path, self.path)
+
+
+                self.send_response(200)
+                self.send_header("Content-type", type)
+                self.end_headers()
+                self.wfile.write(encoded)
+            def LoadHTMLPage(self, filename, replace=[], Pattern4ESCAPE1='#NOTEXISTPATTERN_HERE_FOR_STRING_FORMAT1#',Pattern4ESCAPE2='#NOTEXISTPATTERN_HERE_FOR_STRING_FORMAT2#'):
+
+                indexpage= open(filename, 'r')
+                encoded=indexpage.read()
+                encoded =encoded.replace('%s',Pattern4ESCAPE1 )
+                encoded =encoded.replace('%',Pattern4ESCAPE2 )
+                encoded =encoded.replace(Pattern4ESCAPE1,'%s' )
+
+                for item in replace:
+                    encoded =encoded.replace('%s', item, 1)
+                encoded =encoded.replace(Pattern4ESCAPE2, '%' )
+
+                return encoded
+
+            def RunScript(self, script, args=None):
+                    if not args:
+                        args =''
+                    exe_cmd = '%s %s'%(script,args)
+                    print('Run Script:'+exe_cmd)
+                    encoded = self.runner_proc(exe_cmd)
+                    #encoded ='run{}'.format(exe_cmd)
+                    self.send_response(200)
+                    self.send_header("Content-type", "text/html")#; charset=%s" % enc)
+                    self.end_headers()
+                    self.wfile.write(encoded)
+
+
+            def ParseFormData(self, s):
+                import re
+                reP = re.compile('^(-+[\d\w]+)\r\n(.+)-+[\d\w]+-*', re.M|re.DOTALL)
+                #s = '''-----------------------------186134213815046583202125303385\r\nContent-Disposition: form-data; name="fileToUpload"; filename="case1.csv"\r\nContent-Type: text/csv\r\n\r\n,ACTION,EXPECT,TIMEOUT,CASE OR COMMENTS\n[case1],,,,\n#var,\ncmd,${5}\ncmd2,${cmd2}\n#setup,,,,\ntel,pwd,],10\ntel,ls,],10,\n,ls,],10,\ntel,${cmd},],10,\n,${cmd2},],10,\n#!---,,,,\n\n\r\n-----------------------------186134213815046583202125303385--\r\n'''
+                #rs = re.escape(s)
+                rs =s
+                m = re.match(reP, rs)
+                print(rs)
+                if m:
+                    print('match!')
+                    boundary = m.group(1)
+                    print(m.group(2))
+                    c = m.group(2)
+                    index =c.find(boundary)
+                    if index ==-1:
+                        pass
+                    else:
+                        c = c[:index]
+                    l = c.split('\r\n')
+                    print(l)
+                    attribute=l[0].split('; ')
+                    da={}
+                    la =attribute[0].split(':')
+                    da.update({la[0]:la[1]})
+                    for a in attribute[1:]:
+                        la=a.split('=')
+                        da.update({la[0]:la[1].replace('"','').replace('\'','')})
+                    data = '\r\n'.join(l[3:-1])
+                    filename = da['filename']
+                    if filename.find('\\')!=-1:
+                        filename=filename[filename.rfind('\\')+1:]
+                    else:
+                        filename=filename[filename.rfind('/')+1:]
+                    return (da['name'],filename,data)
+                else:
+                    print('not match')
+                    return None
+            def do_POST(self):
+                content_len = int(self.headers['Content-Length'])
+                #self.queryString
+                self.path
+                s = self.rfile.read(content_len)
+                encoded=''
+                try:
+                    s=str(s)
+                    import urlparse
+                    req = urlparse.parse_qs(urlparse.unquote(s))
+                    script = '{}/{}'.format(self.suite_path, req['script'][0][7:])
+                    if req.has_key('arg'):
+                        arg= req['arg'][0]
+                    else:
+                        arg = ''
+
+                    executefile =''
+                    cmd_line = script+ ' '+ arg
+
+                    encoded=self.runner_proc(cmd_line)
+                    print(encoded)
+                except Exception as e:
+                    import traceback
+                    print(traceback.format_exc())
+                    response = self.ParseFormData(s)
+                    if response:
+                        type, filename, data =response
+                        encoded = self.onUploadFile(type, filename, data)
+                    else:
+                        encoded ='ERROR: %s, Can\'t parse Form data: %s'%(str(e),s)
+                        encoded= encoded.encode(encoding='utf_8')
+                    try:
+                        requestline = self.requestline
+                        import re
+                        reScript=re.compile('POST\s+(.+)\s+HTTP.*', re.DOTALL)
+                        m= re.match(reScript, requestline)
+                        if m:
+                            returncode =self.RunScript(m.group(1),[])
+                            encoded ='script %s completed with return code %d!'%(m.group(1), returncode)
+                    except Exception as e:
+                        encoded ='can\'t run script!'
+                        encoded = encoded.encode(encoding='utf_8', errors='strict')
+
+                # self.send_response(200)
+                # self.send_header("Content-type", "text/html")#; charset=%s" % enc)
+                # self.end_headers()
+                # self.wfile.write(encoded)
+
+        port =self.web_port
+        home = __file__ #sys.argv[0]
+        if os.path.exists(home):
+            home = os.path.dirname(home)
+            root = home
+            home = home +'/html/'
+            #done move runWebserver to DasH, and launch it at dash initialization
+
+        class ThreadingHttpServer(ThreadingMixIn, HTTPServer):
+            pass
+        httpd=ThreadingHttpServer(('',port), HttpHandler)
+
+        from socket import socket, AF_INET, SOCK_DGRAM, gethostname, getfqdn#*
+
+
+        try:
+            hostip=''
+            s = socket(AF_INET, SOCK_DGRAM)
+            s.bind(("", 1234))
+            #sq = socket(AF_INET, SOCK_DGRAM)
+            s.connect(("10.0.0.4", 1234))
+
+            domain = getfqdn()
+            hostip = s.getsockname()[0]
+            s.close()
+        except Exception as e:
+            import traceback
+            msg = traceback.format_exc()
+            print(msg)
+        hostname =gethostname()
+
+        info("Server started on %s (%s),port %d....."%(hostname,hostip,port))
+        #print('Process ID:%d'%os.geteuid())
+        httpd.serve_forever()
+
+        try:
+            s.close()
+        except:
+            pass
+    def add_line_to_case_queue(self,line):
+        type_case, case_name, args = self.check_case_type(line)
+        if type_case in ['txt','csv']:
+            self.run_a_test_suite(line)
+        else:
+            self.case_queue.put(line)
+        return info('adding case to queue: {}'.format(line))
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone

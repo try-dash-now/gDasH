@@ -197,6 +197,7 @@ try:
         data_files= [
                      './LICENSE.TXT','./gDasH.ini',
                     ( 'gui',[ './gui/dash.bmp']),
+                    ('gui/html', [f for f in copy_dir('./gui/html')]),#copy web related files to ./gui/html
                     ( 'sessions',[ f for f in copy_dir('./sessions')]),
                     ('src', [ f for f in copy_dir('./src', True)]),
 
