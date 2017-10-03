@@ -817,8 +817,9 @@ if __name__ == "__main__":
         str_code+='        sys.exit(-1)\n'#, sys.exit(-1)
         for ses in sessions:
             str_code+='''    {}.close_session()\n'''.format(ses)
-
+        info('code saved to file: ',file_name)
         info(str_code)
+        info('code saved to file: ',file_name)
         if not no_operation:
             with open(file_name, 'a+') as f:
                 f.write(str_code)

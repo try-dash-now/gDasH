@@ -579,10 +579,14 @@ class dut(object):
 
     def save_dry_run_json(self):
         try:
-            with open('{}/tmp_{}.json'.format(self.log_path, self.name), 'w') as jsonfile:
+            tmp_json = self.dry_run_json
+            log_path = self.log_path
+            name = self.name
+
+            with open('{}/tmp_{}.json'.format(log_path, name), 'w') as jsonfile:
                 import json
-                jsonfile.write(unicode(json.dumps( self.dry_run_json), "utf-8"))
-            os.rename('{}/tmp_{}.json'.format(self.log_path, self.name), '{}/{}.json'.format(self.log_path, self.name))
+                jsonfile.write(unicode(json.dumps( tmp_json), "utf-8"))
+            os.rename('{}/tmp_{}.json'.format(log_path, name), '{}/{}.json'.format(log_path, name))
         except Exception as e:
             error(format_exc())
 
