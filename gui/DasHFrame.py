@@ -1283,7 +1283,7 @@ if __name__ == "__main__":
                     content += '  \n</td></tr>\n'
                 content += ' \n </table><br>'
                 return  content
-            def show_content_by_path(self, path, type=['csv']):
+            def show_content_by_path(self, path, type='csv'):
                 header = '''
 <table   border="0" align='center' width="100%"  >
 <tr>    <td align=center valign=middle><a href="/">Back to DasH</a></td>		</tr>
@@ -1303,16 +1303,16 @@ if __name__ == "__main__":
                             row = line.split(',')
                             ar.append(row)
                         encoded = self.array2htmltable(ar)
-                    elif type in ['py']:
-                        ar =[]
-                        for line in html:
-                            row = line.split(',')
-                            ar.append(row)
-                        encoded = self.array2htmltable(ar)
+                    # elif type in ['py']:
+                    #     ar =[]
+                    #     for line in html:
+                    #         row = line.split(',')
+                    #         ar.append(row)
+                    #     encoded = self.array2htmltable(ar)
                 else:
                     encoded =self.list_dir(path, self.path, type)
-
-                encoded =header+encoded + footer
+                #encoded = "<html>{}</html>".format(cgi.escape(encoded))
+                encoded =header+encoded.replace('\t', '&nbsp;    ').replace('    ', '&nbsp;    ') + footer
                 return  encoded
             def do_GET(self):
 
@@ -1341,11 +1341,11 @@ if __name__ == "__main__":
                 elif self.path.startswith('/case'):
                     path = os.path.abspath(self.suite_path)
                     path = path+ self.path[5:]#replace('/log/','/')
-                    encoded = self.show_content_by_path(path, ['py'])
+                    encoded = self.show_content_by_path(path, 'py')
                 elif self.path.startswith('/suite'):
                     path = os.path.abspath(self.suite_path)
                     path = path+ self.path[6:]#replace('/log/','/')
-                    encoded = self.show_content_by_path(path, ['csv'])
+                    encoded = self.show_content_by_path(path, 'csv')
                 elif self.path.startswith('/log'):
                     path = os.path.abspath(self.log_path)
                     path = path+ self.path[4:]#replace('/log/','/')
