@@ -1237,6 +1237,7 @@ if __name__ == "__main__":
                 newdocument.close();
             }
                 </SCRIPT>
+                <table>
                 '''
 
                 for name in list:
@@ -1260,10 +1261,12 @@ if __name__ == "__main__":
                         <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunCase')";>"""%(filename,filename,fullfilename)
                     elif related_path.startswith('/suite') and os.path.isfile(fullname):
                         input_button = """
+
                         <input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on">
-                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunSuite')";>"""%(filename,filename,fullfilename)
-                    content+='<li><a href="%s">%s</a>\n'% (related_path+urllib.quote(linkname), cgi.escape(displayname))+input_button
-                content+="</ul>\n<hr>\n</body>\n</html>\n"
+                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunSuite')";>
+                        </td></tr>\n"""%(filename,filename,fullfilename)
+                    content+='<tr><td><a href="%s">%s</a></td><td>'% (related_path+urllib.quote(linkname), cgi.escape(displayname))+input_button
+                content+="</table></ul>\n<hr>\n</body>\n</html>\n"
 
                 return content
             def array2htmltable(self,Array):
