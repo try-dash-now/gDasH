@@ -47,7 +47,7 @@ from multiprocessing import Process
 import subprocess
 import shlex
 #from dut import  dut
-
+DUT={}
 class RedirectText(object):
     font_point_size = 10
     old_stdout = None
@@ -210,6 +210,8 @@ class DasHFrame(MainFrame):#wx.Frame
     case_queue =None
     check_case_running_status_lock = None
     case_list=None
+    #session_names={}
+    web_daemon = None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.case_list= []
@@ -345,6 +347,7 @@ class DasHFrame(MainFrame):#wx.Frame
     def on_close(self, event):
         self.alive =False
         time.sleep(0.01)
+        self.web_daemon.shutdown()
         self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
         if len(self.dict_test_report):
             self.mail_test_report("DASH TEST REPORT")
@@ -391,17 +394,19 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
+        global  gSessions
         closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
         closing_page.on_close()
         if isinstance(closing_page, (SessionTab)):
             ses_name = closing_page.name
             self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
-            if globals().has_key(ses_name):
+            if gSessions.has_key( ses_name):
+                #    globals().has_key(ses_name):
                 #g = dict(globals())
                 #globals()[ses_name]=None
                 #del g[ses_name]
-                globals()[ses_name].close_session()
-                del globals()[ses_name]
+                gSessions[ses_name].close_session()
+                del gSessions[ses_name] #del globals()[ses_name]
 
 
 
@@ -568,17 +573,21 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             #globals().update({ses_name: new_page.session})
 
     def add_new_session_to_globals(self, new_page, args_str):
-        if globals().has_key(new_page.name):
-            if globals()[new_page.name]==None:
-                pass
+        name = new_page.name
+        global  DUT
+
+        if  name in DUT:
+            if DUT[name]==None:
+                DUT[name]= new_page
             else:
-                error('{} already '.format(new_page.name))
+                error('{} already '.format(name))
         else:
-            globals().update({new_page.name: new_page})
-            self.add_cmd_to_sequence_queue('{} = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path').replace("'not_call_open': True,", "'not_call_open': False,") ), 'dut')
+            DUT[name]= new_page
+            self.add_cmd_to_sequence_queue('DUT["{}"] = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path').replace("'not_call_open': True,", "'not_call_open': False,") ), 'dut')
             #session  = dut(name, **attributes)
 
     def on_command_enter(self, event):
+
         info('called on_command_enter')
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
@@ -587,9 +596,20 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
 
         module,class_name, function,args = parse_command_line(cmd)
+        self.add_cmd_to_history(cmd,  module, None)
+
         #args[0]=self.sessions_alive['test_ssh'].session
         if module !='' or class_name!='' or function!='':
-            instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,args, globals())
+            after_sub_args=[]
+            for i in range(len(args)):
+                a = args[i]
+                if a in globals():
+                    after_sub_args.append(a)
+                elif a in DUT:
+                    after_sub_args.append('DUT["{}"]'.format(a))
+                else:
+                    after_sub_args.append(a)
+            instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,after_sub_args, globals())
             call_function = None
 
             if class_name!="":
@@ -646,14 +666,16 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         else:
             event.Skip()
     def add_cmd_to_history(self, cmd, module_name, str_code):
-        if self.history_cmd==[]:
-            self.history_cmd.append(cmd)
-        elif self.history_cmd[-1]==cmd:
-            pass
-        else:
-            self.history_cmd.append(cmd)
-        self.history_cmd_index= len(self.history_cmd)
-        self.add_cmd_to_sequence_queue(str_code,module_name )
+        if str_code is None:
+            if self.history_cmd==[]:
+                self.history_cmd.append(cmd)
+            elif self.history_cmd[-1]==cmd:
+                pass
+            else:
+                self.history_cmd.append(cmd)
+            self.history_cmd_index= len(self.history_cmd)
+        else:# str_code is not None:
+            self.add_cmd_to_sequence_queue(str_code,module_name )
         #self.sequence_queue.put([cmd, datetime.now()])
     def build_function_tab(self):
         src_path = os.path.abspath(self.src_path)
@@ -769,9 +791,10 @@ if __name__ == "__main__":
 
     log_path= '../log/tmp'
     log_path= lib.common.create_case_folder()
+    DUT={}
     try:
 
-""".format(self.src_path,self.lib_path )
+""".format(self.src_path,self.lib_path , "{}")
         sessions =[]
         for module in self.import_modules:
             str_code+='        import {mod}\n'.format(mod=module)#\n    {mod}_instance = {mod}()
@@ -1516,6 +1539,7 @@ if __name__ == "__main__":
 
         info("Server started on %s (%s),port %d....."%(hostname,hostip,port))
         #print('Process ID:%d'%os.geteuid())
+        self.web_daemon= httpd
         httpd.serve_forever()
 
         try:

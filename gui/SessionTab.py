@@ -47,7 +47,7 @@ class SessionTab(wx.Panel, dut):
     type = type
     output_window = None
     cmd_window = None
-    session = None
+    #session = None
     alive =False
     output_lock = None
     font_point = None

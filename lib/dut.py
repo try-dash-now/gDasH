@@ -476,11 +476,14 @@ class dut(object):
                     if self.session.client:
                         self.session.client.close()
                         self.session.client=None
+            info('session {}: Closed!!!'.format(self.name))
         except Exception as e:
             error(e)
             self.session=None
-        info('session {}: Closed!!!'.format(self.name))
-        self.reading_thread_lock.release()
+        try:
+            self.reading_thread_lock.release()
+        except Exception as e:
+            pass
     def write(self, cmd='', ctrl=False):
         resp = ''
         self.add_new_command_to_dry_run_json(cmd, ctrl)
