@@ -1176,7 +1176,7 @@ if __name__ == "__main__":
                 #print('end http server')
                 pass
 
-            def list_dir(self, path, related_path):
+            def list_dir(self, path, related_path, pattern=['']):
                 """Helper to produce a directory listing (absent index.html).
 
                 Return value is either a file object, or None (indicating an
@@ -1241,6 +1241,11 @@ if __name__ == "__main__":
                 '''
 
                 for name in list:
+                    extension = os.path.basename(name).split('.')[-1]
+                    if extension in pattern:
+                        pass
+                    else:
+                        continue
                     fullname = os.path.join(path, name)
                     displayname = linkname = name
                     # Append / for directories or @ for symbolic links
@@ -1278,13 +1283,14 @@ if __name__ == "__main__":
                     content += '  \n</td></tr>\n'
                 content += ' \n </table><br>'
                 return  content
-            def show_content_by_path(self, path, type='csv'):
+            def show_content_by_path(self, path, type=['csv']):
                 header = '''
 <table   border="0" align='center' width="100%"  >
 <tr>    <td align=center valign=middle><a href="/">Back to DasH</a></td>		</tr>
 </table>'''
                 footer = header
                 if  os.path.isfile(path):
+
                     indexpage= open(path)
                     encoded=indexpage.read()
                     html = []
@@ -1297,8 +1303,14 @@ if __name__ == "__main__":
                             row = line.split(',')
                             ar.append(row)
                         encoded = self.array2htmltable(ar)
+                    elif type in ['py']:
+                        ar =[]
+                        for line in html:
+                            row = line.split(',')
+                            ar.append(row)
+                        encoded = self.array2htmltable(ar)
                 else:
-                    encoded =self.list_dir(path, self.path)
+                    encoded =self.list_dir(path, self.path, type)
 
                 encoded =header+encoded + footer
                 return  encoded
@@ -1326,10 +1338,14 @@ if __name__ == "__main__":
                     path = os.path.abspath(self.session_path)
                     path = path+ self.path[9:]#replace('/log/','/')
                     encoded = self.show_content_by_path(path)
+                elif self.path.startswith('/case'):
+                    path = os.path.abspath(self.suite_path)
+                    path = path+ self.path[5:]#replace('/log/','/')
+                    encoded = self.show_content_by_path(path, ['py'])
                 elif self.path.startswith('/suite'):
                     path = os.path.abspath(self.suite_path)
                     path = path+ self.path[6:]#replace('/log/','/')
-                    encoded = self.show_content_by_path(path)
+                    encoded = self.show_content_by_path(path, ['csv'])
                 elif self.path.startswith('/log'):
                     path = os.path.abspath(self.log_path)
                     path = path+ self.path[4:]#replace('/log/','/')
