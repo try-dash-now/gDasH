@@ -31,13 +31,14 @@ if __name__ == "__main__":
         script_name = sys.argv[1]
         sys.argv= sys.argv[1:]
         try:
-            from lib.common import create_case_folder
-            case_log_path = create_case_folder()
+            #from lib.common import create_case_folder
+            #case_log_path = create_case_folder()
+            case_log_path = '../log/'
             log_option = '-l'
             if log_option in sys.argv:
                 log_index = sys.argv.index(log_option)
                 if len(sys.argv)> log_index+1:
-                    sys.argv[log_index+1]=case_log_path
+                    case_log_path = sys.argv[log_index+1] #=case_log_path
                 else:
                     sys.argv.append(case_log_path)
             else:

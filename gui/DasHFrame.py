@@ -854,7 +854,7 @@ if __name__ == "__main__":
         from lib.common import create_case_folder
         old_sys_argv = sys.argv
         sys.argv= [script_name]+script_args
-        case_log_path = self.log_path #create_case_folder()
+        case_log_path = create_case_folder(self.log_path )#self.log_path #create_case_folder()
         sys.argv= old_sys_argv
         try:
             if os.path.exists('script_runner.exe'):
@@ -1430,7 +1430,12 @@ if __name__ == "__main__":
                     cmd_line = script+ ' '+ arg
 
                     encoded=self.runner_proc(cmd_line)
-                    print(encoded)
+                    #print(encoded)
+                    self.send_response(200)
+                    self.send_header("Content-type", "text/html")#; charset=%s" % enc)
+                    self.end_headers()
+                    self.wfile.write(encoded)
+
                 except Exception as e:
                     import traceback
                     print(traceback.format_exc())
