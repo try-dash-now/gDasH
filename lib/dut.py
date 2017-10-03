@@ -79,7 +79,11 @@ class dut(object):
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.dry_run_json={}
-        self.type = type
+        if init_file_name is None:
+            self.type = type
+        else:
+            self.type = 'echo'
+
         self.prompt = prompt
         self.reading_thread_lock=threading.Lock()
         if login_step in [None, '']:
@@ -91,7 +95,7 @@ class dut(object):
         self.retry_login = retry_login
         self.retry_login_interval = retry_login_interval
         self.login_steps = login_step
-        self.session_type = type
+        self.session_type = self.type
         self.name = name
         self.host= host
         self.port = port
@@ -136,11 +140,7 @@ class dut(object):
             else:
                 self.log_path = os.path.abspath('../log')
             self.open_log_file()
-
-
-
             self.sleep(1)
-
             new_line_during_login = self.new_line_during_login
             self.new_line_during_login = new_line_during_login
             init_file_name = self.init_file_name
@@ -357,10 +357,11 @@ class dut(object):
         self.login_done =True
 
     def close_session(self):
+        name = self.name
         if self.write_locker:
             self.write_locker.acquire()
         if self.session_status: #try to avoid to call this function twice
-            info('session {}:close_session called Closing!!!'.format(self.name))
+            info('session {}:close_session called, Closing!!!'.format(name))
 
             #fix issue
             # Traceback (most recent call last):
@@ -398,10 +399,11 @@ class dut(object):
             except:
                 pass
             self.session_status=False
+            self.session =None
 
         self.write_locker.release()
         time.sleep(1)
-
+        info('session {}:close_session ended!!!'.format(name))
     def add_data_to_search_buffer(self, data):
 
         #self.search_buffer_locker.acquire()
@@ -438,6 +440,7 @@ class dut(object):
         last_update_time = datetime.datetime.now()
         self.last_cmd_time_stamp = last_update_time
         self.reading_thread_lock.acquire()
+        name = self.name
         while True:#and self.session:
             try:
                 try:
@@ -476,7 +479,7 @@ class dut(object):
                     if self.session.client:
                         self.session.client.close()
                         self.session.client=None
-            info('session {}: Closed!!!'.format(self.name))
+            info('session {}: read_data Closed!!!'.format(name))
         except Exception as e:
             error(e)
             self.session=None
