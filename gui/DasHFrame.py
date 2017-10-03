@@ -1431,6 +1431,7 @@ if __name__ == "__main__":
 
                     encoded=self.runner_proc(cmd_line)
                     #print(encoded)
+                    encoded = encoded.encode(encoding='utf_8').replace('\t', '    ').replace('\n','')
                     self.send_response(200)
                     self.send_header("Content-type", "text/html")#; charset=%s" % enc)
                     self.end_headers()
