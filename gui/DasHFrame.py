@@ -274,10 +274,6 @@ class DasHFrame(MainFrame):#wx.Frame
         self.m_command_box.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
         from wx.aui import AuiNotebook
-
-
-
-
         bookStyle = wx.aui.AUI_NB_DEFAULT_STYLE &(~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
         self.navigator = AuiNotebook(self.m_left_navigator, style= bookStyle )
         self.case_suite_page    = wx.TreeCtrl(self.navigator, wx.ID_ANY, wx.DefaultPosition, wx.Size(-1, -1), wx.TR_DEFAULT_STYLE | wx.TR_EDIT_LABELS | wx.TR_EXTENDED | wx.TR_HAS_BUTTONS | wx.TR_HAS_VARIABLE_ROW_HEIGHT | wx.HSCROLL | wx.TAB_TRAVERSAL | wx.VSCROLL | wx.WANTS_CHARS)
@@ -343,6 +339,11 @@ class DasHFrame(MainFrame):#wx.Frame
         th.start()
 
         threading.Thread(target=self.web_server_start).start()
+
+        #tooltips bind
+        self.case_suite_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
+        self.session_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
+        self.function_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
 
     def on_close(self, event):
         self.alive =False
@@ -677,6 +678,42 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         else:# str_code is not None:
             self.add_cmd_to_sequence_queue(str_code,module_name )
         #self.sequence_queue.put([cmd, datetime.now()])
+    def get_description_of_function(self, function_obj):
+        import inspect
+        fundefstr=''
+        try:
+            try:
+                fundef = inspect.getsource(function_obj) # recreate function define for binary distribute
+                fundefstr = fundef[:fundef.find(':')]
+            except Exception as e:
+                (args, varargs, keywords, defaults) =inspect.getargspec(function_obj)
+                argstring = ''
+                largs=len(args)
+                ldefaults= len(defaults)
+                gaplen = largs-ldefaults
+                index =0
+
+                for  arg in args:
+                    if index <gaplen:
+                        argstring+='%s, '%arg
+                    else:
+                        defvalue = defaults[index-gaplen]
+                        if type('')==type(defvalue):
+                            defvalue = '"%s"'%defvalue
+                        argstring+='%s = %s, '%(arg,str(defvalue))
+                    index+=1
+
+
+                fundefstr ='%s( %s )'%(function_obj.func_name, argstring)
+                fundef =fundefstr
+            listoffun =fundef.split('\n')
+            ret = function_obj.__doc__
+            if ret:
+                fundefstr = fundefstr +'\n    '+'\n    '.join(ret.split('\n'))
+
+        except Exception as e:
+            pass
+        return fundefstr
     def build_function_tab(self):
         src_path = os.path.abspath(self.src_path)
         if not os.path.exists(src_path):
@@ -707,7 +744,8 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
                 if attr_type == types.FunctionType :
                     new_item  = self.function_page.InsertItem(new_module, new_module, '{}'.format( attr))
-                    item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
+                    item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr),
+                                                 'tip':self.get_description_of_function(attr_obj)})
                     self.function_page.SetItemData(new_item, item_info)
                 elif attr_type== types.TypeType:
                     class_obj = getattr(lmod, attr)
@@ -1554,6 +1592,26 @@ if __name__ == "__main__":
         else:
             self.case_queue.put(line)
         return info('adding case to queue: {}'.format(line))
+    def OnMouseMotion(self, evt):
+        active_page = self.navigator.GetCurrentPage()
+        pos = self.case_suite_page.ScreenToClient(wx.GetMousePosition())
+        item_index, flag = active_page.HitTest(pos)
+        item_data = active_page.GetItemData(item_index)
+        tip = active_page.GetToolTip()
+        if item_data :
+            if item_data.Data.has_key('tip'):
+                active_page.SetToolTipString(item_data.Data['tip'])
+            else:
+                from pprint import pformat
+                tip_string = pformat(item_data.Data)
+                active_page.SetToolTipString(tip_string)
+        if False:
+            if flag == wx.LIST_HITTEST_ONITEMLABEL:
+                active_page.SetToolTipString('Some information about ' + self.case_suite_page.GetItemText(item_index))
+            else:
+                active_page.SetToolTipString('No match tips')
+
+        evt.Skip()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
