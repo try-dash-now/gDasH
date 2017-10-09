@@ -40,7 +40,7 @@ import time,datetime, re, math, datetime
 import threading
 from common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME, create_dir
 import os
-
+import traceback
 class dut(object):
     name=None
     session_type= None
@@ -72,11 +72,13 @@ class dut(object):
     prompt= None
     dry_run_json=None#a dict to record the interaction procedure
     last_write=None
+    time_out=15.0
+    executable_path= None
     def __del__(self):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, executable_path= './lib/'):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.dry_run_json={}
         if init_file_name is None:
@@ -110,6 +112,8 @@ class dut(object):
         self.init_file_name = init_file_name
         self.write_locker=  threading.Lock()
         self.read_locker=  threading.Lock()
+        self.time_out =time_out
+        self.executable_path = executable_path
         th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
         #th.start()
         self.sleep(0.5)
@@ -164,6 +168,9 @@ class dut(object):
                     elif type.lower() in  ['shell']:
                         from shell import  shell
                         self.session = shell()
+                    elif type.lower() in  ['dash_web']:
+                        from dash_web import  dash_web
+                        self.session = dash_web(time_out=self.time_out, executable_path = self.executable_path)
                     if isinstance(login_step,(list, tuple)):
                         pass
                     elif login_step is None :#login_step.strip().lower() in ['none',None, "''", '""']:
@@ -382,11 +389,13 @@ class dut(object):
                     if self.session:
                         self.session.write('exit\r\n')
                         self.session.client.close()
-                if self.session_type in 'telnet':
+                elif self.session_type in 'telnet':
                     #self.session.write('exit')
                     if self.session:
                         self.session.write('exit\r\n')
                     self.session.sock.close()
+                elif self.session_type in ['dash_web']:
+                    self.session.close()
             except Exception as e:
                 error('dut({}): {}'.format(self.name, e))
                 self.session=None
@@ -444,6 +453,7 @@ class dut(object):
         self.last_cmd_time_stamp = last_update_time
         self.reading_thread_lock.acquire()
         name = self.name
+        error_msg =None
         while True:#and self.session:
             try:
                 try:
@@ -452,6 +462,8 @@ class dut(object):
                     else:
                         break
                 except Exception as e:
+
+                    error_msg= traceback.format_exc()
                     error(e)
                     break
                 current_time = datetime.datetime.now()
@@ -472,7 +484,8 @@ class dut(object):
                 data = self.read()
                 time.sleep(0.1)
             except  Exception as e:
-                import traceback
+                #
+                error_msg= traceback.format_exc()
                 if str(e) in ['error: Socket is closed']:
                     error(traceback.format_exc())
                     self.session_status =False
@@ -592,9 +605,15 @@ class dut(object):
             with open('{}/tmp_{}.json'.format(log_path, name), 'w') as jsonfile:
                 import json
                 jsonfile.write(unicode(json.dumps( tmp_json), "utf-8"))
+            if os.path.exists( '{}/{}.json'.format(log_path, name)):
+                os.remove( '{}/{}.json'.format(log_path, name))
             os.rename('{}/tmp_{}.json'.format(log_path, name), '{}/{}.json'.format(log_path, name))
         except Exception as e:
-            error(format_exc())
+            error(name, format_exc())
 
-
+#fixed WindowsError: [Error 183] Cannot create a file when that file already exists
+            # dut.py:604	save_dry_run_json:Traceback (most recent call last):
+            # 	  File "C:/workspace/gDasH\lib\dut.py", line 602, in save_dry_run_json
+            # 	    os.rename('{}/tmp_{}.json'.format(log_path, name), '{}/{}.json'.format(log_path, name))
+            # 	WindowsError: [Error 183] Cannot create a file when that file already exists
 

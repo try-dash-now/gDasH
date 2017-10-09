@@ -40,6 +40,7 @@ import sys
 import inspect
 import Queue
 from datetime import datetime
+import traceback
 class SessionTab(wx.Panel, dut):
     stdout=None
     stderr=None
@@ -202,7 +203,7 @@ class SessionTab(wx.Panel, dut):
         if keycode in [wx.WXK_UP, wx.WXK_DOWN]:
             self.cmd_window.Clear()
             self.history_cmd_index, new_command = get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=increase)
-            self.cmd_window.AppendText(new_command)
+            self.cmd_window.AppendText(new_command.encode(errors='ignore'))
         if keycode in [wx.WXK_TAB]:
             pass
         else:
@@ -213,22 +214,23 @@ class SessionTab(wx.Panel, dut):
         cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
         cmd= cmd.replace('\n', os.linesep)
         self.cmd_window.Clear()
+        cmd = cmd.encode(errors= 'ignore')
         self.add_cmd_to_history(cmd)
-
         try:
             if self.session_status:
+
                 th = threading.Thread(target=self.write,args=( cmd,ctrl))
                 th.start()
 
-
-                self.sequence_queue.put(['TC.step({}, "{}")'.format(self.name,cmd),  datetime.now()])#
+                self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
             else:
                 pass #self.alive= self.session#.session_status
                 #self.write(cmd,ctrl=ctrl)
         except Exception as e:
+            error_msg = traceback.format_exc()
             self.on_close()
             self.close_session()
-            error ('{} closed unexpected'.format(self.name))
+            error ('{} closed unexpected\n{}'.format(self.name, error_msg))
             self.alive= False
         self.cmd_window.SetFocus()
     def add_cmd_to_history(self, cmd):
