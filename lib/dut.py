@@ -31,7 +31,7 @@ provide functions
     when interacting with real device, record the steps to a json file
 '''
 #done: dut.add_data_to_search_buffer --function_step completion, add stream_buffer, search_index, to support search in buffer check
-#todo: function_step defines the output format:
+#done: 2017-10-7  function_step defines the output format:
 #done: 2017-09-02, build_DasH_exe.py to do that option for this script is '--verbose py2exe -d ../dist'.  build executable(exe) file for windows user, allow to distribute it without python installation
 #fixed: if dut is not reachable, it will hang the gDasH gui
 from pprint import pprint
@@ -161,6 +161,9 @@ class dut(object):
                     elif type.lower() in ['telnet']:
                         from TELNET import  TELNET
                         self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
+                    elif type.lower() in  ['shell']:
+                        from shell import  shell
+                        self.session = shell()
                     if isinstance(login_step,(list, tuple)):
                         pass
                     elif login_step is None :#login_step.strip().lower() in ['none',None, "''", '""']:

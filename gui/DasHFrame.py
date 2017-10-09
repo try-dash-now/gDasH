@@ -1593,23 +1593,26 @@ if __name__ == "__main__":
             self.case_queue.put(line)
         return info('adding case to queue: {}'.format(line))
     def OnMouseMotion(self, evt):
-        active_page = self.navigator.GetCurrentPage()
-        pos = self.case_suite_page.ScreenToClient(wx.GetMousePosition())
-        item_index, flag = active_page.HitTest(pos)
-        item_data = active_page.GetItemData(item_index)
-        tip = active_page.GetToolTip()
-        if item_data :
-            if item_data.Data.has_key('tip'):
-                active_page.SetToolTipString(item_data.Data['tip'])
-            else:
-                from pprint import pformat
-                tip_string = pformat(item_data.Data)
-                active_page.SetToolTipString(tip_string)
-        if False:
-            if flag == wx.LIST_HITTEST_ONITEMLABEL:
-                active_page.SetToolTipString('Some information about ' + self.case_suite_page.GetItemText(item_index))
-            else:
-                active_page.SetToolTipString('No match tips')
+        try:
+            active_page = self.navigator.GetCurrentPage()
+            pos = self.case_suite_page.ScreenToClient(wx.GetMousePosition())
+            item_index, flag = active_page.HitTest(pos)
+            item_data = active_page.GetItemData(item_index)
+            tip = active_page.GetToolTip()
+            if item_data :
+                if item_data.Data.has_key('tip'):
+                    active_page.SetToolTipString(item_data.Data['tip'])
+                else:
+                    from pprint import pformat
+                    tip_string = pformat(item_data.Data)
+                    active_page.SetToolTipString(tip_string)
+            if False:
+                if flag == wx.LIST_HITTEST_ONITEMLABEL:
+                    active_page.SetToolTipString('Some information about ' + self.case_suite_page.GetItemText(item_index))
+                else:
+                    active_page.SetToolTipString('No match tips')
+        except Exception as e:
+            pass
 
         evt.Skip()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
@@ -1617,15 +1620,15 @@ if __name__ == "__main__":
 #done: 2017-08-22, 2017-08-19 mail to someone
 #done: 2017-08-19 run a script in DasH
 #done: 2017-08-19 generate test report
-#todo: 2017-08-19 publish all test cases in a web page
-#todo: 2017-08-19 trigger a test remote via web page
+#done: 2017-10-7 2017-08-19 publish all test cases in a web page
+#done: 2017-10-7 2017-08-19 trigger a test remote via web page
 #todo: 2017-08-19 re-run failed cases
 #done: 2017-08-19 build executable packege for DasH
 #todo: 2017-08-19 a popup window to get email address/password/mail_server...
 #done: 2017-08-22 output in m_log window has a lot of empty line, need remove them
 #todo: 2017-08-23 in common.call_function_in_module, should end all threads which are started in previous instance
-#todo: 2017-08-23 add tips for all tree item in teh left
-#todo: 2017-09-30 failed to send command to a session whose name start with numbers e.g. 1_session
+#done: 2017-10-7  2017-08-23 add tips for all tree item in teh left
+#done: 2017-10-7  2017-09-30 failed to send command to a session whose name start with numbers e.g. 1_session
     # Traceback (most recent call last):
     #   File "C:/workspace/gDasH\gui\DasHFrame.py", line 588, in on_command_enter
     #     instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,args, globals())
