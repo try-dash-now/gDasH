@@ -1610,7 +1610,7 @@ if __name__ == "__main__":
                 if flag == wx.LIST_HITTEST_ONITEMLABEL:
                     active_page.SetToolTipString('Some information about ' + self.case_suite_page.GetItemText(item_index))
                 else:
-                    active_page.SetToolTipString('No match tips')
+                    active_page.SetToolTipString('')
         except Exception as e:
             pass
 
