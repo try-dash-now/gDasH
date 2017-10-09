@@ -825,10 +825,10 @@ if __name__ == "__main__":
     import sys, traceback
     sys.path.insert(0,r'{}')
     sys.path.insert(0,r'{}')
-    import lib.common
+    import common
 
     log_path= '../log/tmp'
-    log_path= lib.common.create_case_folder()
+    log_path= common.create_case_folder()
     DUT={}
     try:
 
@@ -1615,6 +1615,9 @@ if __name__ == "__main__":
             pass
 
         evt.Skip()
+    def on_keyboard_key_down(self,event):
+
+        event.Skip()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone

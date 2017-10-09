@@ -243,12 +243,40 @@ class SessionTab(wx.Panel, dut):
             self.history_cmd_index= len(self.history_cmd)
     def on_key_down(self, event):
         keycode = event.KeyCode
-
         if keycode ==wx.WXK_TAB:
                 self.cmd_window.AppendText('\t')
                 self.on_enter_a_command(event)
         elif keycode == wx.PAPER_ENV_INVITE and wx.GetKeyState(wx.WXK_SHIFT):
             self.cmd_window.AppendText('?')
             self.on_enter_a_command(event)
+        elif keycode == ord('C')  and event.controlDown:
+            self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
+            self.write(chr(keycode), ctrl=True)
+        elif keycode == ord('V')  and event.controlDown:
+            #self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
+            #self.write(chr(keycode), ctrl=True)
+            if not wx.TheClipboard.IsOpened():  # may crash, otherwise
+                do = wx.TextDataObject()
+                wx.TheClipboard.Open()
+                success = wx.TheClipboard.GetData(do)
+                wx.TheClipboard.Close()
+                if success:
+                    cmds = do.GetText()
+                    for cmd in cmds.split('\n'):
+                        self.cmd_window.Clear()
+                        #self.history_cmd_index, new_command = get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=increase)
+                        self.cmd_window.AppendText(cmd.encode(errors='ignore'))
+                        self.on_enter_a_command(event)
+                else:
+                    event.Skip()
+
+        elif keycode >= ord('A')  and keycode <= ord('Z') and event.controlDown:
+            info('ctrl+{}'.format(chr(keycode)))
+            self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
+            self.write(chr(keycode), ctrl=True)
+            event.Skip()
         else:
             event.Skip()
+#todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
+#todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
+#todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )

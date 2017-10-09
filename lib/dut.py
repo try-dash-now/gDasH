@@ -266,7 +266,7 @@ class dut(object):
                 if remaining ==0:#no more chance to try again, the last chance
                     import traceback
                     error_msg = "{}\n{}".format(traceback.format_exc(),error_message)
-
+                    error(error_msg)
                     raise Exception(error_msg)
         return  success, match, buffer
     def match_in_buffer(self, pattern, flags = re.DOTALL|re.IGNORECASE|re.MULTILINE):
@@ -514,8 +514,6 @@ class dut(object):
                 new_line = self.new_line
             self.write_locker.acquire()
             if ctrl:
-                ascii = ord(cmd[0]) & 0x1f
-                cmd = chr(ascii)
                 resp = self.session.write(cmd, ctrl=ctrl)
                 resp +='{}'.format(self.session.write(new_line))
             else:
