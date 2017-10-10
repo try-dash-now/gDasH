@@ -13,7 +13,7 @@ def signal_handler(signal, frame):
   time.sleep(1)
   print 'Ctrl+C received in wrapper.py'
 
-signal.signal(signal.SIGINT, signal_handler)
+#signal.signal(signal.SIGINT, signal_handler)
 class shell(object):
     shell= None
     def __init__(self):
@@ -27,8 +27,8 @@ class shell(object):
         os.environ['FOR_DISABLE_CONSOLE_CTRL_HANDLER'] = '1'
 
         if os.name == 'nt':
-            win32api.SetConsoleCtrlHandler(handler_ctrl_c, 1)
-            creationflags= win32con.CREATE_NEW_PROCESS_GROUP#win32con.CREATE_NEW_CONSOLE#|win32con.CREATE_NEW_PROCESS_GROUP
+            #win32api.SetConsoleCtrlHandler(handler_ctrl_c, 1)
+            creationflags= win32con.CREATE_NEW_PROCESS_GROUP#.CREATE_NEW_PROCESS_GROUP#win32con.CREATE_NEW_CONSOLE#|win32con.CREATE_NEW_PROCESS_GROUP
         else:
             creationflags =0
         self.shell = subprocess.Popen(args = exe_cmd ,
@@ -36,6 +36,7 @@ class shell(object):
                                       shell= True,
                                       stdout=subprocess.PIPE,
                                       stdin=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
                                       creationflags=creationflags,#CREATE_NEW_PROCESS_GROUP
                                       )#,shell =True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
@@ -70,16 +71,25 @@ class shell(object):
                     #os.getpgid()
                     pgroupid = self.shell.pid
 
-                        #os.getpgid(self.shell.pid)
-                    win32api.GenerateConsoleCtrlEvent(signal.CTRL_C_EVENT, pgroupid)
-                    win32api.GenerateConsoleCtrlEvent(signal.CTRL_BREAK_EVENT, pgroupid)
-                    #os.kill(pgroupid, signal.CTRL_C_EVENT)
-                    s = signal.CTRL_BREAK_EVENT#CTRL_C_EVENT
-                    self.shell.send_signal(s)
-                    os.kill(self.shell.pid, s)
-                    s = signal.CTRL_C_EVENT
-                    self.shell.send_signal(s)
-                    os.kill(self.shell.pid, s)
+                        ##os.getpgid(self.shell.pid)
+
+                    if True:
+                        #win32api.GenerateConsoleCtrlEvent(signal.CTRL_C_EVENT, pgroupid)
+                        #win32api.GenerateConsoleCtrlEvent(signal.CTRL_BREAK_EVENT, pgroupid)
+                        C= ord('C')
+                        win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
+                        win32api.keybd_event(C, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
+                        win32api.keybd_event(win32con.VK_PAUSE, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
+                        win32api.keybd_event(win32con.VK_PAUSE, 0, win32con.KEYEVENTF_KEYUP, 0);
+                        win32api.keybd_event(C, 0, win32con.KEYEVENTF_KEYUP, 0);
+                        win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0);
+                        import ctypes
+                        ctypes.windll.user32.keybd_event(0x11, 0, 0, 0)#
+                    for s in [ signal.CTRL_C_EVENT, signal.CTRL_BREAK_EVENT, signal.SIGINT]:
+                        s = signal.CTRL_BREAK_EVENT#CTRL_C_EVENT
+                        self.shell.send_signal(s)
+                        os.kill(self.shell.pid, s)
+
                     #todo 2017-10-10 can't stop "ping localhost -t" with ctrl+c, it's disabled by windows for non-console process
 
 

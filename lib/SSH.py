@@ -59,6 +59,13 @@ class SSH(object):
             resp =''
         return resp
     def write(self, data,ctrl=False):
-        self.chan.send('{}'.format(data))
+        #fixed failed to send ctrl+c to ssh session
+        if ctrl:
+            ascii = ord(data[0]) & 0x1f
+            ch = chr(ascii)
+            data = ch
+            self.chan.send(ch)
+        else:
+            self.chan.send('{}'.format(data))
         #self.chan.send(os.linesep)
         return  ''
