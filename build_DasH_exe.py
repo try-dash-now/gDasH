@@ -30,6 +30,7 @@ if len(sys.argv)<2:
     sys.argv.append('-d')
     sys.argv.append('../DasH')
 
+
 import paramiko
 paramiko.SSHClient()
 #import zeep
@@ -70,7 +71,23 @@ try:
     wt = TELNET('a', log_path='../log')
 except:
     pass
+import pandas
+import numpy
+import matplotlib
+import win32con,win32gui, win32api
+pandas.DataFrame()
+numpy.array([])
+def numpy_dll_paths_fix():
+    paths = set()
+    np_path = numpy.__path__[0]
+    for dirpath, _, filenames in os.walk(np_path):
+        for item in filenames:
+            if item.endswith('.dll'):
+                paths.add(dirpath)
 
+    sys.path.append(*list(paths))
+
+numpy_dll_paths_fix()
 # from TclInter import TclInter
 # try:
 #     ti = TclInter('a',{}, logpath='../test/log')
@@ -155,17 +172,19 @@ class MediaCollector(build_exe):
 
 from distutils.core import setup
 import py2exe
-dll_excludes = ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll',
+dll_excludes = [
+                'libgdk-win32-2.0-0.dll',
+                'libgobject-2.0-0.dll',
                 #'tcl84.dll',
                 #'tk84.dll',
                 'MSVCP90.dll'
                  ]
 py2exe_options = {
-        #'cmdclass': {'py2exe': MediaCollector},
+        'cmdclass': {'py2exe': MediaCollector},
         # [...] Other py2exe options here.
     }
-
-wd_base = 'C:/Python27/Lib/site-packages/selenium-2.46.0-py2.7.egg/selenium/webdriver/'
+#todo 2017-10-10 add webdriver for web browser
+wd_base = r'C:\Python27\Lib\site-packages\selenium\webdriver'
 RequiredDataFailes = [
     ('selenium/webdriver/firefox', ['%s\\firefox\\webdriver.xpi'%(wd_base), '%s\\firefox\\webdriver_prefs.json'%(wd_base)])
 ]
@@ -194,9 +213,11 @@ try:
                     "./lib/import_module.py",
                           ],
 
-        data_files= [
-                     './LICENSE.TXT','./gDasH.ini',
+        data_files=list(matplotlib.get_py2exe_datafiles())+ [
+                     './LICENSE.TXT',
+                    './gDasH.ini',
                     ( 'gui',[ './gui/dash.bmp']),
+
                     ('gui/html', [f for f in copy_dir('./gui/html')]),#copy web related files to ./gui/html
                     ( 'sessions',[ f for f in copy_dir('./sessions')]),
                     ('src', [ f for f in copy_dir('./src', True)]),
@@ -213,7 +234,7 @@ try:
                           "optimize": 0,#2,#no optimaze it, create .pyc files
                           "includes":[],# includes,
                           "excludes":[],# excludes,
-                          "packages": [],#packages,
+                          "packages": [ ],#'pandas','win32con', 'win32api', 'win32gui'],#packages,,'numpy'
                           "dll_excludes": dll_excludes,
                           #"bundle_files": 1,
                           "dist_dir": "DasH",

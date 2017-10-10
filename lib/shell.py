@@ -104,4 +104,6 @@ class shell(object):
         return ''
 
         #done: 2017-10-9, 2017-10-7 a new type of dut--shell, powershell for windows and linux shell
+        #todo 2017-10-10 missed win32con in distribute package
+
 
