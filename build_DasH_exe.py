@@ -234,7 +234,7 @@ try:
                           "optimize": 0,#2,#no optimaze it, create .pyc files
                           "includes":[],# includes,
                           "excludes":[],# excludes,
-                          "packages": [ ],#'pandas','win32con', 'win32api', 'win32gui'],#packages,,'numpy'
+                          "packages": ['numpy','pandas','win32con', 'win32api', 'win32gui'],#packages,,'numpy'
                           "dll_excludes": dll_excludes,
                           #"bundle_files": 1,
                           "dist_dir": "DasH",
