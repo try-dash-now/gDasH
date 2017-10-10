@@ -65,6 +65,7 @@ class SSH(object):
             ch = chr(ascii)
             data = ch
             self.chan.send(ch)
+            self.chan.send('\r\n')
         else:
             self.chan.send('{}'.format(data))
         #self.chan.send(os.linesep)
