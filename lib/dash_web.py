@@ -105,7 +105,7 @@ class dash_web(object):
         #done: 2017-10-9, 2017-10-7 a new type of dut--shell, powershell for windows and linux shell
     def __update_output_buffer(self,data):
         self.output_locker.acquire()
-        self.output_buffer+= '{}\n>\n'.format(data)
+        self.output_buffer+= '{}\n>'.format(data)
         self.output_locker.release()
 
     def help(self,attribute=None):
@@ -126,18 +126,18 @@ class dash_web(object):
         by: string, one of  list [link_text,partial_link_text,id,name,xpath,tag_name,class_name, None]
             default is None, try order: left to right as list above
         '''
-        if by is None:
-            search_order =[self.driver.find_element_by_link_text,
+        search_order =[self.driver.find_element_by_link_text,
                        self.driver.find_element_by_partial_link_text,
                        self.driver.find_element_by_id,
                        self.driver.find_element_by_name,
                        self.driver.find_element_by_xpath,
                        self.driver.find_element_by_tag_name,
                        self.driver.find_element_by_class_name]
-        else:
+        if by is not None:
             fun_name = 'find_element_by_{}'.format(by.strip().lower())
             if fun_name in self.function_in_dirver:
                 search_order = [self.driver.__getattribute__(fun_name)]
+
 
 
 
@@ -154,17 +154,7 @@ class dash_web(object):
             self.__update_output_buffer('failed to find element({})'.format(identifier))
         return  element
 
-    def xclick(self, identifier,  by=None):
-        '''
-        xclick(self, identifier,  by=None ):
-        to find element by identifier, and click it
-        identifier: string, search the identifier in the source code
-        by: string, one of  list [link_text,partial_link_text,id,name,xpath,tag_name,class_name, None]
-            default is None, try order: left to right as list above
-        '''
-        element = self.xfind(identifier, by)
-        element.click()
-        self.__update_output_buffer('clicked element({})'.format(identifier))
+
     def xget_attribute(self, identifier, attribute ,by =None,):
         element =self.xfind(identifier, by)
         value =element.get_attribute(attribute)
