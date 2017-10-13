@@ -188,6 +188,9 @@ wd_base = r'C:\Python27\Lib\site-packages\selenium\webdriver'
 RequiredDataFailes = [
     ('selenium/webdriver/firefox', ['%s\\firefox\\webdriver.xpi'%(wd_base), '%s\\firefox\\webdriver_prefs.json'%(wd_base)])
 ]
+#todo 2017-10-11 need copy getAttribute.js and isDisplayed.js in C:\Python27\Lib\site-packages\selenium\webdriver\remote to ./selenium\webdriver\remote
+#todo 2017-10-11 need copy all files under ./src, web.py missed
+#todo 2017-10-11 need find a better place for chromedriver.exe
 
 def copy_dir(dir_path, copy_py=False):
     #dir_path = 'test'

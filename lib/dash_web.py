@@ -88,7 +88,7 @@ class dash_web(object):
                     response = None
                     try:
                         self.response = func(*new_argvs, **new_kwargs)
-                        self.__update_output_buffer( 'done - {}({})\n{}'.format(function_name, args_string, response))
+                        self.__update_output_buffer( 'done - {}({})\n{}'.format(function_name, args_string, self.response))
                     except Exception as e:
 
                         response = traceback.format_exc()

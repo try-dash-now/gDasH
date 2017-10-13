@@ -51,18 +51,6 @@ class shell(object):
                 import signal
                 s=None
                 if os.name =='nt':
-                    #os.kill(self.shell.pid, signal.CTRL_BREAK_EVENT)
-                    #
-# SIGABRT = 22
-# SIGBREAK = 21
-# SIGFPE = 8
-# SIGILL = 4
-# SIGINT = 2
-# SIGSEGV = 11
-# SIGTERM = 15
-#
-# SIG_DFL = 0
-# SIG_IGN = 1
                     import win32gui,win32con
                     #win32con
 #                    tid =win32gui.FindWindowEx('shell')
@@ -73,18 +61,18 @@ class shell(object):
 
                         ##os.getpgid(self.shell.pid)
 
-                    if True:
+                    #if True:
                         #win32api.GenerateConsoleCtrlEvent(signal.CTRL_C_EVENT, pgroupid)
                         #win32api.GenerateConsoleCtrlEvent(signal.CTRL_BREAK_EVENT, pgroupid)
-                        C= ord('C')
-                        win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
-                        win32api.keybd_event(C, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
-                        win32api.keybd_event(win32con.VK_PAUSE, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
-                        win32api.keybd_event(win32con.VK_PAUSE, 0, win32con.KEYEVENTF_KEYUP, 0);
-                        win32api.keybd_event(C, 0, win32con.KEYEVENTF_KEYUP, 0);
-                        win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0);
-                        import ctypes
-                        ctypes.windll.user32.keybd_event(0x11, 0, 0, 0)#
+                        #C= ord('C')
+                        # win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
+                        # win32api.keybd_event(C, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
+                        # win32api.keybd_event(win32con.VK_PAUSE, 0, win32con.KEYEVENTF_EXTENDEDKEY, 0);
+                        # win32api.keybd_event(win32con.VK_PAUSE, 0, win32con.KEYEVENTF_KEYUP, 0);
+                        # win32api.keybd_event(C, 0, win32con.KEYEVENTF_KEYUP, 0);
+                        # win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0);
+                        #import ctypes
+                        #ctypes.windll.user32.keybd_event(0x11, 0, 0, 0)#
                     for s in [ signal.CTRL_C_EVENT, signal.CTRL_BREAK_EVENT, signal.SIGINT]:
                         s = signal.CTRL_BREAK_EVENT#CTRL_C_EVENT
                         self.shell.send_signal(s)

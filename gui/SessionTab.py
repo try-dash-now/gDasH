@@ -228,10 +228,10 @@ class SessionTab(wx.Panel, dut):
                 #self.write(cmd,ctrl=ctrl)
         except Exception as e:
             error_msg = traceback.format_exc()
-            self.on_close()
-            self.close_session()
+            #self.on_close()
+            #self.close_session()
             error ('{} closed unexpected\n{}'.format(self.name, error_msg))
-            self.alive= False
+            #self.alive= False
         self.cmd_window.SetFocus()
     def add_cmd_to_history(self, cmd):
         if self.history_cmd==[]:
@@ -250,8 +250,12 @@ class SessionTab(wx.Panel, dut):
             self.cmd_window.AppendText('?')
             self.on_enter_a_command(event)
         elif keycode == ord('C')  and event.controlDown:
-            self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
-            self.write(chr(keycode), ctrl=True)
+            data = self.cmd_window.GetStringSelection()
+            if len(data)==0:
+                self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
+                self.write(chr(keycode), ctrl=True)
+            event.Skip()
+
         elif keycode == ord('V')  and event.controlDown:
             #self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
             #self.write(chr(keycode), ctrl=True)
@@ -264,14 +268,30 @@ class SessionTab(wx.Panel, dut):
                     cmds = do.GetText()
                     for cmd in cmds.split('\n'):
                         self.cmd_window.Clear()
-                        #self.history_cmd_index, new_command = get_next_in_ring_list(self.history_cmd_index,self.history_cmd,increase=increase)
-                        self.cmd_window.AppendText(cmd.encode(errors='ignore'))
-                        self.on_enter_a_command(event)
+                        ctrl = False
+                        cmd = cmd.encode(errors= 'ignore')
+                        self.add_cmd_to_history(cmd)
+                        try:
+                            if self.session_status:
+                                th = threading.Thread(target=self.write,args=( cmd,ctrl))
+                                th.start()
+                                self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
+                                th.join()
+                            else:
+                                pass #self.alive= self.session#.session_status
+                                #self.write(cmd,ctrl=ctrl)
+                        except Exception as e:
+                            error_msg = traceback.format_exc()
+                            error ('{} closed unexpected\n{}'.format(self.name, error_msg))
+                        self.cmd_window.SetFocus()
+
                 else:
                     event.Skip()
 
         elif keycode >= ord('A')  and keycode <= ord('Z') and event.controlDown:
             info('ctrl+{}'.format(chr(keycode)))
+            #done 2017-10-13 2017-10-12 if selected is not empty, ctrl+c should be copy, not send control code to session
+            #done 2017-10-13 2017-10-12 if clipboard is not empty, ctrl+v should be paste not send control code to session
             self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
             self.write(chr(keycode), ctrl=True)
             event.Skip()
