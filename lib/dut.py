@@ -73,12 +73,11 @@ class dut(object):
     dry_run_json=None#a dict to record the interaction procedure
     last_write=None
     time_out=15.0
-    executable_path= None
     def __del__(self):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, executable_path= './lib/'):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.dry_run_json={}
         if init_file_name is None:
@@ -113,7 +112,6 @@ class dut(object):
         self.write_locker=  threading.Lock()
         self.read_locker=  threading.Lock()
         self.time_out =time_out
-        self.executable_path = executable_path
         th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
         #th.start()
         self.sleep(0.5)
@@ -170,7 +168,7 @@ class dut(object):
                         self.session = shell()
                     elif type.lower() in  ['dash_web']:
                         from dash_web import  dash_web
-                        self.session = dash_web(time_out=self.time_out, executable_path = self.executable_path)
+                        self.session = dash_web(time_out=self.time_out)
                     if isinstance(login_step,(list, tuple)):
                         pass
                     elif login_step is None :#login_step.strip().lower() in ['none',None, "''", '""']:

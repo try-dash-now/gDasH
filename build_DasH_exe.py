@@ -183,14 +183,14 @@ py2exe_options = {
         'cmdclass': {'py2exe': MediaCollector},
         # [...] Other py2exe options here.
     }
-#todo 2017-10-10 add webdriver for web browser
+#done 2017-10-14 2017-10-10 add webdriver for web browser
 wd_base = r'C:\Python27\Lib\site-packages\selenium\webdriver'
 RequiredDataFailes = [
     ('selenium/webdriver/firefox', ['%s\\firefox\\webdriver.xpi'%(wd_base), '%s\\firefox\\webdriver_prefs.json'%(wd_base)])
 ]
-#todo 2017-10-11 need copy getAttribute.js and isDisplayed.js in C:\Python27\Lib\site-packages\selenium\webdriver\remote to ./selenium\webdriver\remote
-#todo 2017-10-11 need copy all files under ./src, web.py missed
-#todo 2017-10-11 need find a better place for chromedriver.exe
+#done 2017-10-14 2017-10-11 need copy getAttribute.js and isDisplayed.js in C:\Python27\Lib\site-packages\selenium\webdriver\remote to ./selenium\webdriver\remote
+#done 2017-10-14 2017-10-11 need copy all files under ./src, web.py missed
+#done 2017-10-14 ./lib/ 2017-10-11 need find a better place for chromedriver.exe
 
 def copy_dir(dir_path, copy_py=False):
     #dir_path = 'test'
@@ -198,11 +198,14 @@ def copy_dir(dir_path, copy_py=False):
     for (dirpath, dirnames, files) in os.walk(base_dir):
         for f in files:
             print(f)
-            if f.endswith('.py') and copy_py==False:
+            if f.endswith('.pyc'):
                 continue
-            elif f.endswith('.pyc'):
+            elif f.endswith('.py') and copy_py==False:
                 continue
-            yield os.path.join(dirpath.split(os.path.sep, 1)[1], f)
+            elif f in ['.' , '..']:
+                continue
+            else:
+                yield os.path.join(dirpath.split(os.path.sep, 1)[1], f)
 try:
     dist = setup(
        # windows = ['./gDasH.py'],#'../bin/dash.py'
@@ -223,7 +226,9 @@ try:
 
                     ('gui/html', [f for f in copy_dir('./gui/html')]),#copy web related files to ./gui/html
                     ( 'sessions',[ f for f in copy_dir('./sessions')]),
+                    ('selenium/webdriver/remote', [ f for f in copy_dir(r'C:\\Python27\Lib\site-packages\selenium\webdriver\remote', True)]),
                     ('src', [ f for f in copy_dir('./src', True)]),
+                    ('lib', ['./lib/chromedriver.exe'])# copy chromedriver.exe to lib
 
                        #('dut', [ f for f in copy_dir('../dut')]),
 

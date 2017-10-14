@@ -15,9 +15,15 @@ class dash_web(object):
     help_doc= None
     function_supported = None
     response =None
-    def __init__(self, executable_path = './lib/', time_out= 15,):
+    def __init__(self, executable_path = None, time_out= 15,):
         import os
         print os.path.abspath(executable_path)
+        print('file location', __file__)
+        if executable_path is None:
+            executable_path =os.path.dirname(__file__)
+        else:
+            executable_path= './'
+
         self.driver = webdriver.Chrome(executable_path = '{}/chromedriver.exe'.format(executable_path))
         #self.driver.maximize_window()  # full screen
         self.driver.set_page_load_timeout(time_out)
