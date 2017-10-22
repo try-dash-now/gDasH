@@ -244,11 +244,17 @@ class SessionTab(wx.Panel, dut):
     def on_key_down(self, event):
         keycode = event.KeyCode
         if keycode ==wx.WXK_TAB:
+            #deliver 2017-10-21 when hitted key_tab or ?, need don't need clear cmd_window--or re-enter the command again
+                cmd_string = self.cmd_window.GetValue()
                 self.cmd_window.AppendText('\t')
                 self.on_enter_a_command(event)
+                self.cmd_window.AppendText(cmd_string)
+
         elif keycode == wx.PAPER_ENV_INVITE and wx.GetKeyState(wx.WXK_SHIFT):
+            cmd_string = self.cmd_window.GetValue()
             self.cmd_window.AppendText('?')
             self.on_enter_a_command(event)
+            self.cmd_window.AppendText(cmd_string)
         elif keycode == ord('C')  and event.controlDown:
             data = self.cmd_window.GetStringSelection()
             if len(data)==0:
