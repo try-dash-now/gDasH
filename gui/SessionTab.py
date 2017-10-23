@@ -52,6 +52,7 @@ class SessionTab(wx.Panel, dut):
     alive =False
     output_lock = None
     font_point = None
+    cmd_window_font_size = 15
     history_cmd = None
     history_cmd_index = 0
     sequence_queue =None
@@ -164,8 +165,8 @@ class SessionTab(wx.Panel, dut):
         self.font_point = self.output_window.GetFont().PointSize
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.output_window, 10, wx.EXPAND)
-        sizer.Add(self.cmd_window, 0, wx.EXPAND)
+        sizer.Add(self.output_window, 95, wx.EXPAND)
+        sizer.Add(self.cmd_window, 5, wx.EXPAND)
         self.SetSizer(sizer)
         #from lib.common import create_session
         info (os.curdir)
@@ -174,8 +175,10 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
         self.cmd_window.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.cmd_window.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.cmd_window.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel_cmd_window)
         self.output_window.SetBackgroundColour('Black')
         self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+        self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(20, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
 
 
@@ -307,6 +310,25 @@ class SessionTab(wx.Panel, dut):
             event.Skip()
         else:
             event.Skip()
+    def OnMouseWheel_cmd_window(self,event):
+        min_font_size = 5
+        interval_step = 2
+        if event.ControlDown():
+            pass
+        else:
+            return
+
+        if event.GetWheelRotation() < 0:
+                if self.cmd_window_font_size>min_font_size:
+                    self.cmd_window_font_size-=interval_step
+        else:
+            self.cmd_window_font_size+=1
+
+        f =self.cmd_window.GetFont()
+        f.PointSize= self.cmd_window_font_size
+        self.cmd_window.SetFont(f)
+
+        self.Refresh()
 #todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
 #todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
 #todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )
