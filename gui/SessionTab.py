@@ -272,24 +272,28 @@ class SessionTab(wx.Panel, dut):
                 wx.TheClipboard.Close()
                 if success:
                     cmds = do.GetText()
-                    for cmd in cmds.split('\n'):
-                        self.cmd_window.Clear()
-                        ctrl = False
-                        cmd = cmd.encode(errors= 'ignore')
-                        self.add_cmd_to_history(cmd)
-                        try:
-                            if self.session_status:
-                                th = threading.Thread(target=self.write,args=( cmd,ctrl))
-                                th.start()
-                                self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
-                                th.join()
-                            else:
-                                pass #self.alive= self.session#.session_status
-                                #self.write(cmd,ctrl=ctrl)
-                        except Exception as e:
-                            error_msg = traceback.format_exc()
-                            error ('{} closed unexpected\n{}'.format(self.name, error_msg))
-                        self.cmd_window.SetFocus()
+                    cmd = cmds.encode(errors= 'ignore')
+                    if '\n' not in cmds:
+                        self.cmd_window.AppendText(cmd)
+                    else:
+                        for cmd in cmds.split('\n'):
+                            ctrl = False
+                            self.add_cmd_to_history(cmd)
+                            try:
+                                if self.session_status:
+                                    th = threading.Thread(target=self.write,args=( cmd,ctrl))
+                                    th.start()
+                                    self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
+                                    th.join()
+                                else:
+                                    pass #self.alive= self.session#.session_status
+                                    #self.write(cmd,ctrl=ctrl)
+
+                            except Exception as e:
+                                error_msg = traceback.format_exc()
+                                error ('{} closed unexpected\n{}'.format(self.name, error_msg))
+                            self.cmd_window.Clear()#append cmd to cmd_window
+                            self.cmd_window.SetFocus()
 
                 else:
                     event.Skip()

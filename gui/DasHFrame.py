@@ -367,6 +367,8 @@ class DasHFrame(MainFrame):#wx.Frame
         sys.stdout = self.redir.old_stdout
         event.Skip()
     def generate_report(self, filename):
+        #todo 2017-10-21 no need to send whole report, just the updating part
+
         def GetTime(duration):
             from datetime import timedelta
             sec = timedelta(seconds=int(duration))
@@ -820,6 +822,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             self.import_modules.update({module_name:module_name})
         self.sequence_queue.put([cmd,datetime.now() ])
     def generate_code(self, file_name ):
+        #todo 2017-10-21 no code need, when no command entered at all
         str_code ="""#created by DasH
 if __name__ == "__main__":
     import sys, traceback
