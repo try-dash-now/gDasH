@@ -221,8 +221,10 @@ class SessionTab(wx.Panel, dut):
         self.add_cmd_to_history(cmd)
         try:
             if self.session_status:
-
-                th = threading.Thread(target=self.write,args=( cmd,ctrl))
+                add_newline =True
+                if cmd[-1] in ['?', "\t"]:
+                    add_newline =False
+                th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
                 th.start()
 
                 self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
@@ -262,7 +264,7 @@ class SessionTab(wx.Panel, dut):
             data = self.cmd_window.GetStringSelection()
             if len(data)==0:
                 self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
-                self.write(chr(keycode), ctrl=True)
+                self.write(chr(keycode), ctrl=True, has_newline = False)
             event.Skip()
 
         elif keycode == ord('V')  and event.controlDown:
@@ -280,11 +282,11 @@ class SessionTab(wx.Panel, dut):
                         self.cmd_window.AppendText(cmd)
                     else:
                         for cmd in cmds.split('\n'):
-                            ctrl = False
+                            ctrl = False, add_newline =False
                             self.add_cmd_to_history(cmd)
                             try:
                                 if self.session_status:
-                                    th = threading.Thread(target=self.write,args=( cmd,ctrl))
+                                    th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
                                     th.start()
                                     self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
                                     th.join()

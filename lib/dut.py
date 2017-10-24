@@ -501,7 +501,7 @@ class dut(object):
             self.reading_thread_lock.release()
         except Exception as e:
             pass
-    def write(self, cmd='', ctrl=False):
+    def write(self, cmd='', ctrl=False, add_newline=True):
         resp = ''
         self.add_new_command_to_dry_run_json(cmd, ctrl)
         if self.session_status:
@@ -513,10 +513,14 @@ class dut(object):
             self.write_locker.acquire()
             if ctrl:
                 resp = self.session.write(cmd, ctrl=ctrl)
-                resp +='{}'.format(self.session.write(new_line))
+                if add_newline is True:
+                    resp +='{}'.format(self.session.write(new_line))
             else:
                 try:
+                    if add_newline is False:
+                        new_line = ''
                     resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line= new_line), ctrl=ctrl)
+
                 except Exception as e :
                     self.session_status =False
             #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
