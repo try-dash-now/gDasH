@@ -224,6 +224,8 @@ class SessionTab(wx.Panel, dut):
                 add_newline =True
                 if cmd[-1] in ['?', "\t"]:
                     add_newline =False
+                    lcmd =len(cmd)-1
+                    cmd = cmd + '\b'*lcmd*2
                 th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
                 th.start()
 
