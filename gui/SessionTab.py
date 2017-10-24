@@ -270,7 +270,7 @@ class SessionTab(wx.Panel, dut):
             data = self.cmd_window.GetStringSelection()
             if len(data)==0:
                 self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
-                self.write(chr(keycode), ctrl=True, has_newline = False)
+                self.write(chr(keycode), ctrl=True, add_newline = False)
             event.Skip()
 
         elif keycode == ord('V')  and event.controlDown:
