@@ -181,7 +181,7 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel_cmd_window)
         self.output_window.SetBackgroundColour('Black')
         self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
-        self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(20, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+        self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(19, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
 
 
@@ -225,10 +225,11 @@ class SessionTab(wx.Panel, dut):
         try:
             if self.session_status:
                 add_newline =True
-                if cmd[-1] in ['?', "\t"]:
-                    add_newline =False
-                    lcmd =len(cmd)-1
-                    cmd = cmd + '\b'*lcmd*2
+                if len(cmd)>0:
+                    if cmd[-1] in ['?', "\t"]:
+                        add_newline =False
+                        lcmd =len(cmd)-1
+                        cmd = cmd + '\b'*lcmd*2
                 th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
                 th.start()
 
