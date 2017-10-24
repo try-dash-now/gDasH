@@ -86,6 +86,7 @@ class SessionTab(wx.Panel, dut):
              r'(\[\?\d;\d0c)|' \
              r'(\d;\dR))'
              , flags=re.IGNORECASE)
+        BACKSPACE_pat =re.compile('(\s*\b+\n*\s*)+')
         while( status):
             try:
                 status = self.alive #and self.session
@@ -99,10 +100,12 @@ class SessionTab(wx.Panel, dut):
                 response = self.read_display_buffer()
                 if True:
                     response = ansi_escape.sub('', response)
+                    response = BACKSPACE_pat.sub('\n', response)
+                    #response = re.sub().replace('\b', '')
                 BACKSPACE = chr(8)
                 #response = re.sub(chr(32)+BACKSPACE,'',response)
 
-                BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
+                #BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
             if len(response)!=0:
                 if False:
                     whole_text = self.output_window.GetValue()
