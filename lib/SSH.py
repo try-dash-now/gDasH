@@ -54,7 +54,7 @@ class SSH(object):
         self.client.connect(host, int(port), user, password)
         self.chan = self.client.invoke_shell()
     def read(self):
-        resp = self.chan.recv(64)
+        resp = self.chan.recv(512)
         if resp ==None:
             resp =''
         return resp
