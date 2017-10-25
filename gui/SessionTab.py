@@ -288,7 +288,8 @@ class SessionTab(wx.Panel, dut):
                         self.cmd_window.AppendText(cmd)
                     else:
                         for cmd in cmds.split('\n'):
-                            ctrl = False, add_newline =False
+                            ctrl = False
+                            add_newline = False
                             self.add_cmd_to_history(cmd)
                             try:
                                 if self.session_status:
