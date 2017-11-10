@@ -212,6 +212,8 @@ class DasHFrame(MainFrame):#wx.Frame
     case_list=None
     #session_names={}
     web_daemon = None
+    web_host = None
+
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.case_list= []
@@ -389,7 +391,15 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                     else:
                         result = return_code # 'FAIL' if return_code else 'PASS'
 
-                    record = '\t'.join(['{},\t'.format(x) for x in [result,start_time,end_time,pi,duration,GetTime(duration),case_name,'<{}>'.format(log_path) ]])
+                    record = '\t'.join(['{},\t'.format(x) for x in [
+                        result,
+                        start_time,
+                        end_time,
+                        pi,
+                        duration,
+                        GetTime(duration),
+                        case_name,
+                        '<{}>, {}'.format(log_path, log_path.replace(self.log_path, 'http://{}:{}/log/'.format(self.web_host,self.web_port))) ]])
                     report+=record+'\n'
                     f.write(record+'\n')
 
@@ -1575,6 +1585,7 @@ if __name__ == "__main__":
 
             domain = getfqdn()
             hostip = s.getsockname()[0]
+            self.web_host = hostip
             s.close()
         except Exception as e:
             import traceback
