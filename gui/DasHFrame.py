@@ -1307,7 +1307,9 @@ if __name__ == "__main__":
 
                 for name in list:
                     extension = os.path.basename(name).split('.')[-1]
-                    if extension in pattern:
+                    if pattern in ['', '*', '*.*']:
+                        pass
+                    elif extension in pattern:
                         pass
                     else:
                         continue
@@ -1413,8 +1415,9 @@ if __name__ == "__main__":
                     encoded = self.show_content_by_path(path, 'csv')
                 elif self.path.startswith('/log'):
                     path = os.path.abspath(self.log_path)
+                    print(path)
                     path = path+ self.path[4:]#replace('/log/','/')
-                    encoded = self.show_content_by_path(path)
+                    encoded = self.show_content_by_path(path, '*')
                 else:
                     path = os.path.abspath(root)
                     path = path+ self.path.replace('//','/')

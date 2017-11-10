@@ -163,7 +163,7 @@ class SessionTab(wx.Panel, dut):
         self.output_lock = threading.Lock()
         #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
         self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
-        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER|wx.TE_MULTILINE )
+        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER)#|wx.TE_MULTILINE )
 
         self.font_point = self.output_window.GetFont().PointSize
 
@@ -222,6 +222,7 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.Clear()
         cmd = cmd.encode(errors= 'ignore')
         self.add_cmd_to_history(cmd)
+        self.history_cmd_index= len(self.history_cmd)
         try:
             if self.session_status:
                 add_newline =True
@@ -243,6 +244,7 @@ class SessionTab(wx.Panel, dut):
             #self.close_session()
             error ('{} closed unexpected\n{}'.format(self.name, error_msg))
             #self.alive= False
+        self.cmd_window.Clear()
         self.cmd_window.SetFocus()
     def add_cmd_to_history(self, cmd):
         if self.history_cmd==[]:
