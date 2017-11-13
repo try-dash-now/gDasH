@@ -73,18 +73,20 @@ class dut(object):
     dry_run_json=None#a dict to record the interaction procedure
     last_write=None
     time_out=15.0
+    product = None
     def __del__(self):
         if self.session:
             self.close_session()
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, **kwarg):
         #expected types are [echo, telnet, ssh, shell, web_brower]
         self.dry_run_json={}
         if init_file_name is None:
             self.type = type
         else:
             self.type = 'echo'
-
+        if 'product' in kwarg:
+            self.product = kwarg['product']
         self.prompt = prompt
         self.reading_thread_lock=threading.Lock()
         if login_step in [None, '']:
