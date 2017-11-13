@@ -221,7 +221,7 @@ try:
 
         data_files=list(matplotlib.get_py2exe_datafiles())+ [
                      './LICENSE.TXT',
-                    './gDasH.ini',
+                   # './gDasH.ini',
                     ( 'gui',[ './gui/dash.bmp']),
 
                     ('gui/html', [f for f in copy_dir('./gui/html')]),#copy web related files to ./gui/html

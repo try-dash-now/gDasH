@@ -188,32 +188,32 @@ class DasHFrame(MainFrame):#wx.Frame
     redir = None
     edit_area=None
     tabs_in_edit_area = None
-    src_path = None
+    src_path = './src/'
     sessions_alive=None
     sequence_queue=None
     history_cmd = []
     history_cmd_index = -1
     import_modules={'TC':'TC'}
     lib_path ='./lib'
-    log_path = '../log'
+    log_path = '../log/dash'
     session_path = './sessions'
     suite_path = '../test_suite'
 
-    dict_test_report= None
+    dict_test_report= ''
     alive =True
     mail_server=None
     mail_to_list=None
     mail_from=None
     mail_read_url= 'outlook.office365.com'
     mail_password = None
-    mail_usre =None
+    mail_user ='nonexistent@dash.com'
     case_queue =None
     check_case_running_status_lock = None
     case_list=None
     #session_names={}
     web_daemon = None
     web_host = None
-
+    web_port = 8888
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.case_list= []
@@ -226,18 +226,48 @@ class DasHFrame(MainFrame):#wx.Frame
         self.sequence_queue= Queue.Queue()
         #self.sequence_queue.put()
         self.ini_setting    = ConfigParser.ConfigParser()
-        self.ini_setting.read(ini_file)
-        self.src_path       = os.path.abspath(self.ini_setting.get('dash','src_path'))
-        self.lib_path       = os.path.abspath(self.ini_setting.get('dash','lib_path'))
-        self.log_path       = os.path.abspath(self.ini_setting.get('dash','log_path'))
-        self.suite_path     = os.path.abspath(self.ini_setting.get('dash', 'test_suite_path'))
-        self.mail_server    = self.ini_setting.get('dash', 'mail_server')
-        self.mail_from      =self.ini_setting.get('dash', 'mail_from')
-        self.mail_to_list   =self.ini_setting.get('dash', 'mail_to_list')
-        self.mail_read_url  =self.ini_setting.get('dash', 'mail_read_url')
-        self.mail_user      = self.ini_setting.get('dash','mail_user')
-        self.mail_password  =self.ini_setting.get('dash', 'mail_password')
-        self.web_port       =int(self.ini_setting.get('dash', 'web_port'))
+        if os.path.exists(ini_file):
+            self.ini_setting.read(ini_file)
+            self.src_path       = os.path.abspath(self.ini_setting.get('dash','src_path'))
+            self.lib_path       = os.path.abspath(self.ini_setting.get('dash','lib_path'))
+            self.log_path       = os.path.abspath(self.ini_setting.get('dash','log_path'))
+            self.suite_path     = os.path.abspath(self.ini_setting.get('dash', 'test_suite_path'))
+            self.mail_server    = self.ini_setting.get('dash', 'mail_server')
+            self.mail_from      =self.ini_setting.get('dash', 'mail_from')
+            self.mail_to_list   =self.ini_setting.get('dash', 'mail_to_list')
+            self.mail_read_url  =self.ini_setting.get('dash', 'mail_read_url')
+            self.mail_user      = self.ini_setting.get('dash','mail_user')
+            self.mail_password  =self.ini_setting.get('dash', 'mail_password')
+            self.web_port       =int(self.ini_setting.get('dash', 'web_port'))
+        else:
+            with open(ini_file, 'w') as ini_file:
+                ini_file.write('''[dash]
+test_suite_path = ../test_suite/
+log_path= {log_path}
+lib_path = {lib_path}
+session_path={session_path}
+#the source python file folder
+src_path = {src_path}
+mail_server={mail_server}
+mail_to_list={mail_to_list}
+mail_user={mail_user}
+mail_from ={mail_from}
+mail_read_url={mail_read_url}
+mail_password = {mail_password}
+web_port={web_port}
+                '''.format(
+                    log_path = self.log_path,
+                    lib_path = self.lib_path,
+                    session_path = self.session_path,
+                    src_path = self.src_path,
+                    mail_server = self.mail_server,
+                    mail_to_list = self.mail_to_list,
+                    mail_user = self.mail_user,
+                    mail_from = self.mail_from,
+                    mail_read_url = self.mail_read_url,
+                    mail_password = self.mail_password,
+                    web_port = self.web_port))
+
         from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
         sys.argv.append('{}'.format(self.log_path))
@@ -1063,6 +1093,8 @@ if __name__ == "__main__":
                 pass
             return rtn
         url, user, password = self.mail_read_url,self.mail_user, self.mail_password
+        if self.mail_user in ['nonexistent@dash.com']:
+            return
         conn = imaplib.IMAP4_SSL(url,993)
         conn.login(user,password)
         conn.select('INBOX')#, readonly=True)
@@ -1130,7 +1162,7 @@ if __name__ == "__main__":
                     handled = True
                     #conn.uid('STORE', unread_mail_id, '+FLAGS', '\SEEN')
                 elif sub in ['dash-request-run']:
-                    #if from1 in ['dash@calix.com', 'yu_silence@163.com',self.mail_to_list]:
+                    #if from1 in [ 'yu_silence@163.com',self.mail_to_list]:
                     conn.uid('STORE', unread_mail_id, '+FLAGS', r'(\SEEN)')
                     handled = True
 
