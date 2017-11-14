@@ -193,7 +193,7 @@ class DasHFrame(MainFrame):#wx.Frame
     sequence_queue=None
     history_cmd = []
     history_cmd_index = -1
-    import_modules={'TC':'TC'}
+    import_modules={'TC':''}
     lib_path ='./lib'
     log_path = '../log/dash'
     session_path = './sessions'
@@ -639,7 +639,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
 
         module,class_name, function,args = parse_command_line(cmd)
-        self.add_cmd_to_history(cmd,  module, None)
+        self.add_cmd_to_history(cmd,  module, None, class_name)
 
         #args[0]=self.sessions_alive['test_ssh'].session
         if module !='' or class_name!='' or function!='':
@@ -663,7 +663,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 call_function = instance_name#(*new_argvs,**new_kwargs)
             th =threading.Thread(target=call_function, args=new_argvs, kwargs=new_kwargs)
             th.start()
-            self.add_cmd_to_history(cmd,  module, str_code)
+            self.add_cmd_to_history(cmd,  module, str_code, class_name)
         else:
             error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
     def add_src_path_to_python_path(self, path):
@@ -708,7 +708,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             pass
         else:
             event.Skip()
-    def add_cmd_to_history(self, cmd, module_name, str_code):
+    def add_cmd_to_history(self, cmd, module_name, str_code, class_name=""):
         if str_code is None:
             if self.history_cmd==[]:
                 self.history_cmd.append(cmd)
@@ -718,7 +718,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 self.history_cmd.append(cmd)
             self.history_cmd_index= len(self.history_cmd)
         else:# str_code is not None:
-            self.add_cmd_to_sequence_queue(str_code,module_name )
+            self.add_cmd_to_sequence_queue(str_code,module_name, class_name )
         #self.sequence_queue.put([cmd, datetime.now()])
     def get_description_of_function(self, function_obj):
         import inspect
@@ -854,12 +854,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         self.function_page.DeleteAllItems()
         self.build_function_tab()
         info('Refresh Function tab done!')
-    def add_cmd_to_sequence_queue(self, cmd, module_name):
+    def add_cmd_to_sequence_queue(self, cmd, module_name, class_name=""):
         if self.import_modules.has_key(module_name):
-
             pass
         else:
-            self.import_modules.update({module_name:module_name})
+            self.import_modules.update({module_name:class_name})
         self.sequence_queue.put([cmd,datetime.now() ])
     def generate_code(self, file_name ):
         #todo 2017-10-21 no code need, when no command entered at all
@@ -879,6 +878,10 @@ if __name__ == "__main__":
         sessions =[]
         for module in self.import_modules:
             str_code+='        import {mod}\n'.format(mod=module)#\n    {mod}_instance = {mod}()
+        for module in self.import_modules:
+            class_name = self.import_modules[module]
+            if class_name!="":
+                str_code+='        {mod}_instance = {mod}.{class_name}()\n'.format(mod=module, class_name=class_name)#\
         no_operation = True
         while True:
             try:
