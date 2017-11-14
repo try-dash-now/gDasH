@@ -863,7 +863,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         self.sequence_queue.put([cmd,datetime.now() ])
     def generate_code(self, file_name ):
         #todo 2017-10-21 no code need, when no command entered at all
-        str_code ="""#created by DasH
+        str_code ="""#created by DasH {}
 if __name__ == "__main__":
     import sys, traceback
     sys.path.insert(0,r'{}')
@@ -875,7 +875,7 @@ if __name__ == "__main__":
     DUT={}
     try:
 
-""".format(self.src_path,self.lib_path , "{}")
+""".format(datetime.now().isoformat('-'), self.src_path,self.lib_path , "{}")
         sessions =[]
         for module in self.import_modules:
             str_code+='        import {mod}\n'.format(mod=module)#\n    {mod}_instance = {mod}()
