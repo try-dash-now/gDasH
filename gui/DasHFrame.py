@@ -271,7 +271,8 @@ web_port={web_port}
         from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
         sys.argv.append('{}'.format(self.log_path))
-        self.log_path = create_case_folder(self.log_path)
+        from lib.common import create_dir
+        self.log_path = create_dir(self.log_path)
         self.suite_path = create_dir(self.suite_path)
         self.lib_path = create_dir(self.lib_path)
         self.src_path = create_dir(self.src_path)
@@ -429,7 +430,13 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                         duration,
                         GetTime(duration),
                         case_name,
-                        '<{}>, {}'.format(log_path, log_path.replace(self.log_path, 'http://{}:{}/log/'.format(self.web_host,self.web_port))) ]])
+                        '<{}>, <{}>'.format(
+                                log_path,
+                                log_path.replace(
+                                        self.log_path,
+                                        'http://{}:{}/log/'.format(self.web_host,self.web_port)
+                                ).replace('/\\',r'/')
+                        ) ]])
                     report+=record+'\n'
                     f.write(record+'\n')
 
