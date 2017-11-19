@@ -216,10 +216,11 @@ class DasHFrame(MainFrame):#wx.Frame
     web_port = 8888
 
     mailed_case_pids= []
-
+    timestamp=None
 
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        self.timestamp= datetime.now().isoformat('-').replace(':','-')
         self.case_list= []
         self.case_queue = Queue.Queue()
         self.dict_test_report={}
@@ -1116,7 +1117,7 @@ if __name__ == "__main__":
             report_all_cases=True
             if subject.find('updating')!=-1:
                 report_all_cases=False
-            test_report = self.generate_report(filename='{}/dash_report.html'.format(self.log_path),report_all_cases= report_all_cases)
+            test_report = self.generate_report(filename='{}/dash_report_{}.html'.format(self.log_path, self.timestamp),report_all_cases= report_all_cases)
             #TO, SUBJECT, TEXT, SERVER, FROM
             send_mail_smtp_without_login(self.mail_to_list, subject,test_report,self.mail_server,self.mail_from)
         except Exception as e:
