@@ -373,3 +373,12 @@ def csvfile2array(csvfile, Delimiter = ',', Newline = '', Quoting=csv.QUOTE_ALL)
     return a
 
 
+def array2htmltable(Array):
+    content = "<table   border='1' align='left' width=autofit  >"
+
+    for index , sublist in enumerate( Array):
+        content += '  <tr><td>\n%d</td><td>'%(index+1)
+        content += '    </td><td>'.join(['{}'.format(x) if x!='' else '&nbsp;' for x in sublist ])
+        content += '  \n</td></tr>\n'
+    content += ' \n </table><br>'
+    return  content

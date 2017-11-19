@@ -214,6 +214,10 @@ class DasHFrame(MainFrame):#wx.Frame
     web_daemon = None
     web_host = None
     web_port = 8888
+
+    mailed_case_pids= []
+
+
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.case_list= []
@@ -382,6 +386,7 @@ web_port={web_port}
         self.alive =False
         time.sleep(0.01)
         self.web_daemon.shutdown()
+
         self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
         if len(self.dict_test_report):
             self.mail_test_report("DASH TEST REPORT")
@@ -399,8 +404,8 @@ web_port={web_port}
         sys.stderr =self.redir.old_stderr
         sys.stdout = self.redir.old_stdout
         event.Skip()
-    def generate_report(self, filename):
-        #todo 2017-10-21 no need to send whole report, just the updating part
+    def generate_report(self, filename, report_all_cases=True):
+        #fixed 2017-11-19, 2017-10-21 no need to send whole report, just the updating part
 
         def GetTime(duration):
             from datetime import timedelta
@@ -410,19 +415,26 @@ web_port={web_port}
             #print("DAYS:HOURS:MIN:SEC")
 
             return "%d:%d:%d:%d" % (d.day-1, d.hour, d.minute, d.second)
+        report_in_list =[['result',
+                        'start_time',
+                        'end_time',
+                        'ProcessID',
+                        'duration',
+                        'duration',
+                        'case_name','log']]
         report = '''Test Report
 RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Name,\tLog\n'''
         if len(self.dict_test_report):
-            with open(filename, 'a+') as f:
-                f.write(report)
+            with open(filename, 'w') as f:
+                #f.write(report)
                 for pi in sorted(self.dict_test_report, key = lambda x: self.dict_test_report[x][1]):
                     case_name, start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][:7]
+
                     if return_code is None:
                         result = 'IP'
                     else:
                         result = return_code # 'FAIL' if return_code else 'PASS'
-
-                    record = '\t'.join(['{},\t'.format(x) for x in [
+                    one_record = ['{}'.format(x) for x in [
                         result,
                         start_time,
                         end_time,
@@ -430,15 +442,32 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                         duration,
                         GetTime(duration),
                         case_name,
-                        '<{}>, <{}>'.format(
-                                log_path,
-                                log_path.replace(
+                        '<a href={html_link}>{file_path}</a>'.format(
+                                file_path=log_path,
+                                html_link = log_path.replace(
                                         self.log_path,
                                         'http://{}:{}/log/'.format(self.web_host,self.web_port)
                                 ).replace('/\\',r'/')
-                        ) ]])
-                    report+=record+'\n'
-                    f.write(record+'\n')
+                        ) ]]
+                    report_in_list.append(one_record)
+                    record = '\t'.join(one_record)
+                    if result == 'IP':
+                        report+=record+'\n'
+
+                    else:
+                        if report_all_cases:
+                            report+=record+'\n'
+                            self.mailed_case_pids.append(pi)
+                        elif  pi not in self.mailed_case_pids:
+                            report+=record+'\n'
+                            self.mailed_case_pids.append(pi)
+
+                        else:
+                            pass
+                from lib.common import array2htmltable
+                report_in_html_string = array2htmltable(report_in_list)
+                f.write(report_in_html_string)
+
 
         return report
 
@@ -533,7 +562,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             pass
     def build_session_tab(self):
         if self.session_page.RootItem:
-            self.session_page.DeleteAllItems()
+            self.session_pagef.DeleteAllItems()
 
         session_path = os.path.abspath(self.ini_setting.get('dash','session_path'))
         self.session_path= session_path
@@ -780,6 +809,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             self.function_page.SetItemTextColour(root, wx.Colour(255, 0, 0))
             return
         for module_file in modules:
+            if module_file.endswith('.pyc'):
+                if  module_file[:-1] in modules:
+                    continue
+            if  module_file.startswith('__'):
+                continue
             path_name = '{}'.format(os.path.abspath(self.src_path))
             module_name = os.path.basename(module_file).split('.')[0]
             new_module = self.function_page.InsertItem(root, root, module_name)
@@ -800,7 +834,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                     class_obj = getattr(lmod, attr)
                     new_class  = self.function_page.InsertItem(new_module, new_module, attr)
                     item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
-                    self.function_page.SetItemData(new_item, item_info)
+                    self.function_page.SetItemData(new_class, item_info)
                     for attr_in_class in sorted(dir(class_obj)):
                         if attr_in_class.startswith('__'):
                             continue
@@ -808,7 +842,8 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                         attr_type =type(attr_obj)
 
                         if attr_type == types.MethodType :
-                            item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class)})
+                            item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class),
+                                                         'tip':self.get_description_of_function(attr_obj)})
                             new_item  = self.function_page.InsertItem(new_class, new_class, attr_in_class)
                             self.function_page.SetItemData(new_item, item_info)
         self.function_page.Expand(root)
@@ -1078,13 +1113,16 @@ if __name__ == "__main__":
         try:
 
             #self.check_case_status()
-            test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
+            report_all_cases=True
+            if subject.find('updating')!=-1:
+                report_all_cases=False
+            test_report = self.generate_report(filename='{}/dash_report.html'.format(self.log_path),report_all_cases= report_all_cases)
             #TO, SUBJECT, TEXT, SERVER, FROM
             send_mail_smtp_without_login(self.mail_to_list, subject,test_report,self.mail_server,self.mail_from)
         except Exception as e:
             error(traceback.format_exc())
     def on_mail_test_report(self,event):
-        self.mail_test_report('DasH Test Report-updating')
+        self.mail_test_report('DasH Test Report-requested')
         #p.terminate()
     def on_handle_request_via_mail(self):
         import imaplib
