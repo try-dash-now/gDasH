@@ -637,7 +637,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                     error(("variable '{}' is existed in global, please change the name".format(ses_name)))
                     return
 
-            new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'], self.sequence_queue, log_path=self.log_path)
+            new_page = SessionTab(self.edit_area, ses_name, session_attribute.Data['attribute'], self.sequence_queue, log_path=self.log_path+'/session_log')
 
             window_id = self.edit_area.AddPage(new_page, ses_name)
 
