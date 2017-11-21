@@ -1078,7 +1078,7 @@ if __name__ == "__main__":
                 if not self.alive:
                     break
             except:
-                exit(0) #break can't exit the app immediately, so change it to exit
+                sys.exit(0) #break can't exit the app immediately, so change it to exit
             #self.check_case_running_status_lock.acquire()
             self.check_case_status()
             #self.check_case_running_status_lock.release()
