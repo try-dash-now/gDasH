@@ -433,10 +433,31 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
                     if return_code is None:
                         result = 'IP'
+                        result_html = '<font color="blue">IP'
                     else:
                         result = return_code # 'FAIL' if return_code else 'PASS'
+                        if result.lower() in ['pass']:
+                            result_html= '<font color="green">PASS'
+                        else:
+                            result_html= '<font color="red">FAIL'
+
                     one_record = ['{}'.format(x) for x in [
                         result,
+                        start_time,
+                        end_time,
+                        pi,
+                        duration,
+                        GetTime(duration),
+                        case_name,
+                        '{html_link} {file_path}'.format(
+                                file_path=log_path,
+                                html_link = log_path.replace(
+                                        self.log_path,
+                                        'http://{}:{}/log/'.format(self.web_host,self.web_port)
+                                ).replace('/\\',r'/')
+                        ) ]]
+                    one_record_html = ['{}'.format(x) for x in [
+                        result_html,
                         start_time,
                         end_time,
                         pi,
@@ -450,11 +471,10 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                                         'http://{}:{}/log/'.format(self.web_host,self.web_port)
                                 ).replace('/\\',r'/')
                         ) ]]
-                    report_in_list.append(one_record)
+                    report_in_list.append(one_record_html)
                     record = '\t'.join(one_record)
                     if result == 'IP':
                         report+=record+'\n'
-
                     else:
                         if report_all_cases:
                             report+=record+'\n'
