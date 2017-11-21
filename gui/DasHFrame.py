@@ -794,62 +794,65 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             pass
         return fundefstr
     def build_function_tab(self):
-        src_path = os.path.abspath(self.src_path)
-        if not os.path.exists(src_path):
-            src_path= os.path.abspath(os.path.curdir)
-        base_name = os.path.basename(src_path)
+        try:
+            src_path = os.path.abspath(self.src_path)
+            if not os.path.exists(src_path):
+                src_path= os.path.abspath(os.path.curdir)
+            base_name = os.path.basename(src_path)
 
 
-        root =self.function_page.AddRoot(base_name)
-        item_info = wx.TreeItemData({'name':src_path})
-        self.function_page.SetItemData(root, item_info)
-        modules = get_folder_item(src_path)
+            root =self.function_page.AddRoot(base_name)
+            item_info = wx.TreeItemData({'name':src_path})
+            self.function_page.SetItemData(root, item_info)
+            modules = get_folder_item(src_path)
 
-        if modules is None:
-            self.function_page.SetItemText(root, self.function_page.GetItemText(root) + ' Not Exists!!!')
-            self.function_page.SetItemTextColour(root, wx.Colour(255, 0, 0))
-            return
-        for module_file in modules:
-            if module_file.endswith('.pyc'):
-                if  module_file[:-1] in modules:
+            if modules is None:
+                self.function_page.SetItemText(root, self.function_page.GetItemText(root) + ' Not Exists!!!')
+                self.function_page.SetItemTextColour(root, wx.Colour(255, 0, 0))
+                return
+            for module_file in modules:
+                if module_file.endswith('.pyc'):
+                    if  module_file[:-1] in modules:
+                        continue
+                if  module_file.startswith('__'):
                     continue
-            if  module_file.startswith('__'):
-                continue
-            path_name = '{}'.format(os.path.abspath(self.src_path))
-            module_name = os.path.basename(module_file).split('.')[0]
-            new_module = self.function_page.InsertItem(root, root, module_name)
-            file, path_name, description = imp.find_module(module_name)
-            lmod = imp.load_module(module_name, file, path_name,description)
-            for attr in sorted(dir(lmod)):
-                if attr.startswith('__'):
-                    continue
-                attr_obj = getattr(lmod, attr)
-                attr_type = type(attr_obj)
+                path_name = '{}'.format(os.path.abspath(self.src_path))
+                module_name = os.path.basename(module_file).split('.')[0]
+                new_module = self.function_page.InsertItem(root, root, module_name)
+                file, path_name, description = imp.find_module(module_name)
+                lmod = imp.load_module(module_name, file, path_name,description)
+                for attr in sorted(dir(lmod)):
+                    if attr.startswith('__'):
+                        continue
+                    attr_obj = getattr(lmod, attr)
+                    attr_type = type(attr_obj)
 
-                if attr_type == types.FunctionType :
-                    new_item  = self.function_page.InsertItem(new_module, new_module, '{}'.format( attr))
-                    item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr),
-                                                 'tip':self.get_description_of_function(attr_obj)})
-                    self.function_page.SetItemData(new_item, item_info)
-                elif attr_type== types.TypeType:
-                    class_obj = getattr(lmod, attr)
-                    new_class  = self.function_page.InsertItem(new_module, new_module, attr)
-                    item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
-                    self.function_page.SetItemData(new_class, item_info)
-                    for attr_in_class in sorted(dir(class_obj)):
-                        if attr_in_class.startswith('__'):
-                            continue
-                        attr_obj = getattr(class_obj,attr_in_class)
-                        attr_type =type(attr_obj)
+                    if attr_type == types.FunctionType :
+                        new_item  = self.function_page.InsertItem(new_module, new_module, '{}'.format( attr))
+                        item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr),
+                                                     'tip':self.get_description_of_function(attr_obj)})
+                        self.function_page.SetItemData(new_item, item_info)
+                    elif attr_type== types.TypeType:
+                        class_obj = getattr(lmod, attr)
+                        new_class  = self.function_page.InsertItem(new_module, new_module, attr)
+                        item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
+                        self.function_page.SetItemData(new_class, item_info)
+                        for attr_in_class in sorted(dir(class_obj)):
+                            if attr_in_class.startswith('__'):
+                                continue
+                            attr_obj = getattr(class_obj,attr_in_class)
+                            attr_type =type(attr_obj)
 
-                        if attr_type == types.MethodType :
-                            item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class),
-                                                         'tip':self.get_description_of_function(attr_obj)})
-                            new_item  = self.function_page.InsertItem(new_class, new_class, attr_in_class)
-                            self.function_page.SetItemData(new_item, item_info)
-        self.function_page.Expand(root)
-        first_child = self.function_page.GetFirstChild(root)
-        self.function_page.Expand(first_child[0])
+                            if attr_type == types.MethodType :
+                                item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class),
+                                                             'tip':self.get_description_of_function(attr_obj)})
+                                new_item  = self.function_page.InsertItem(new_class, new_class, attr_in_class)
+                                self.function_page.SetItemData(new_item, item_info)
+            self.function_page.Expand(root)
+            first_child = self.function_page.GetFirstChild(root)
+            self.function_page.Expand(first_child[0])
+        except Exception as e:
+            print(traceback.format_exc())
     def on_LeftDClick_in_Function_tab(self,event):
         event.Skip()
         select_item = self.function_page.GetSelection()
