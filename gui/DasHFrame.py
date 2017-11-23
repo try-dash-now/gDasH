@@ -294,14 +294,16 @@ web_port={web_port}
 
         self.m_command_box.WriteText('functions.static_function_in_module  test_ssh 2')
         fileMenu = wx.Menu()
-        open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
-        open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
+        #open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
+        #open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
+        generate_code = fileMenu.Append(wx.NewId(), "Generate Python Code", "Generate Python Code")
         mail_test_report = fileMenu.Append(wx.NewId(), "Mail Test Report", "Mail Test Report")
         get_case_queue = fileMenu.Append(wx.NewId(), "Get Case Queue", "Get Case Queue") #done
         clear_case_queue = fileMenu.Append(wx.NewId(), "Clear Case Queue", "Clear Case Queue")
         kill_running_case = fileMenu.Append(wx.NewId(), "Kill Running Case(s)", "Kill Running Case(s)")
         self.m_menubar_main.Append(fileMenu, "&Open")
 
+        self.Bind(wx.EVT_MENU,self.on_generate_code ,generate_code)
         self.Bind(wx.EVT_MENU,self.on_mail_test_report ,mail_test_report)
         self.Bind(wx.EVT_MENU,self.get_case_queue ,get_case_queue)
         self.Bind(wx.EVT_MENU,self.on_clear_case_queue ,clear_case_queue)
@@ -973,6 +975,8 @@ if __name__ == "__main__":
         if not no_operation:
             with open(file_name, 'a+') as f:
                 f.write(str_code)
+        else:
+            info('No code will be saved to file, due to no operation was performed ',file_name)
 
     def on_right_down_in_case_tab(self, event):
         menu = wx.Menu()
@@ -1739,6 +1743,8 @@ if __name__ == "__main__":
     def on_keyboard_key_down(self,event):
 
         event.Skip()
+    def on_generate_code(self, event):
+        self.generate_code('{}/test_code_{}.py'.format(self.suite_path, datetime.now().isoformat().replace(':','-').replace('.','-')))
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
