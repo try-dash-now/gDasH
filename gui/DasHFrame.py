@@ -392,7 +392,10 @@ web_port={web_port}
     def on_close(self, event):
         self.alive =False
         time.sleep(0.01)
-        self.web_daemon.shutdown()
+        try:
+            self.web_daemon.shutdown()
+        except:
+            pass
 
         self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
         if len(self.dict_test_report):
@@ -403,14 +406,17 @@ web_port={web_port}
                 if closing_page:
                     name = closing_page.name
                     self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
-
-            closing_page.on_close()
+            try:
+                closing_page.on_close()
+            except:
+                pass
 
 
         self.redir.close()
         sys.stderr =self.redir.old_stderr
         sys.stdout = self.redir.old_stdout
         event.Skip()
+        sys.exit(0)
     def generate_report(self, filename, report_all_cases=True):
         #fixed 2017-11-19, 2017-10-21 no need to send whole report, just the updating part
 
