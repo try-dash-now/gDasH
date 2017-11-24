@@ -966,6 +966,7 @@ if __name__ == "__main__":
         print(traceback.format_exc())\n'''
         for ses in sessions:
             str_code+='''        {}.close_session()\n'''.format(ses)
+            no_operation=False
         str_code+='        sys.exit(-1)\n'#, sys.exit(-1)
         for ses in sessions:
             str_code+='''    {}.close_session()\n'''.format(ses)
