@@ -84,6 +84,9 @@ class RedirectText(object):
         if self.log_file:
             self.log_file.flush()
             self.log_file.close()
+    def flush(self):
+        if self.log_file:
+            self.log_file.flush()
 class process_info(object):
     process = None
     pid=None
@@ -218,6 +221,7 @@ class DasHFrame(MainFrame):#wx.Frame
     mailed_case_pids= []
     timestamp=None
 
+    mail_failure =False
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.timestamp= datetime.now().isoformat('-').replace(':','-')
@@ -1173,8 +1177,18 @@ if __name__ == "__main__":
         if self.mail_user in ['nonexistent@dash.com']:
             return
         conn = imaplib.IMAP4_SSL(url,993)
-        conn.login(user,password)
+        #conn.logout()
+        #conn.authenticate('')
+        conn.debug = 0#10
+        def plain_callback(response):
+            return "{}\x00{}\x00{}".format(user.lower(),user.lower(),password)
+        try:
+            conn.authenticate('PLAIN',plain_callback)
+        except:
+            conn.login(user,password)
+        self.mail_failure = False
         conn.select('INBOX')#, readonly=True)
+
         try:
 
             authorized_mail_address = self.mail_to_list.replace(',',';').split(';')
@@ -1282,7 +1296,9 @@ if __name__ == "__main__":
             try:
                 self.on_handle_request_via_mail()
             except Exception as e:
-                error(traceback.format_exc())
+                if self.mail_failure is False:
+                    error(traceback.format_exc())
+                    self.mail_failure =True
                 pass
 
     def get_case_queue(self, item=None):
