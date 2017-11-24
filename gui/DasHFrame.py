@@ -1711,6 +1711,7 @@ if __name__ == "__main__":
             domain = getfqdn()
             hostip = s.getsockname()[0]
             self.web_host = hostip
+            self.SetTitle('DasH-{}:{}'.format(self.web_host, self.web_port))
             s.close()
         except Exception as e:
             import traceback
