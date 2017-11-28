@@ -120,14 +120,28 @@ class SessionTab(wx.Panel, dut):
                         #wx.CallAfter(self.output_window.Remove,start ,end)
                         response= response[:start_BS]+response[end_BS:]
                         #response =''
+                err_pattern = re.compile('error|\s+err\s+|fail|wrong')
+                wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
 
                 if re.search('error|\s+err\s+|fail|wrong',response.lower()):
-                    #self.output_window.SetDefaultStyle( wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
-                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+                    last_start = 0
+                    for m in err_pattern.finditer(response.lower()):
+                        #print(m.start(), m.end(), m.group())
+
+                        wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        wx.CallAfter(self.output_window.AppendText, response[last_start:m.start()])
+                        wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.BLACK,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        wx.CallAfter(self.output_window.AppendText, response[m.start():m.end()])
+                        last_start= m.end()
+
+                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    wx.CallAfter(self.output_window.AppendText, response[last_start:])
+
+
                 else:
                     #self.output_window.SetDefaultStyle( wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                     wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                wx.CallAfter(self.output_window.AppendText, response)
+                    wx.CallAfter(self.output_window.AppendText, response)
                 if False:
                     whole_text = self.output_window.GetValue()
                     m = re.search('[^\b]\b',whole_text)
