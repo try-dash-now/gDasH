@@ -354,6 +354,7 @@ web_port={web_port}
         self.function_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_function_tab)
         self.case_suite_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_case_tab)
         self.session_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_session_tab)
+        self.edit_area.Bind(wx.aui.EVT__AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_right_up_over_tab_in_edit_area)
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
         nav_sizer = wx.BoxSizer()
@@ -1769,6 +1770,14 @@ if __name__ == "__main__":
         event.Skip()
     def on_generate_code(self, event):
         self.generate_code('{}/test_code_{}.py'.format(self.suite_path, datetime.now().isoformat().replace(':','-').replace('.','-')))
+    def on_right_up_over_tab_in_edit_area(self, event):
+        x = event.GetEventObject()
+        tabID = x.GetId()
+        tab = x.FindWindowById(tabID)
+        #session.session.open(retry, interval)
+        #tab.open(3,15)
+        index = self.edit_area.GetCurrentPage().open(1, 60)
+        #self.edit_area.SetSelection(index)
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
