@@ -58,6 +58,7 @@ class SessionTab(wx.Panel, dut):
     sequence_queue =None
     log_path =None
     name = None
+    error_pattern =None
 
     def on_close(self):
         self.alive = False
@@ -120,7 +121,7 @@ class SessionTab(wx.Panel, dut):
                         #wx.CallAfter(self.output_window.Remove,start ,end)
                         response= response[:start_BS]+response[end_BS:]
                         #response =''
-                err_pattern = re.compile('error|\s+err\s+|fail|wrong')
+                err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
                 wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
 
                 if re.search('error|\s+err\s+|fail|wrong',response.lower()):
@@ -130,7 +131,7 @@ class SessionTab(wx.Panel, dut):
 
                         wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                         wx.CallAfter(self.output_window.AppendText, response[last_start:m.start()])
-                        wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.BLACK,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                         wx.CallAfter(self.output_window.AppendText, response[m.start():m.end()])
                         last_start= m.end()
 
@@ -180,7 +181,7 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER)#|wx.TE_MULTILINE )
 
         self.font_point = self.output_window.GetFont().PointSize
-
+        self.error_pattern = re.compile('error|\s+err\s+|fail|wrong')
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.output_window, 95, wx.EXPAND)
         sizer.Add(self.cmd_window, 5, wx.EXPAND)

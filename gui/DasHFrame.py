@@ -54,13 +54,13 @@ class RedirectText(object):
     old_stderr = None
     write_lock = None
     log_file    = None
-
+    error_pattern = None
     def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize
         self.write_lock = threading.Lock()
-
+        self.error_pattern = re.compile('error|\s+err\s+|fail|wrong')
         if log_path:
             name = '{}/dash.log'.format(log_path)
             self.log_file = open(name, 'w+')
@@ -71,11 +71,28 @@ class RedirectText(object):
         #string = string.replace('\\033\[[0-9\;]+m', '')
 
         #self.old_stderr.write(string)
-        if re.search('error|\s+err\s+|fail|wrong',string.lower()):
-            self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW, font =wx.Font(self.font_point_size+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))#wx.CallAfter(s
+        err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
+        #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+
+        if True:#err_pattern.search(string.lower()):
+            last_start = 0
+            for m in err_pattern.finditer(string.lower()):
+                #print(m.start(), m.end(), m.group())
+
+                #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                self.out.AppendText( string[last_start:m.start()])
+                self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                self.out.AppendText( string[m.start():m.end()])
+                last_start= m.end()
+
+            #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+            self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+            self.out.AppendText( string[last_start:])
         else:
             self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-        wx.CallAfter(self.out.AppendText, string)
+            wx.CallAfter(self.out.AppendText, string)
         if self.log_file:
             self.log_file.write(string)
             self.log_file.flush()
