@@ -1072,7 +1072,7 @@ if __name__ == "__main__":
 
             self.on_kill_script(event)
             try:
-                p, case_log_path = self.run_script('{} {}'.format(script_name, item_name))
+                p, case_log_path = self.run_script('{} {}'.format(script_name, item_name.replace(os.path.basename(script_name), '')))
                 self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
                 self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
                 info('start process {} :{}'.format(item_name,  p.pid))
