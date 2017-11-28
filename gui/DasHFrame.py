@@ -1793,7 +1793,10 @@ if __name__ == "__main__":
         tab = x.FindWindowById(tabID)
         #session.session.open(retry, interval)
         #tab.open(3,15)
-        index = self.edit_area.GetCurrentPage().open(1, 60)
+        th =threading.Thread(target=self.edit_area.GetCurrentPage().open, args=[1, 60])
+        #index = self.edit_area.GetCurrentPage().open(1, 60)
+        th.start()
+        event.Skip()
         #self.edit_area.SetSelection(index)
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
