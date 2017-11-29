@@ -529,20 +529,22 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
-        global  gSessions
-        closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
-        closing_page.on_close()
-        if isinstance(closing_page, (SessionTab)):
-            ses_name = closing_page.name
-            self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
-            if gSessions.has_key( ses_name):
-                #    globals().has_key(ses_name):
-                #g = dict(globals())
-                #globals()[ses_name]=None
-                #del g[ses_name]
-                gSessions[ses_name].close_session()
-                del gSessions[ses_name] #del globals()[ses_name]
-
+        def close_tab():
+            global  gSessions
+            closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
+            closing_page.on_close()
+            if isinstance(closing_page, (SessionTab)):
+                ses_name = closing_page.name
+                self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(ses_name))
+                if gSessions.has_key( ses_name):
+                    #    globals().has_key(ses_name):
+                    #g = dict(globals())
+                    #globals()[ses_name]=None
+                    #del g[ses_name]
+                    gSessions[ses_name].close_session()
+                    del gSessions[ses_name] #del globals()[ses_name]
+        threading.Thread(target=close_tab, args=[]).start()
+        event.Skip()
 
 
     def add_item_to_subfolder_in_tree(self,node):
@@ -680,6 +682,12 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             info(session_attribute.Data['attribute'])
             counter =1
             original_ses_name = ses_name
+            tmp_tabs =[]
+            for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+                tab_page = self.edit_area.GetPage(index)
+                #tab_page.name
+                tmp_tabs.append(tab_page.name)
+            self.tabs_in_edit_area = tmp_tabs
             while ses_name in self.tabs_in_edit_area:
                 ses_name= '{}_{}'.format(original_ses_name,counter)
                 counter+=1

@@ -91,40 +91,38 @@ class SessionTab(wx.Panel, dut):
         while( status):
             try:
                 status = self.alive #and self.session
-            except Exception as e :
-                time.sleep(0.001)
-                break
-            time.sleep(0.05)
-            response=''
-            if self.alive:
-                self.output_lock.acquire()
-                response = self.read_display_buffer()
-                if True:
-                    response = ansi_escape.sub('', response)
-                    response = BACKSPACE_pat.sub('\n', response)
-                    #response = re.sub().replace('\b', '')
-                BACKSPACE = chr(8)
-                #response = re.sub(chr(32)+BACKSPACE,'',response)
 
-                #BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
-            if len(response)!=0:
-                if False:
-                    whole_text = self.output_window.GetValue()
-                    last_index = len(whole_text)
-                    total_BS_in_response = int(response.count(BACKSPACE))
-                    start_BS = response.find(BACKSPACE)
-                    end_BS = response.rfind(BACKSPACE)+1
-                    start = last_index-total_BS_in_response-1
-                    end = last_index
-                    if total_BS_in_response:
-                        self.output_window.Remove(start ,end)
-                        #wx.CallAfter(self.output_window.Remove,start ,end)
-                        response= response[:start_BS]+response[end_BS:]
-                        #response =''
-                err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
-                wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                time.sleep(0.05)
+                response=''
+                if self.alive:
+                    self.output_lock.acquire()
+                    response = self.read_display_buffer()
+                    if True:
+                        response = ansi_escape.sub('', response)
+                        response = BACKSPACE_pat.sub('\n', response)
+                        #response = re.sub().replace('\b', '')
+                    BACKSPACE = chr(8)
+                    #response = re.sub(chr(32)+BACKSPACE,'',response)
 
-                if re.search('error|\s+err\s+|fail|wrong',response.lower()):
+                    #BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
+                if len(response)!=0:
+                    if False:
+                        whole_text = self.output_window.GetValue()
+                        last_index = len(whole_text)
+                        total_BS_in_response = int(response.count(BACKSPACE))
+                        start_BS = response.find(BACKSPACE)
+                        end_BS = response.rfind(BACKSPACE)+1
+                        start = last_index-total_BS_in_response-1
+                        end = last_index
+                        if total_BS_in_response:
+                            self.output_window.Remove(start ,end)
+                            #wx.CallAfter(self.output_window.Remove,start ,end)
+                            response= response[:start_BS]+response[end_BS:]
+                            #response =''
+                    err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
+                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+
+                    #if re.search('error|\s+err\s+|fail|wrong',response.lower()):
                     last_start = 0
                     for m in err_pattern.finditer(response.lower()):
                         #print(m.start(), m.end(), m.group())
@@ -139,22 +137,25 @@ class SessionTab(wx.Panel, dut):
                     wx.CallAfter(self.output_window.AppendText, response[last_start:])
 
 
-                else:
-                    #self.output_window.SetDefaultStyle( wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    wx.CallAfter(self.output_window.AppendText, response)
-                if False:
-                    whole_text = self.output_window.GetValue()
-                    m = re.search('[^\b]\b',whole_text)
-                    while m:
-                        self.output_window.Remove(m.start(), m.end())
+                    # else:
+                    #     #self.output_window.SetDefaultStyle( wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    #     wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    #     wx.CallAfter(self.output_window.AppendText, response)
+                    if False:
                         whole_text = self.output_window.GetValue()
                         m = re.search('[^\b]\b',whole_text)
+                        while m:
+                            self.output_window.Remove(m.start(), m.end())
+                            whole_text = self.output_window.GetValue()
+                            m = re.search('[^\b]\b',whole_text)
 
-                #wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
-                last = self.output_window.GetLastPosition()
-                wx.CallAfter(self.output_window.SetInsertionPoint,last)#wx.CallAfter(
-                wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)#wx.CallAfter(
+                    #wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
+                    last = self.output_window.GetLastPosition()
+                    wx.CallAfter(self.output_window.SetInsertionPoint,last)#wx.CallAfter(
+                    wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)#wx.CallAfter(
+            except Exception as e :
+                time.sleep(0.001)
+                break
             try:
                 if self.output_lock.locked():
                     self.output_lock.release()

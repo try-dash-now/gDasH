@@ -76,7 +76,8 @@ class dut(object):
     product = None
     def __del__(self):
         if self.session:
-            self.close_session()
+            threading.Thread(target=self.close_session, args=[]).start()
+            #self.close_session()
 
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, **kwarg):
         #expected types are [echo, telnet, ssh, shell, web_brower]
@@ -370,52 +371,62 @@ class dut(object):
         name = self.name
         if self.write_locker:
             self.write_locker.acquire()
-        if self.session_status: #try to avoid to call this function twice
-            info('session {}:close_session called, Closing!!!'.format(name))
+        try:
+            if self.session_status: #try to avoid to call this function twice
+                info('session {}:close_session called, Closing!!!'.format(name))
 
-            #fix issue
-            # Traceback (most recent call last):
-            # File "C:\Python27\Lib\threading.py", line 801, in __bootstrap_inner
-            # self.run()
-            # File "C:\Python27\Lib\threading.py", line 754, in run
-            # self.__target(*self.__args, **self.__kwargs)
-            # File "C:/workspace/gDasH\gui\DasHFrame.py", line 57, in update_output
-            # while( self.alive ):#and self.session.session_status
-            # File "C:\Python27\lib\site-packages\wx-3.0-msw\wx\_core.py", line 16711, in __getattr__
-            # raise PyDeadObjectError(self.attrStr % self._name)
-            # PyDeadObjectError: The C++ part of the SessionTab object has been deleted, attribute access no longer allowed.
+                #fix issue
+                # Traceback (most recent call last):
+                # File "C:\Python27\Lib\threading.py", line 801, in __bootstrap_inner
+                # self.run()
+                # File "C:\Python27\Lib\threading.py", line 754, in run
+                # self.__target(*self.__args, **self.__kwargs)
+                # File "C:/workspace/gDasH\gui\DasHFrame.py", line 57, in update_output
+                # while( self.alive ):#and self.session.session_status
+                # File "C:\Python27\lib\site-packages\wx-3.0-msw\wx\_core.py", line 16711, in __getattr__
+                # raise PyDeadObjectError(self.attrStr % self._name)
+                # PyDeadObjectError: The C++ part of the SessionTab object has been deleted, attribute access no longer allowed.
+                try:
+                    if self.session_type in ['ssh']:
+                        if self.session:
+                            self.session.write('exit\r\n')
+                            self.session.client.close()
+                    elif self.session_type in 'telnet':
+                        #self.session.write('exit')
+                        if self.session:
+                            self.session.write('exit\r\n')
+                        self.session.sock.close()
+                    elif self.session_type in ['dash_web']:
+                        self.session.close()
+                except Exception as e:
+                    try:
+                        error('dut({}): {}'.format(self.name, e))
+                        self.session=None
+                        self.session_status = False
+                        if self.read_locker.locked():
+                            self.read_locker.release()
+                    except :
+                        pass
+                try:
+                    if self.log_file:
+                        self.log_file.flush()
+                        self.log_file.close()
+                        self.log_file=None
+                    self.save_dry_run_json()
+                except:
+                    pass
+                self.session_status=False
+                self.session =None
             try:
-                if self.session_type in ['ssh']:
-                    if self.session:
-                        self.session.write('exit\r\n')
-                        self.session.client.close()
-                elif self.session_type in 'telnet':
-                    #self.session.write('exit')
-                    if self.session:
-                        self.session.write('exit\r\n')
-                    self.session.sock.close()
-                elif self.session_type in ['dash_web']:
-                    self.session.close()
-            except Exception as e:
-                error('dut({}): {}'.format(self.name, e))
-                self.session=None
-                self.session_status = False
-                if self.read_locker.locked():
-                    self.read_locker.release()
-            try:
-                if self.log_file:
-                    self.log_file.flush()
-                    self.log_file.close()
-                    self.log_file=None
-                self.save_dry_run_json()
-            except:
+                self.write_locker.release()
+                time.sleep(1)
+            except :
                 pass
-            self.session_status=False
-            self.session =None
+            info('session {}:close_session ended!!!'.format(name))
+        except Exception as e:
+            error(traceback.format_exc())
 
-        self.write_locker.release()
-        time.sleep(1)
-        info('session {}:close_session ended!!!'.format(name))
+
     def add_data_to_search_buffer(self, data):
 
         #self.search_buffer_locker.acquire()
