@@ -407,28 +407,33 @@ web_port={web_port}
         self.session_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.function_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
 
+        self.Show(True)
+        self.Maximize()
+
     def on_close(self, event):
+        self.Show(False)
         self.alive =False
         time.sleep(0.01)
-        try:
-            self.web_daemon.shutdown()
-        except:
-            pass
-
-        self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
-        if len(self.dict_test_report):
-            self.mail_test_report("DASH TEST REPORT")
-        for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
-            closing_page = self.edit_area.GetPage(index)
-            if isinstance(closing_page, (SessionTab)):
-                if closing_page:
-                    name = closing_page.name
-                    self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
+        def close():
             try:
-                closing_page.on_close()
+                self.web_daemon.shutdown()
             except:
                 pass
 
+            self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
+            if len(self.dict_test_report):
+                self.mail_test_report("DASH TEST REPORT")
+            for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+                closing_page = self.edit_area.GetPage(index)
+                if isinstance(closing_page, (SessionTab)):
+                    if closing_page:
+                        name = closing_page.name
+                        self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
+                try:
+                    closing_page.on_close()
+                except:
+                    pass
+        threading.Thread(target=close, args=[]).start()
 
         self.redir.close()
         sys.stderr =self.redir.old_stderr
