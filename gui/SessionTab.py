@@ -251,7 +251,8 @@ class SessionTab(wx.Panel, dut):
 
                 self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
             else:
-                pass #self.alive= self.session#.session_status
+                th =threading.Thread(target=self.open, args=[1,60]) #self.alive= self.session#.session_status
+                th.start()
                 #self.write(cmd,ctrl=ctrl)
         except Exception as e:
             error_msg = traceback.format_exc()
