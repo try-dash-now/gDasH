@@ -52,7 +52,7 @@ class SessionTab(wx.Panel, dut):
     alive =False
     output_lock = None
     font_point = None
-    cmd_window_font_size = 15
+    cmd_window_font_size = 19
     history_cmd = None
     history_cmd_index = 0
     sequence_queue =None
@@ -129,7 +129,7 @@ class SessionTab(wx.Panel, dut):
 
                         wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                         wx.CallAfter(self.output_window.AppendText, response[last_start:m.start()])
-                        wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.YELLOW, wx.RED,  font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                         wx.CallAfter(self.output_window.AppendText, response[m.start():m.end()])
                         last_start= m.end()
 
@@ -181,7 +181,7 @@ class SessionTab(wx.Panel, dut):
         self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER)#|wx.TE_MULTILINE )
 
-        self.font_point = self.output_window.GetFont().PointSize
+        self.font_point = self.output_window.GetFont().PointSize+2
         self.error_pattern = re.compile('error|\s+err\s+|fail|wrong')
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.output_window, 95, wx.EXPAND)
@@ -196,12 +196,14 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.cmd_window.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel_cmd_window)
         self.output_window.SetBackgroundColour('Black')
-        self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
-        self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(19, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.BOLD, faceName = 'Consolas')))
+        self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+        self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(19, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
 
 
-
+        f =self.cmd_window.GetFont()
+        f.PointSize= self.cmd_window_font_size
+        self.cmd_window.SetFont(f)
         #self.session  = self
         self.alive =True
         th =threading.Thread(target=self.update_output)

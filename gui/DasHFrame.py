@@ -58,7 +58,7 @@ class RedirectText(object):
     def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
-        self.font_point_size = self.out.GetFont().PointSize
+        self.font_point_size = self.out.GetFont().PointSize+2
         self.write_lock = threading.Lock()
         self.error_pattern = re.compile('error|\s+err\s+|fail|wrong')
         if log_path:
