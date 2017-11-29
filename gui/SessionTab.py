@@ -182,7 +182,7 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER)#|wx.TE_MULTILINE )
 
         self.font_point = self.output_window.GetFont().PointSize+2
-        self.error_pattern = re.compile('error|\s+err\s+|fail|wrong')
+        self.error_pattern = re.compile('error|\s+err\s+|fail|wrong|errno')
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.output_window, 95, wx.EXPAND)
         sizer.Add(self.cmd_window, 5, wx.EXPAND)
@@ -248,7 +248,7 @@ class SessionTab(wx.Panel, dut):
                     if cmd[-1] in ['?', "\t"]:
                         add_newline =False
                         lcmd =len(cmd)-1
-                        cmd = cmd + '\b'*lcmd*2
+                        cmd = + '\b'*lcmd*4 +cmd + '\b'*lcmd*4
                 th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
                 th.start()
 

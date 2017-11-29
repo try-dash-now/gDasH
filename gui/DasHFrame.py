@@ -60,7 +60,7 @@ class RedirectText(object):
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize+2
         self.write_lock = threading.Lock()
-        self.error_pattern = re.compile('error|\s+err\s+|fail|wrong')
+        self.error_pattern = re.compile('error|\s+err\s+|fail|wrong|errno')
         if log_path:
             name = '{}/dash.log'.format(log_path)
             self.log_file = open(name, 'w+')
@@ -651,7 +651,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 sessions.update(ses_in_bench)
 
             except Exception as e:
-                pass
+                error(traceback.format_exc())
 
         root =self.session_page.GetRootItem()
         for file_name in sorted(sessions.keys()):
