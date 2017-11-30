@@ -59,12 +59,11 @@ class SessionTab(wx.Panel, dut):
     log_path =None
     name = None
     error_pattern =None
-
+    def __del__(self):
+        self.on_close()
     def on_close(self):
         self.alive = False
-        th = threading.Thread(target=self.close_session)
-        th.start()
-        #self.close_session()
+        self.close_session()
         self.sleep(0.001)
         info('tab {} closed!!!'.format(self.name))
 
@@ -248,7 +247,7 @@ class SessionTab(wx.Panel, dut):
                     if cmd[-1] in ['?', "\t"]:
                         add_newline =False
                         lcmd =len(cmd)-1
-                        cmd = + '\b'*lcmd*4 +cmd + '\b'*lcmd*4
+                        cmd  ='\b'*lcmd*4 +cmd + '\b'*lcmd*4
                 th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
                 th.start()
 

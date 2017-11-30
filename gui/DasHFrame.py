@@ -1323,20 +1323,24 @@ if __name__ == "__main__":
         return script_name.lower().split('.')[-1],script_name_and_args[0] ,script_name_and_args[1:]
 
     def polling_request_via_mail(self):
-        while True:
-            time.sleep(10)
+
+        while self.alive:
             try:
-                if not self.alive:
+                time.sleep(10)
+                try:
+                    if not self.alive:
+                        break
+                except:
                     break
-            except:
+                try:
+                    self.on_handle_request_via_mail()
+                except Exception as e:
+                    if self.mail_failure is False:
+                        error(traceback.format_exc())
+                        self.mail_failure =True
+
+            except :
                 break
-            try:
-                self.on_handle_request_via_mail()
-            except Exception as e:
-                if self.mail_failure is False:
-                    error(traceback.format_exc())
-                    self.mail_failure =True
-                pass
 
     def get_case_queue(self, item=None):
         case_in_queue = list(self.case_queue.queue)

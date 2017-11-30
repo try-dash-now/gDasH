@@ -41,6 +41,7 @@ import threading
 from common import dut_exception_handler, info, debug, error,warn, TRACE_LEVEL,TRACE_LEVEL_NAME, create_dir
 import os
 import traceback
+import signal
 class dut(object):
     name=None
     session_type= None
@@ -74,10 +75,8 @@ class dut(object):
     last_write=None
     time_out=15.0
     product = None
-    def __del__(self):
-        if self.session:
-            threading.Thread(target=self.close_session, args=[]).start()
-            #self.close_session()
+
+
 
     def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, **kwarg):
         #expected types are [echo, telnet, ssh, shell, web_brower]
@@ -368,10 +367,12 @@ class dut(object):
         self.login_done =True
 
     def close_session(self):
-        name = self.name
-        if self.write_locker:
-            self.write_locker.acquire()
+
         try:
+            name = self.name
+            if self.write_locker:
+                self.write_locker.acquire()
+
             if self.session_status: #try to avoid to call this function twice
                 info('session {}:close_session called, Closing!!!'.format(name))
 
@@ -398,6 +399,11 @@ class dut(object):
                         self.session.sock.close()
                     elif self.session_type in ['dash_web']:
                         self.session.close()
+                    elif self.session_type in ['shell']:
+                        pass
+                        #self.session.shell.close_session()
+                        #import signal
+                        #os.killpg(self.session.shell.pid, signal.SIGTERM)
                 except Exception as e:
                     try:
                         error('dut({}): {}'.format(self.name, e))
@@ -535,6 +541,7 @@ class dut(object):
                     resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line= new_line), ctrl=ctrl)
 
                 except Exception as e :
+                    error(traceback.format_exc())
                     self.session_status =False
             #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
             self.last_cmd_time_stamp = datetime.datetime.now()

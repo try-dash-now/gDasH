@@ -16,9 +16,16 @@ def signal_handler(signal, frame):
 #signal.signal(signal.SIGINT, signal_handler)
 class shell(object):
     shell= None
+
+    def close_session(self):
+        if self.shell:
+            pass#self.shell.kill()
+            #os.killpg(self.shell.pid, signal.SIGTERM)
+            #self.shell.send_signal(signal.SIGTERM)
+            #self.shell=None
     def __init__(self):
         if os.name=='nt':
-            exe_cmd=['powershell.exe']##['cmd.exe']#cmd.exe
+            exe_cmd=['powershell']#, '-noprofile', '-command', 'set-location /; $pwd']#['powershell.exe']##['cmd.exe']#cmd.exe
         else:
             exe_cmd=['bash']#cmd.exe
         CREATE_NEW_PROCESS_GROUP=512
@@ -30,7 +37,7 @@ class shell(object):
             #win32api.SetConsoleCtrlHandler(handler_ctrl_c, 1)
             creationflags= win32con.CREATE_NEW_PROCESS_GROUP#.CREATE_NEW_PROCESS_GROUP#win32con.CREATE_NEW_CONSOLE#|win32con.CREATE_NEW_PROCESS_GROUP
         else:
-            creationflags =0
+            creationflags =512
         self.shell = subprocess.Popen(args = exe_cmd ,
                                       universal_newlines=True,
                                       shell= True,
@@ -41,7 +48,9 @@ class shell(object):
                                       )#,shell =True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def read(self):
-        data =self.shell.stdout.readline()
+        data =self.shell.stdout.read(1024)#.readline()
+        #data +='\r\n'+self.shell.stderr.readline()
+        #print('read', data)
         return  data
 
     def write(self, cmd, ctrl=False):
@@ -51,7 +60,7 @@ class shell(object):
                 import signal
                 s=None
                 if os.name =='nt':
-                    import win32gui,win32con
+                    #import win32gui,win32con
                     #win32con
 #                    tid =win32gui.FindWindowEx('shell')
  #                   win32gui.PostMessage(tid, win32con.CTRL_BREAK_EVENT)
@@ -82,13 +91,14 @@ class shell(object):
 
 
             else:
+
                 ascii = ord(cmd[0]) & 0x1f
                 ch = chr(ascii)
                 stdin.write(ch)
 
 
         else:
-            stdin.write(cmd)
+            stdin.write(cmd+'\r\n')
         return ''
 
         #done: 2017-10-9, 2017-10-7 a new type of dut--shell, powershell for windows and linux shell
