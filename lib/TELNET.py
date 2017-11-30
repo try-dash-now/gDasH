@@ -193,7 +193,7 @@ class TELNET(object):#, spawn
         # The buffer size should be fairly small so as to avoid quadratic
         # behavior in process_rawq() above
 
-        buf = self.sock.recv(512)
+        buf = self.sock.recv(512*8)
         self.msg("recv %r", buf)
         self.eof = (not buf)
         self.rawq = self.rawq + buf

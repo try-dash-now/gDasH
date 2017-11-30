@@ -67,35 +67,38 @@ class RedirectText(object):
             self.fileno = self.log_file.fileno
     def write(self,string):
         self.write_lock.acquire()
-        self.old_stdout.write(string)
-        #string = string.replace('\\033\[[0-9\;]+m', '')
+        try:
+            self.old_stdout.write(string)
+            #string = string.replace('\\033\[[0-9\;]+m', '')
 
-        #self.old_stderr.write(string)
-        err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
-        #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+            #self.old_stderr.write(string)
+            err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
+            #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
 
-        if True:#err_pattern.search(string.lower()):
-            last_start = 0
-            for m in err_pattern.finditer(string.lower()):
-                #print(m.start(), m.end(), m.group())
+            if False:#err_pattern.search(string.lower()):
+                last_start = 0
+                for m in err_pattern.finditer(string.lower()):
+                    #print(m.start(), m.end(), m.group())
+
+                    #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                    self.out.AppendText( string[last_start:m.start()])
+                    self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                    #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    self.out.AppendText( string[m.start():m.end()])
+                    last_start= m.end()
 
                 #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                 self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                self.out.AppendText( string[last_start:m.start()])
-                self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                self.out.AppendText( string[m.start():m.end()])
-                last_start= m.end()
-
-            #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-            self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-            self.out.AppendText( string[last_start:])
-        else:
-            self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-            wx.CallAfter(self.out.AppendText, string)
-        if self.log_file:
-            self.log_file.write(string)
-            self.log_file.flush()
+                self.out.AppendText( string[last_start:])
+            else:
+                self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                wx.CallAfter(self.out.AppendText, string)
+            if self.log_file:
+                self.log_file.write(string)
+                self.log_file.flush()
+        except:
+            pass
         self.write_lock.release()
     def close(self):
         if self.log_file:
@@ -411,8 +414,15 @@ web_port={web_port}
         self.Maximize()
 
     def on_close(self, event):
+        try:
+            self.alive =False
+            sys.stderr =self.redir.old_stderr
+            sys.stdout = self.redir.old_stdout
+            self.redir.close()
+            event.Skip()
+        except Exception as e:
+            error(traceback.format_exc())
         self.Show(False)
-        self.alive =False
         time.sleep(0.01)
         def close():
             try:
@@ -433,13 +443,10 @@ web_port={web_port}
                     closing_page.on_close()
                 except:
                     pass
-        threading.Thread(target=close, args=[]).start()
+        close()
 
-        self.redir.close()
-        sys.stderr =self.redir.old_stderr
-        sys.stdout = self.redir.old_stdout
-        event.Skip()
-        sys.exit(0)
+        #sys.exit(0)
+
     def generate_report(self, filename, report_all_cases=True):
         #fixed 2017-11-19, 2017-10-21 no need to send whole report, just the updating part
 
@@ -671,11 +678,9 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         first_child = self.session_page.GetFirstChild(root)
         self.session_page.Expand(first_child[0])
     def on_LeftDClick_in_Session_tab(self, event):
-        event.Skip()
+
+
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
-
-
-
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
         if session_attribute.Data.has_key('attribute'):
@@ -714,6 +719,9 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             attribute['log_path']=log_path
             self.add_new_session_to_globals(new_page, '{}'.format(attribute))
             #globals().update({ses_name: new_page.session})
+
+            time.sleep(0.1)
+            event.Skip()
 
     def add_new_session_to_globals(self, new_page, args_str):
         name = new_page.name
@@ -1141,15 +1149,19 @@ if __name__ == "__main__":
 
         return changed
     def polling_running_cases(self):
-        while True:
-            time.sleep(10)
-            try:
-                if not self.alive:
-                    break
-            except:
-                sys.exit(0) #break can't exit the app immediately, so change it to exit
-            #self.check_case_running_status_lock.acquire()
-            self.check_case_status()
+        try:
+            while self.alive:
+                time.sleep(10)
+                try:
+                    self.check_case_status()
+                except:
+                    error(traceback.format_exc())
+        except:
+            pass
+        print('end polling_running_cases')
+                    #sys.exit(0) #break can't exit the app immediately, so change it to exit
+                #self.check_case_running_status_lock.acquire()
+
             #self.check_case_running_status_lock.release()
 
 
@@ -1323,24 +1335,23 @@ if __name__ == "__main__":
         return script_name.lower().split('.')[-1],script_name_and_args[0] ,script_name_and_args[1:]
 
     def polling_request_via_mail(self):
-
-        while self.alive:
-            try:
-                time.sleep(10)
-                try:
-                    if not self.alive:
-                        break
-                except:
-                    break
+        try:
+            while self.alive:
+                time.sleep(5)
                 try:
                     self.on_handle_request_via_mail()
                 except Exception as e:
-                    if self.mail_failure is False:
-                        error(traceback.format_exc())
-                        self.mail_failure =True
-
-            except :
-                break
+                    try:
+                        if self.mail_failure is False:
+                            error(traceback.format_exc())
+                            self.mail_failure =True
+                        if self.alive is False:
+                            break
+                    except:
+                        break
+        except :
+            pass
+        print('end polling_request_via_mail!!!')
 
     def get_case_queue(self, item=None):
         case_in_queue = list(self.case_queue.queue)
@@ -1810,7 +1821,7 @@ if __name__ == "__main__":
         tab = x.FindWindowById(tabID)
         #session.session.open(retry, interval)
         #tab.open(3,15)
-        th =threading.Thread(target=self.edit_area.GetCurrentPage().open, args=[1, 60])
+        th =threading.Thread(target=self.edit_area.GetCurrentPage().open, args=[1, 5])
         #index = self.edit_area.GetCurrentPage().open(1, 60)
         th.start()
         event.Skip()

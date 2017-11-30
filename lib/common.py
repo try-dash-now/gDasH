@@ -48,7 +48,7 @@ def dut_exception_handler(function_name):
                     pass
                 else:
                     dut_instance.close_session()
-            raise
+            raise(e)
         return r
     return wrapped
 

@@ -87,7 +87,7 @@ class SessionTab(wx.Panel, dut):
              r'(\d;\dR))'
              , flags=re.IGNORECASE)
         BACKSPACE_pat =re.compile('(\s*\b+\n*\s*)+')
-        while( status):
+        while( self.alive):
             try:
                 status = self.alive #and self.session
 

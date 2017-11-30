@@ -48,7 +48,7 @@ class shell(object):
                                       )#,shell =True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def read(self):
-        data =self.shell.stdout.read(1024)#.readline()
+        data =self.shell.stdout.read(1024*4)#.readline()
         #data +='\r\n'+self.shell.stderr.readline()
         #print('read', data)
         return  data

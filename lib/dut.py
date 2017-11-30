@@ -123,7 +123,7 @@ class dut(object):
         else:
             self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
-        if self.session:
+        if self.session and self.session_status:
             #self.session_status=False
             self.close_session()
             self.sleep(0.01)
@@ -154,6 +154,8 @@ class dut(object):
             type = self.type
             counter = 0
             while counter<retry:
+                if self.session_status is False:
+                    break
                 counter+=1
                 try:
                     if type == 'echo' or init_file_name !=None:
@@ -297,7 +299,9 @@ class dut(object):
                     info('{} sleep {:02.1f}% {:.1f}/{} '.format(self.name , 100*delta_seconds/sleep_time,delta_seconds,sleep_time))
                 time.sleep(1)
         else:
-            time.sleep(sleep_time)
+            if self.session:
+                time.sleep(sleep_time)
+
 
     def wait_for(self, pattern='.*', time_out=30, flags=re.DOTALL|re.IGNORECASE|re.M, not_want_to_find=False):
         poll_interval = 0.5# default polling interval, 0.5 second
@@ -306,8 +310,8 @@ class dut(object):
         time_out=float(time_out)
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=math.ceil(time_out))
-
-        while True:
+        success, match, buffer =False, None, ""
+        while self.session_status:
             #print(self.search_buffer)
             match, buffer = self.match_in_buffer(pattern=pattern, flags=flags)
             if not_want_to_find:
@@ -369,13 +373,14 @@ class dut(object):
     def close_session(self):
 
         try:
+
             name = self.name
             if self.write_locker:
                 self.write_locker.acquire()
 
             if self.session_status: #try to avoid to call this function twice
                 info('session {}:close_session called, Closing!!!'.format(name))
-
+                self.session_status=False
                 #fix issue
                 # Traceback (most recent call last):
                 # File "C:\Python27\Lib\threading.py", line 801, in __bootstrap_inner
@@ -419,10 +424,11 @@ class dut(object):
                         self.log_file.close()
                         self.log_file=None
                     self.save_dry_run_json()
+                    self.session_status=False
+                    self.session =None
                 except:
                     pass
-                self.session_status=False
-                self.session =None
+
             try:
                 self.write_locker.release()
                 time.sleep(1)
@@ -471,7 +477,7 @@ class dut(object):
         self.reading_thread_lock.acquire()
         name = self.name
         error_msg =None
-        while True:#and self.session:
+        while self.session_status:#and self.session:
             try:
                 try:
                     if self.session_status :
@@ -520,6 +526,7 @@ class dut(object):
             self.reading_thread_lock.release()
         except Exception as e:
             pass
+        print('end dut session:{}'.format(self.name))
     def write(self, cmd='', ctrl=False, add_newline=True):
         resp = ''
         self.add_new_command_to_dry_run_json(cmd, ctrl)
