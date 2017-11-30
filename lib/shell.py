@@ -73,8 +73,8 @@ class shell(object):
                 ch = chr(ascii)
                 stdin.write(ch)
         else:
-            pad_len= self.max_buffer-1-len(cmd)
-            pad = ' '*pad_len+'\n'
+            pad_len= (self.max_buffer-1-len(cmd))/2
+            pad = ' '*pad_len+'\b'*pad_len+'\n'
             stdin.write(cmd+pad)
         return ''
 
