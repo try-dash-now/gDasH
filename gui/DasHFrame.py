@@ -1155,7 +1155,8 @@ if __name__ == "__main__":
                 try:
                     self.check_case_status()
                 except:
-                    error(traceback.format_exc())
+                    if self.alive:
+                        error(traceback.format_exc())
         except:
             pass
         print('end polling_running_cases')

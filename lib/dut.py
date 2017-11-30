@@ -397,6 +397,7 @@ class dut(object):
                         if self.session:
                             self.session.write('exit\r\n')
                             self.session.client.close()
+                            self.session.client=None
                     elif self.session_type in 'telnet':
                         #self.session.write('exit')
                         if self.session:
@@ -405,8 +406,8 @@ class dut(object):
                     elif self.session_type in ['dash_web']:
                         self.session.close()
                     elif self.session_type in ['shell']:
-                        pass
-                        #self.session.shell.close_session()
+                        #self.session.shell.kill()
+                        self.session.close_session()
                         #import signal
                         #os.killpg(self.session.shell.pid, signal.SIGTERM)
                 except Exception as e:
@@ -477,7 +478,7 @@ class dut(object):
         self.reading_thread_lock.acquire()
         name = self.name
         error_msg =None
-        while self.session_status:#and self.session:
+        while True:#and self.session:
             try:
                 try:
                     if self.session_status :
@@ -513,11 +514,7 @@ class dut(object):
                     error(traceback.format_exc())
                     self.session_status =False
         try:
-            if self.session_type in ['ssh']:
-                if self.session:
-                    if self.session.client:
-                        self.session.client.close()
-                        self.session.client=None
+            self.close_session()
             info('session {}: read_data Closed!!!'.format(name))
         except Exception as e:
             error(e)
@@ -526,7 +523,7 @@ class dut(object):
             self.reading_thread_lock.release()
         except Exception as e:
             pass
-        print('end dut session:{}'.format(self.name))
+        #print('end dut session:{}'.format(self.name))
     def write(self, cmd='', ctrl=False, add_newline=True):
         resp = ''
         self.add_new_command_to_dry_run_json(cmd, ctrl)
@@ -545,7 +542,8 @@ class dut(object):
                 try:
                     if add_newline is False:
                         new_line = ''
-                    resp = self.session.write('{cmd}{new_line}'.format(cmd=cmd, new_line= new_line), ctrl=ctrl)
+                    resp = self.session.write('{cmd}'.format(cmd=cmd), ctrl=ctrl)
+                    resp +=self.session.write(new_line,ctrl=ctrl)
 
                 except Exception as e :
                     error(traceback.format_exc())
