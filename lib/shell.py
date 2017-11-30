@@ -28,7 +28,7 @@ class shell(object):
         if os.name=='nt':
             exe_cmd='cmd'#'powershell'#, '-noprofile', '-command', 'set-location /; $pwd']#['powershell.exe']##['cmd.exe']#cmd.exe
         else:
-            exe_cmd=['bash']#cmd.exe
+            exe_cmd='bash'#cmd.exe
         CREATE_NEW_PROCESS_GROUP=512
         import win32con
 
@@ -44,7 +44,7 @@ class shell(object):
                                       shell= True,
                                       stdout=subprocess.PIPE,
                                       stdin=subprocess.PIPE,
-                                      #stderr=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
                                       creationflags=creationflags,#CREATE_NEW_PROCESS_GROUP
                                       bufsize = 1
                                       )#,shell =True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
