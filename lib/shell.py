@@ -6,7 +6,7 @@ import sys
 import time
 import subprocess, signal
 if os.name =='nt':
-    import win32api
+    pass#import win32api
 def handler_ctrl_c(sig, func=None):
     return True
 def signal_handler(signal, frame):
@@ -55,7 +55,7 @@ class shell(object):
                     #win32con
 #                    tid =win32gui.FindWindowEx('shell')
  #                   win32gui.PostMessage(tid, win32con.CTRL_BREAK_EVENT)
-                    import win32api
+                    #import win32api
                     #os.getpgid()
                     pgroupid = self.shell.pid
 
