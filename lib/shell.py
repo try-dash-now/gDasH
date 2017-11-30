@@ -48,7 +48,7 @@ class shell(object):
                                       creationflags=creationflags,#CREATE_NEW_PROCESS_GROUP
                                       bufsize = 1
                                       )#,shell =True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-        self.shell.stderr= self.shell.stdout
+        #self.shell.stderr= self.shell.stdout
     def read(self):
         #self.shell.stdout.write('\n')
         data =self.shell.stdout.readline()#read(1024)#.readline()
