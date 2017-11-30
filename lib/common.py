@@ -77,7 +77,8 @@ def runner(file_name, setting_file=None):
     #execute
 import csv
 def load_bench(bench_file):
-    dict_bench = {os.path.basename(bench_file):{}}
+    bench_name = os.path.basename(bench_file)
+    dict_bench = {bench_name:{}}
     with open(bench_file) as bench:
         reader = csv.reader(bench,delimiter=',')
         for row in reader:
@@ -97,7 +98,10 @@ def load_bench(bench_file):
                     for attribute in row[1:]:
                         #print("$$",attribute)
                         if attribute in [''] or attribute.find('=')==-1:
-                            continue
+                            if len(dict_bench[bench_name])>0:
+                                continue
+                            else:
+                                return {}
                         a_name,a_value = attribute.split('=')
                         dict_attributes[a_name.strip()]=a_value.strip().replace('\\r', '\r').replace('\\n','\n')
                     dict_bench[os.path.basename(bench_file)][name]=dict_attributes
