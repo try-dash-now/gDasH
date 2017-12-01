@@ -26,19 +26,20 @@ class shell(object):
             #self.shell=None
     def __init__(self):
         if os.name=='nt':
+            #powershell can't response self.shell.stdin.write, ever add the cmd length to 512,so just call "cmd"
             exe_cmd='cmd'#'powershell'#, '-noprofile', '-command', 'set-location /; $pwd']#['powershell.exe']##['cmd.exe']#cmd.exe
         else:
             exe_cmd='bash'#cmd.exe
         CREATE_NEW_PROCESS_GROUP=512
-        import win32con
+        #import win32con
 
         os.environ['FOR_DISABLE_CONSOLE_CTRL_HANDLER'] = '1'
 
         if os.name == 'nt':
             #win32api.SetConsoleCtrlHandler(handler_ctrl_c, 1)
-            creationflags= win32con.CREATE_NEW_PROCESS_GROUP#.CREATE_NEW_PROCESS_GROUP#win32con.CREATE_NEW_CONSOLE#|win32con.CREATE_NEW_PROCESS_GROUP
+            creationflags= 512#win32con.CREATE_NEW_PROCESS_GROUP#.CREATE_NEW_PROCESS_GROUP#win32con.CREATE_NEW_CONSOLE#|win32con.CREATE_NEW_PROCESS_GROUP
         else:
-            creationflags =512
+            creationflags =0 #512
         self.shell = subprocess.Popen(args = exe_cmd ,
                                       universal_newlines=True,
                                       shell= True,
