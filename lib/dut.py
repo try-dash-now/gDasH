@@ -408,6 +408,7 @@ class dut(object):
                     elif self.session_type in ['shell']:
                         #self.session.shell.kill()
                         self.session.close_session()
+                        self.session_status =False
                         #import signal
                         #os.killpg(self.session.shell.pid, signal.SIGTERM)
                 except Exception as e:
@@ -523,7 +524,7 @@ class dut(object):
             self.reading_thread_lock.release()
         except Exception as e:
             pass
-        #print('end dut session:{}'.format(self.name))
+        print('end dut session')
     def write(self, cmd='', ctrl=False, add_newline=True):
         resp = ''
         self.add_new_command_to_dry_run_json(cmd, ctrl)

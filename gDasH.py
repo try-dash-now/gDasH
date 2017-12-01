@@ -38,3 +38,4 @@ if __name__ == "__main__":
     dash.Centre()
     dash.Show()
     app.MainLoop()
+    print('Bye')

@@ -444,7 +444,7 @@ web_port={web_port}
                 except:
                     pass
         close()
-
+        time.sleep(0.01)
         #sys.exit(0)
 
     def generate_report(self, filename, report_all_cases=True):
@@ -1160,6 +1160,7 @@ if __name__ == "__main__":
         except:
             pass
         print('end polling_running_cases')
+        time.sleep(0.01)
                     #sys.exit(0) #break can't exit the app immediately, so change it to exit
                 #self.check_case_running_status_lock.acquire()
 
@@ -1341,18 +1342,13 @@ if __name__ == "__main__":
                 time.sleep(5)
                 try:
                     self.on_handle_request_via_mail()
+                    self.mail_failure =False
                 except Exception as e:
-                    try:
-                        if self.mail_failure is False:
-                            error(traceback.format_exc())
-                            self.mail_failure =True
-                        if self.alive is False:
-                            break
-                    except:
-                        break
+                    self.mail_failure =True
         except :
             pass
         print('end polling_request_via_mail!!!')
+        time.sleep(0.01)
 
     def get_case_queue(self, item=None):
         case_in_queue = list(self.case_queue.queue)

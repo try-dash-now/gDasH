@@ -19,8 +19,11 @@ class shell(object):
     max_buffer =512
     def close_session(self):
         if self.shell:
+            self.write('')#the self.shell.stdout.readline is bloking-mode
+            self.write('')
             self.shell.kill()
             self.shell=None
+            print('close shell!!!')
             #os.killpg(self.shell.pid, signal.SIGTERM)
             #self.shell.send_signal(signal.SIGTERM)
             #self.shell=None
@@ -75,8 +78,8 @@ class shell(object):
                 ch = chr(ascii)
                 stdin.write(ch)
         else:
-            pad_len= (self.max_buffer-1-len(cmd))/2
-            pad = ' '*pad_len+'\b'*pad_len+'\n'
+            pad_len= (self.max_buffer-1-len(cmd))/1
+            pad = ' '*pad_len+'\r\n'
             stdin.write(cmd+pad)
         return ''
 
