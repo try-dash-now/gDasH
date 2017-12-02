@@ -242,6 +242,7 @@ class DasHFrame(MainFrame):#wx.Frame
     timestamp=None
 
     mail_failure =False
+    last_time_call_on_idle= None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         self.timestamp= datetime.now().isoformat('-').replace(':','-')
@@ -398,10 +399,10 @@ web_port={web_port}
 
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
-        th= threading.Thread(target=self.polling_running_cases)
-        th.start()
-        th = threading.Thread(target=self.polling_request_via_mail)
-        th.start()
+        #th= threading.Thread(target=self.polling_running_cases)
+        #th.start()
+        #th = threading.Thread(target=self.polling_request_via_mail)
+        #th.start()
 
         threading.Thread(target=self.web_server_start).start()
 
@@ -409,6 +410,9 @@ web_port={web_port}
         self.case_suite_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.session_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.function_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
+
+        self.Bind(wx.EVT_IDLE, self.on_idle)
+        self.last_time_call_on_idle = datetime.now()
 
         self.Show(True)
         self.Maximize()
@@ -1825,6 +1829,24 @@ if __name__ == "__main__":
         th.start()
         event.Skip()
         #self.edit_area.SetSelection(index)
+    def idle_process(self):
+        try:
+            self.on_handle_request_via_mail()
+            self.mail_failure =False
+        except Exception as e:
+            self.mail_failure =True
+        try:
+            self.check_case_status()
+        except:
+            pass
+        #print('{} i\'m idle !!!!!!!!!!!!!!!!!!'.format(datetime.now().isoformat()))
+    def on_idle(self,event):
+        now = datetime.now()
+        max_idle=10
+        if (now-self.last_time_call_on_idle).total_seconds()>max_idle:
+            self.last_time_call_on_idle=now
+            th=threading.Thread(target=self.idle_process, args=[])
+            th.start()
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
