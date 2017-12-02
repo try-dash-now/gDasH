@@ -1747,7 +1747,7 @@ if __name__ == "__main__":
             pass
         httpd=ThreadingHttpServer(('',port), HttpHandler)
 
-        from socket import socket, AF_INET, SOCK_DGRAM, gethostname, getfqdn#*
+        from socket import socket, AF_INET, SOCK_DGRAM, gethostname,SOL_SOCKET, SO_REUSEADDR, getfqdn#*
 
 
         try:
@@ -1771,6 +1771,8 @@ if __name__ == "__main__":
         info("Server started on %s (%s),port %d....."%(hostname,hostip,port))
         #print('Process ID:%d'%os.geteuid())
         self.web_daemon= httpd
+        on=1
+        self.web_daemon.socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, on)
         httpd.serve_forever()
 
         try:
