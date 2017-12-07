@@ -730,12 +730,29 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     def add_new_session_to_globals(self, new_page, args_str):
         name = new_page.name
         global  DUT
-
+        #FIX ISSUE
+            #  INFO	common.py:161	call_function_in_module:
+            # 	module_name: 	xdsl
+            # 	class_name: 	xdsl
+            # 	function_name: 	get_eut
+            # 	args:[wxPython wrapper for DELETED SessionTab object! (The C++ object no longer exists.)]
+            # 	kwargs: {}
+            # Exception in thread Thread-40:
+            # Traceback (most recent call last):
+            #   File "C:\Python27\Lib\threading.py", line 801, in __bootstrap_inner
+            #     self.run()
+            #   File "C:\Python27\Lib\threading.py", line 754, in run
+            #     self.__target(*self.__args, **self.__kwargs)
+            #   File "C:\workspace\gDasH\src\xdsl.py", line 36, in get_eut
+            #     ses.write(cmd)
+            #   File "C:\Python27\lib\site-packages\wx-3.0-msw\wx\_core.py", line 16711, in __getattr__
+            #     raise PyDeadObjectError(self.attrStr % self._name)
         if  name in DUT:
-            if DUT[name]==None:
+            try:
+                DUT[name].name
+                del DUT[name]
+            except :
                 DUT[name]= new_page
-            else:
-                error('{} already '.format(name))
         else:
             DUT[name]= new_page
             self.add_cmd_to_sequence_queue('DUT["{}"] = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path').replace("'not_call_open': True,", "'not_call_open': False,") ), 'dut')
