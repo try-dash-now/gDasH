@@ -256,7 +256,7 @@ class dut(object):
                     brief_buffer =buffer[:128]+'\n...\n'+buffer[-128:]
                 else:
                     brief_buffer = buffer
-                display_str = info(cmd = command, time_out = time_out, ctrl = ctrl, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer, remaining = remaining,total_try=total_try)
+                display_str = info(name = self.name,cmd = command, time_out = time_out, ctrl = ctrl, success = success, expect=expect, not_want_to_find = not_want_to_find, buffer = brief_buffer, remaining = remaining,total_try=total_try)
                 if success:
                     break
                 elif remaining>0:
