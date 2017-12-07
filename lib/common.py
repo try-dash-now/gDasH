@@ -97,11 +97,13 @@ def load_bench(bench_file):
                     dict_attributes = {}
                     for attribute in row[1:]:
                         #print("$$",attribute)
-                        if attribute in [''] or attribute.find('=')==-1:
-                            if len(dict_bench[bench_name])>0:
+                        if attribute in ['']:
+                            if len(dict_attributes)>0:
                                 continue
                             else:
                                 return {}
+                        elif  attribute.find('=')==-1:
+                            return {}
                         a_name,a_value = attribute.split('=')
                         dict_attributes[a_name.strip()]=a_value.strip().replace('\\r', '\r').replace('\\n','\n')
                     dict_bench[os.path.basename(bench_file)][name]=dict_attributes

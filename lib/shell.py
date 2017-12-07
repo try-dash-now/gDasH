@@ -70,7 +70,7 @@ class shell(object):
                     pgroupid = self.shell.pid
                     for s in [ signal.CTRL_C_EVENT, signal.CTRL_BREAK_EVENT, signal.SIGINT]:
                         s = signal.CTRL_BREAK_EVENT#CTRL_C_EVENT
-                        self.shell.send_signal(s)
+                        #self.shell.send_signal(s)
                         os.kill(self.shell.pid, s)
                     #todo 2017-10-10 can't stop "ping localhost -t" with ctrl+c, it's disabled by windows for non-console process
             else:
