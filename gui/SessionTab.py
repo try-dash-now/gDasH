@@ -178,13 +178,13 @@ class SessionTab(wx.Panel, dut):
         self.output_lock = threading.Lock()
         #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
         self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
-        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER)#|wx.TE_MULTILINE )
+        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER|wx.TE_MULTILINE )
 
         self.font_point = self.output_window.GetFont().PointSize+2
         self.error_pattern = re.compile('error|\s+err\s+|fail|wrong|errno')
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.output_window, 95, wx.EXPAND)
-        sizer.Add(self.cmd_window, 5, wx.EXPAND)
+        sizer.Add(self.output_window,   9, wx.EXPAND)
+        sizer.Add(self.cmd_window,      0,  wx.EXPAND)
         self.SetSizer(sizer)
         #from lib.common import create_session
         info (os.curdir)
@@ -232,7 +232,6 @@ class SessionTab(wx.Panel, dut):
         else:
             event.Skip()
     def on_enter_a_command(self, event):
-
         ctrl = False
         cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
         cmd= cmd.replace('\n', os.linesep)
@@ -250,7 +249,6 @@ class SessionTab(wx.Panel, dut):
                         cmd  ='\b'*lcmd*4 +cmd + '\b'*lcmd*4
                 th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
                 th.start()
-
                 self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
             else:
                 th =threading.Thread(target=self.open, args=[1,60]) #self.alive= self.session#.session_status
@@ -262,7 +260,9 @@ class SessionTab(wx.Panel, dut):
             #self.close_session()
             error ('{} closed unexpected\n{}'.format(self.name, error_msg))
             #self.alive= False
+        event.Skip()
         self.cmd_window.Clear()
+        self.cmd_window.ShowPosition(1)
         self.cmd_window.SetFocus()
     def add_cmd_to_history(self, cmd):
         if self.history_cmd==[]:

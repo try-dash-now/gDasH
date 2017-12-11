@@ -38,7 +38,7 @@ class MainFrame ( wx.Frame ):
 		self.m_log = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_READONLY |wx.TE_RICH|wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER) )#richtext.RichTextCtrl |wx.WANTS_CHARS
 		sizer_right.Add( self.m_log, 3, wx.ALL|wx.EXPAND, 5 )
 		
-		self.m_command_box = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,  wx.TE_PROCESS_ENTER)
+		self.m_command_box = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,  wx.TE_PROCESS_ENTER|wx.TE_MULTILINE)
 		font1 = self.m_command_box.GetFont()
 		font1 = wx.Font(font1.PointSize+3, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Consolas')
 		self.m_command_box.SetFont(font1)

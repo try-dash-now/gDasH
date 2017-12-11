@@ -428,8 +428,8 @@ web_port={web_port}
         edit_sizer = wx.BoxSizer()
         edit_sizer.Add(self.edit_area, 1, wx.EXPAND, 1)
         self.m_file_editor.SetSizer(edit_sizer)
-        right_sizer.Add(self.m_file_editor,     6,  wx.ALL|wx.EXPAND, 1)
-        right_sizer.Add(self.m_log,         3,  wx.ALL|wx.EXPAND, 2)
+        right_sizer.Add(self.m_file_editor,     8,  wx.ALL|wx.EXPAND, 1)
+        right_sizer.Add(self.m_log,         2,  wx.ALL|wx.EXPAND, 2)
         right_sizer.Add(self.m_command_box, 0,  wx.ALL|wx.EXPAND, 3)
         main_sizer.Add(right_sizer, 8,  wx.EXPAND)
         self.SetSizer(main_sizer)
@@ -797,44 +797,52 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             DUT[name]= new_page
             self.add_cmd_to_sequence_queue('DUT["{}"] = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path').replace("'not_call_open': True,", "'not_call_open': False,") ), 'dut')
             #session  = dut(name, **attributes)
-
+    @gui_event_decorator.gui_even_handle
     def on_command_enter(self, event):
 
         info('called on_command_enter')
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
-        if cmd.strip()=='':
-            return
 
+        cmd = cmd.strip()
+        cmds = cmd.replace('\r\n', '\n').split('\n')
+        def handle_one_cmd(cmd):
+            if cmd.strip()=='':
+                return
+            module,class_name, function,args = parse_command_line(cmd)
+            self.add_cmd_to_history(cmd,  module, None, class_name)
+            #args[0]=self.sessions_alive['test_ssh'].session
+            if module !='' or class_name!='' or function!='':
+                after_sub_args=[]
+                for i in range(len(args)):
+                    a = args[i]
+                    if a in globals():
+                        after_sub_args.append(a)
+                    elif a in DUT:
+                        after_sub_args.append('DUT["{}"]'.format(a))
+                    else:
+                        after_sub_args.append(a)
+                instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,after_sub_args, globals())
+                call_function = None
 
-        module,class_name, function,args = parse_command_line(cmd)
-        self.add_cmd_to_history(cmd,  module, None, class_name)
+                if class_name!="":
 
-        #args[0]=self.sessions_alive['test_ssh'].session
-        if module !='' or class_name!='' or function!='':
-            after_sub_args=[]
-            for i in range(len(args)):
-                a = args[i]
-                if a in globals():
-                    after_sub_args.append(a)
-                elif a in DUT:
-                    after_sub_args.append('DUT["{}"]'.format(a))
+                    call_function = getattr(instance_name, function_name)
+                    #(*new_argvs,**new_kwargs)
                 else:
-                    after_sub_args.append(a)
-            instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,after_sub_args, globals())
-            call_function = None
+                    call_function = instance_name#(*new_argvs,**new_kwargs)
+                th =threading.Thread(target=call_function, args=new_argvs, kwargs=new_kwargs)
+                th.start()
 
-            if class_name!="":
+                self.m_command_box.ShowPosition(len(self.m_command_box.GetString())+1)
+                self.add_cmd_to_history(cmd,  module, str_code, class_name)
 
-                call_function = getattr(instance_name, function_name)
-                #(*new_argvs,**new_kwargs)
             else:
-                call_function = instance_name#(*new_argvs,**new_kwargs)
-            th =threading.Thread(target=call_function, args=new_argvs, kwargs=new_kwargs)
-            th.start()
-            self.add_cmd_to_history(cmd,  module, str_code, class_name)
-        else:
-            error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
+                error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
+
+        for cmd in cmds:
+            handle_one_cmd(cmd)
+        event.Skip()
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
 

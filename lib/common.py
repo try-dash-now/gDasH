@@ -148,6 +148,7 @@ def call_function_in_module(module_name, class_name, function_name, args , envir
     import inspect
     new_argvs=[]
     new_kwargs={}
+    str_code = ''
     def GetFunArgs(*argvs, **kwargs):
     #re-assign for self.argvs and self.kwargvs
 
