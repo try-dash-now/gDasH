@@ -178,7 +178,7 @@ class SessionTab(wx.Panel, dut):
         self.output_lock = threading.Lock()
         #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
         self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
-        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER|wx.TE_MULTILINE )
+        self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER|wx.TE_MULTILINE|wx.VSCROLL )
 
         self.font_point = self.output_window.GetFont().PointSize+2
         self.error_pattern = re.compile('error|\s+err\s+|fail|wrong|errno')

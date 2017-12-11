@@ -841,7 +841,10 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
 
         for cmd in cmds:
-            handle_one_cmd(cmd)
+            try:
+                handle_one_cmd(cmd)
+            except:
+                error(traceback.format_exc())
         event.Skip()
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
