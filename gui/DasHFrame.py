@@ -513,8 +513,8 @@ web_port={web_port}
                         'case_name','log']]
         report = '''Test Report
 RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Name,\tLog\n'''
-        if len(self.dict_test_report):
-            with open(filename, 'w') as f:
+        with open(filename, 'w') as f:
+            if len(self.dict_test_report):
                 #f.write(report)
                 for pi in sorted(self.dict_test_report, key = lambda x: self.dict_test_report[x][1]):
                     case_name, start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][:7]
@@ -573,9 +573,9 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
                         else:
                             pass
-                from lib.common import array2htmltable
-                report_in_html_string = array2htmltable(report_in_list)
-                f.write(report_in_html_string)
+            from lib.common import array2htmltable
+            report_in_html_string = array2htmltable(report_in_list)
+            f.write(report_in_html_string)
         return report
 
     def on_close_tab_in_edit_area(self, event):
