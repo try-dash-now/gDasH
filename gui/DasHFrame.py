@@ -24,6 +24,7 @@ __doc__ = '''
 it's GUI of DasH aka Do as Human
 created 2017-05-06 by Sean Yu
 '''
+import webbrowser
 from datetime import datetime
 import wx.grid as gridlib
 import traceback
@@ -450,7 +451,8 @@ web_port={web_port}
         self.case_suite_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.session_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.function_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
-
+        #wx.html.EVT_HTML_LINK_CLICKED wx.EVT_TEXT_URL,  wx.EVT_TEXT_URL,
+        self.m_log.Bind(wx.EVT_TEXT_URL, self.on_leftD_click_url_in_m_log)
         self.Bind(wx.EVT_IDLE, self.on_idle)
         self.last_time_call_on_idle = datetime.now()
 
@@ -574,8 +576,6 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 from lib.common import array2htmltable
                 report_in_html_string = array2htmltable(report_in_list)
                 f.write(report_in_html_string)
-
-
         return report
 
     def on_close_tab_in_edit_area(self, event):
@@ -1925,8 +1925,21 @@ if __name__ == "__main__":
             th.start()
     @gui_event_decorator.gui_even_handle
     def on_generate_test_report(self,event):
-        report = self.generate_report(filename='{}/dash_report_{}.html'.format(self.log_path, self.timestamp))
+        file_name='{}/dash_report_{}.html'.format(self.log_path, self.timestamp)
+        report = self.generate_report(filename=file_name)#'{}/dash_report_{}.html'.format(self.log_path, self.timestamp))
+        report = 'http://{}:{}/log/{}\n{}'.format(self.web_host, self.web_port, file_name.replace(self.log_path, ''),report)
         print(report)
+    @gui_event_decorator.gui_even_handle
+    def on_leftD_click_url_in_m_log(self, event):
+
+        #print(urlString)
+        mouseEvent = event.GetMouseEvent()
+        if mouseEvent.LeftDClick():
+            urlString = self.m_log.GetRange(event.GetURLStart(),event.GetURLEnd())
+            webbrowser.open(urlString)
+        event.Skip()
+
+
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone

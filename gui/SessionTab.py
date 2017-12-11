@@ -39,6 +39,7 @@ import ConfigParser
 import sys
 import inspect
 import Queue
+import webbrowser
 from datetime import datetime
 import traceback
 class SessionTab(wx.Panel, dut):
@@ -198,7 +199,7 @@ class SessionTab(wx.Panel, dut):
         self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
         self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(19, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
-
+        self.output_window.Bind(wx.EVT_TEXT_URL,self.on_leftD_click_url_in_output)
 
         f =self.cmd_window.GetFont()
         f.PointSize= self.cmd_window_font_size
@@ -362,6 +363,12 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.SetFont(f)
 
         self.Refresh()
+    def on_leftD_click_url_in_output(self, event):
+        mouseEvent = event.GetMouseEvent()
+        if mouseEvent.LeftDClick():
+            urlString = self.output_window.GetRange(event.GetURLStart(),event.GetURLEnd())
+            webbrowser.open(urlString)
+        event.Skip()
 #todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
 #todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
 #todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )
