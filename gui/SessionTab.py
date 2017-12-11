@@ -207,10 +207,10 @@ class SessionTab(wx.Panel, dut):
         self.alive =True
         th =threading.Thread(target=self.update_output)
         th.start()
-        self.sleep(0.1)
+        #self.sleep(0.1)
         th = threading.Thread(target=self.open, args= [self.retry_login,60])#, kwargs=attributes)
         th.start()
-        self.sleep(0.1)
+        #self.sleep(0.1)
     def on_key_up(self, event):
         keycode = event.KeyCode
 

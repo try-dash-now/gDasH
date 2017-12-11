@@ -205,7 +205,45 @@ class FileEditor(wx.Panel):
             self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
 #DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
-class DasHFrame(MainFrame):#wx.Frame
+from functools import wraps
+import pprint
+def gui_event_thread_handler( func):
+
+
+    @wraps(func)
+    def inner(func, *args, **kwargs):
+        ret =None
+        try:
+            ret  = func(*args, **kwargs)
+            #th = threading.Thread(target=func,args= args, kwargs=kwargs)
+            #th.start()
+        except:
+            error(traceback.format_exc())
+        return  ret
+    return inner
+
+
+class gui_event_decorator():
+
+    def __init__(self):
+        pass
+    @classmethod
+    def gui_even_handle(self, func):
+        def inner(*args, **kwargs):
+            ret =None
+            try:
+                #print('decorator!!!')
+                #ret  = func(*args, **kwargs)
+                th = threading.Thread(target=func,args= args, kwargs=kwargs)
+                th.start()
+                #print('decorator####')
+            except:
+                print(traceback.format_exc())
+            return  ret
+        return inner
+
+
+class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
     ini_setting = None
         #m_left_navigator =None
     redir = None
@@ -245,6 +283,7 @@ class DasHFrame(MainFrame):#wx.Frame
     last_time_call_on_idle= None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        gui_event_decorator.__init__(self)
         self.timestamp= datetime.now().isoformat('-').replace(':','-')
         self.case_list= []
         self.case_queue = Queue.Queue()
@@ -321,13 +360,14 @@ web_port={web_port}
         fileMenu = wx.Menu()
         #open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         #open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
+        generate_test_report = fileMenu.Append(wx.NewId(), "Generate Test Report", "Generate Test Report")
         generate_code = fileMenu.Append(wx.NewId(), "Generate Python Code", "Generate Python Code")
         mail_test_report = fileMenu.Append(wx.NewId(), "Mail Test Report", "Mail Test Report")
         get_case_queue = fileMenu.Append(wx.NewId(), "Get Case Queue", "Get Case Queue") #done
         clear_case_queue = fileMenu.Append(wx.NewId(), "Clear Case Queue", "Clear Case Queue")
         kill_running_case = fileMenu.Append(wx.NewId(), "Kill Running Case(s)", "Kill Running Case(s)")
-        self.m_menubar_main.Append(fileMenu, "&Open")
-
+        self.m_menubar_main.Append(fileMenu, "&Operations")
+        self.Bind(wx.EVT_MENU,self.on_generate_test_report ,generate_test_report)
         self.Bind(wx.EVT_MENU,self.on_generate_code ,generate_code)
         self.Bind(wx.EVT_MENU,self.on_mail_test_report ,mail_test_report)
         self.Bind(wx.EVT_MENU,self.get_case_queue ,get_case_queue)
@@ -578,7 +618,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 self.case_suite_page.SetItemHasChildren(new_item)
                 #self.m_case_tree.ItemHasChildren()
                 #self.m_case_tree.InsertItem(new_item,new_item,'')
-
+    @gui_event_decorator.gui_even_handle
     def build_suite_tree(self):
         suite_path = self.suite_path #os.path.abspath(self.ini_setting.get('dash','test_suite_path'))
         if not os.path.exists(suite_path):
@@ -629,6 +669,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                     self.add_item_to_subfolder_in_tree(ht_item)
         except Exception as e:
             pass
+    @gui_event_decorator.gui_even_handle
     def build_session_tab(self):
         if self.session_page.RootItem:
             self.session_pagef.DeleteAllItems()
@@ -681,9 +722,8 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         self.session_page.Expand(root)
         first_child = self.session_page.GetFirstChild(root)
         self.session_page.Expand(first_child[0])
+    #@gui_event_decorator.gui_even_handle
     def on_LeftDClick_in_Session_tab(self, event):
-
-
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
@@ -885,6 +925,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         except Exception as e:
             pass
         return fundefstr
+    @gui_event_decorator.gui_even_handle
     def build_function_tab(self):
         try:
             src_path = os.path.abspath(self.src_path)
@@ -1812,6 +1853,7 @@ if __name__ == "__main__":
         else:
             self.case_queue.put(line)
         return info('adding case to queue: {}'.format(line))
+
     def OnMouseMotion(self, evt):
         try:
             active_page = self.navigator.GetCurrentPage()
@@ -1838,6 +1880,7 @@ if __name__ == "__main__":
     def on_keyboard_key_down(self,event):
 
         event.Skip()
+    @gui_event_decorator.gui_even_handle
     def on_generate_code(self, event):
         self.generate_code('{}/test_code_{}.py'.format(self.suite_path, datetime.now().isoformat().replace(':','-').replace('.','-')))
     def on_right_up_over_tab_in_edit_area(self, event):
@@ -1869,6 +1912,10 @@ if __name__ == "__main__":
             self.last_time_call_on_idle=now
             th=threading.Thread(target=self.idle_process, args=[])
             th.start()
+    @gui_event_decorator.gui_even_handle
+    def on_generate_test_report(self,event):
+        report = self.generate_report(filename='{}/dash_report_{}.html'.format(self.log_path, self.timestamp))
+        print(report)
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
@@ -1892,3 +1939,4 @@ if __name__ == "__main__":
     #     GetFunArgs(35b)
     #                  ^
     # SyntaxError: invalid syntax
+#todo: start thread for all gui event handlers with decoration, catch all exceptions
