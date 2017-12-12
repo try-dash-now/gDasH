@@ -282,6 +282,7 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
 
     mail_failure =False
     last_time_call_on_idle= None
+    ini_file=None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         gui_event_decorator.__init__(self)
@@ -296,6 +297,7 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
         self.sequence_queue= Queue.Queue()
         #self.sequence_queue.put()
         self.ini_setting    = ConfigParser.ConfigParser()
+
         if os.path.exists(ini_file):
             self.ini_setting.read(ini_file)
             self.src_path       = os.path.abspath(self.ini_setting.get('dash','src_path'))
@@ -310,8 +312,8 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
             self.mail_password  =self.ini_setting.get('dash', 'mail_password')
             self.web_port       =int(self.ini_setting.get('dash', 'web_port'))
         else:
-            with open(ini_file, 'w') as ini_file:
-                ini_file.write('''[dash]
+            with open(ini_file, 'w') as tmp_ini_file:
+                tmp_ini_file.write('''[dash]
 test_suite_path = ../test_suite/
 log_path= {log_path}
 lib_path = {lib_path}
@@ -337,7 +339,9 @@ web_port={web_port}
                     mail_read_url = self.mail_read_url,
                     mail_password = self.mail_password,
                     web_port = self.web_port))
-
+                tmp_ini_file.flush()
+        #self.ini_setting.read(ini_file)
+        self.ini_file = ini_file
         from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
         sys.argv.append('{}'.format(self.log_path))
@@ -434,9 +438,7 @@ web_port={web_port}
         right_sizer.Add(self.m_command_box, 0,  wx.ALL|wx.EXPAND, 3)
         main_sizer.Add(right_sizer, 8,  wx.EXPAND)
         self.SetSizer(main_sizer)
-        self.build_session_tab()
-        self.build_suite_tree()
-        self.build_function_tab()
+
 
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
@@ -456,6 +458,9 @@ web_port={web_port}
         self.Bind(wx.EVT_IDLE, self.on_idle)
         self.last_time_call_on_idle = datetime.now()
 
+        self.build_session_tab()
+        self.build_suite_tree()
+        self.build_function_tab()
         self.Show(True)
         self.Maximize()
 
@@ -673,7 +678,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     def build_session_tab(self):
         if self.session_page.RootItem:
             self.session_pagef.DeleteAllItems()
-
+        self.ini_setting.read(self.ini_file)
         session_path = os.path.abspath(self.ini_setting.get('dash','session_path'))
         self.session_path= session_path
         if not os.path.exists(session_path):

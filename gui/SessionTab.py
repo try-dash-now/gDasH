@@ -191,10 +191,11 @@ class SessionTab(wx.Panel, dut):
         info (os.curdir)
         #self.Bind(wx.EVT_CLOSE, self.on_close)
         #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
-        self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
+        #self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
         self.cmd_window.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.cmd_window.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.cmd_window.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel_cmd_window)
+        self.cmd_window.Bind(wx.EVT_CHAR, self.on_press_enter)
         self.output_window.SetBackgroundColour('Black')
         self.output_window.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK, font =wx.Font(9, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
         self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(19, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
@@ -238,32 +239,35 @@ class SessionTab(wx.Panel, dut):
         cmd= cmd.replace('\n', os.linesep)
         self.cmd_window.Clear()
         cmd = cmd.encode(errors= 'ignore')
-        self.add_cmd_to_history(cmd)
-        self.history_cmd_index= len(self.history_cmd)
-        try:
-            if self.session_status:
-                add_newline =True
-                if len(cmd)>0:
-                    if cmd[-1] in ['?', "\t"]:
-                        add_newline =False
-                        lcmd =len(cmd)-1
-                        cmd  ='\b'*lcmd*4 +cmd + '\b'*lcmd*4
-                th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
-                th.start()
-                self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
-            else:
-                th =threading.Thread(target=self.open, args=[1,60]) #self.alive= self.session#.session_status
-                th.start()
-                #self.write(cmd,ctrl=ctrl)
-        except Exception as e:
-            error_msg = traceback.format_exc()
-            #self.on_close()
-            #self.close_session()
-            error ('{} closed unexpected\n{}'.format(self.name, error_msg))
+        cmds = cmd.split(os.linesep)
+        for cmd in cmds:
+            self.add_cmd_to_history(cmd)
+            self.history_cmd_index= len(self.history_cmd)
+            try:
+                if self.session_status:
+                    add_newline =True
+                    if len(cmd)>0:
+                        if cmd[-1] in ['?', "\t"]:
+                            add_newline =False
+                            lcmd =len(cmd)-1
+                            cmd  ='\b'*lcmd*4 +cmd + '\b'*lcmd*4
+                    th = threading.Thread(target=self.write,args=( cmd,ctrl, add_newline))
+                    th.start()
+                    self.sequence_queue.put(["TC.step(DUT['{}'], '{}')".format(self.name,cmd.encode(errors= 'ignore')),  datetime.now()])#
+                else:
+                    th =threading.Thread(target=self.open, args=[1,60]) #self.alive= self.session#.session_status
+                    th.start()
+                    #self.write(cmd,ctrl=ctrl)
+            except Exception as e:
+                error_msg = traceback.format_exc()
+                #self.on_close()
+                #self.close_session()
+                error ('{} closed unexpected\n{}'.format(self.name, error_msg))
             #self.alive= False
-        event.Skip()
+        #event.Skip()
         self.cmd_window.Clear()
-        self.cmd_window.ShowPosition(1)
+        self.cmd_window.SetValue('')
+        self.cmd_window.ShowPosition(100)
         self.cmd_window.SetFocus()
     def add_cmd_to_history(self, cmd):
         if self.history_cmd==[]:
@@ -369,6 +373,12 @@ class SessionTab(wx.Panel, dut):
             urlString = self.output_window.GetRange(event.GetURLStart(),event.GetURLEnd())
             webbrowser.open(urlString)
         event.Skip()
+
+    def on_press_enter(self, event):
+        if event.GetKeyCode() == 13:
+            self.on_enter_a_command(event)
+        else:
+            event.Skip()
 #todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
 #todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
 #todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )
