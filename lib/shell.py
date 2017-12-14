@@ -64,15 +64,23 @@ class shell(object):
         stdin = self.shell.stdin
         if ctrl:
             if cmd[0] in ['c', 'C']:
+                ascii = ord(cmd[0]) & 0x1f
+                ch = chr(ascii)
+                stdin.write(ch)
                 import signal
                 s=None
                 if os.name =='nt':
                     pgroupid = self.shell.pid
+
                     for s in [ signal.CTRL_C_EVENT, signal.CTRL_BREAK_EVENT, signal.SIGINT]:
                         s = signal.CTRL_BREAK_EVENT#CTRL_C_EVENT
                         #self.shell.send_signal(s)
                         try:
                             self.shell.send_signal(s)
+                        except:
+                            import traceback
+                            print(traceback.format_exc())
+                        try:
                             os.kill(self.shell.pid, s)
                         except:
                             import traceback

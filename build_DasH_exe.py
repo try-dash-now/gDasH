@@ -55,10 +55,14 @@ excludedFolder =['sessions',
 if not os.path.exists(folder):
     os.mkdir(folder)
 else:
-    shutil.rmtree(folder)
+    shutil.rmtree(folder,ignore_errors=True)
     import time
     time.sleep(1)
-    os.mkdir(folder)
+    try:
+        os.mkdir(folder)
+    except:
+        import traceback
+        print(traceback.format_exc())
 
 class tcltk(Tkinter.Tk):
     def __init__(self):

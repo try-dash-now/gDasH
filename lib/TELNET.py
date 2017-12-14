@@ -157,8 +157,15 @@ class TELNET(object):#, spawn
 
         """
         buffer =buffer.encode(encoding='utf-8')
+        if ctrl:
+            ascii = ord(buffer[0]) & 0x1f
+            ch = chr(ascii)
+            buffer = ch
+            #self.chan.send(ch)
+
         if IAC in buffer:
             buffer = buffer.replace(IAC, IAC+IAC)
+
         self.msg("send %r", buffer)
         if self.sock:
             self.sock.sendall(buffer)

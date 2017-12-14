@@ -292,7 +292,7 @@ class SessionTab(wx.Panel, dut):
                 self.cmd_window.AppendText('?')
                 self.on_enter_a_command(event)
                 self.cmd_window.AppendText(cmd_string)
-            elif keycode == ord('C')  and event.controlDown:
+            elif keycode >= ord('a') and keycode <= ord('Z') and event.controlDown:#keycode == ord('C')  and
                 data = self.cmd_window.GetStringSelection()
                 if len(data)==0:
                     self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
