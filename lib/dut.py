@@ -209,6 +209,7 @@ class dut(object):
                 self.session_status =False
             except:
                 pass
+            raise e
 
 
     def step(self,command, expect='.*', time_out=30, total_try =3, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.DOTALL|re.I|re.M):
