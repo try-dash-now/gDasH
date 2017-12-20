@@ -75,6 +75,7 @@ class dut(object):
     last_write=None
     time_out=15.0
     product = None
+    is_openning =False
 
 
 
@@ -123,6 +124,7 @@ class dut(object):
         else:
             self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
+        self.is_openning =True
         if self.session and self.session_status:
             #self.session_status=False
             self.close_session()
@@ -196,7 +198,6 @@ class dut(object):
                         info('failed to login {}\n\t{}'.format(self.name, format_exc()), retry= retry, counter = counter, interval = interval)
                         self.sleep(interval)
                     else:
-
                         e.message +=format_exc()
                         error(e.message)
                         raise e
@@ -209,7 +210,9 @@ class dut(object):
                 self.session_status =False
             except:
                 pass
+            self.is_openning=False
             raise e
+        self.is_openning=False
 
 
     def step(self,command, expect='.*', time_out=30, total_try =3, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.DOTALL|re.I|re.M):
@@ -549,7 +552,8 @@ class dut(object):
 
                 except Exception as e :
                     error(traceback.format_exc())
-                    self.session_status =False
+                    if self.is_openning is not True:
+                        self.session_status =False
             #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
             self.last_cmd_time_stamp = datetime.datetime.now()
             self.write_locker.release()
