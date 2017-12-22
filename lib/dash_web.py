@@ -166,6 +166,13 @@ class dash_web(object):
         value =element.get_attribute(attribute)
         self.__update_output_buffer('{} of {}:\n\t{}'.format(attribute, identifier, value))
         return  value
+    def xget(self, url):
+        if '{}'.format(url).strip().startswith('http.{}://'):
+            pass
+        else:
+            url='http://{}'.format(url.strip())
+        self.driver.get(url)
+
 
 
 
