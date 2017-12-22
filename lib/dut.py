@@ -356,6 +356,7 @@ class dut(object):
                 self.login_steps = csv.reader(csvfile, delimiter=',', quotechar='|')
                 for row in self.login_steps:
                     login_steps.append(row)
+                self.login_steps = login_steps
         for row in login_steps:
             cmd,expect, time_out, total_try ='3', '.*',30,1
             if len(row)==1:
