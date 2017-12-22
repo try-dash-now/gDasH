@@ -971,15 +971,14 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             instances = self.dict_function_obj['instance'].keys()
             for inst_name in instances:
                 inst = self.dict_function_obj['instance'][inst_name]
-                print ('instance ref count',inst_name, sys.getrefcount(inst))
+                #print ('instance ref count',inst_name, sys.getrefcount(inst))
                 if 'close' in dir(inst):
                     inst.close()
                 del inst
             fun_list = self.dict_function_obj.keys()
             for fun_name in fun_list:
                 inst = self.dict_function_obj[fun_name]
-                print ('instance ref count',fun_name, sys.getrefcount(inst))
-
+                #print ('instance ref count',fun_name, sys.getrefcount(inst))
                 del inst
             time.sleep(1)
             #import gc
