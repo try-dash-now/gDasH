@@ -283,6 +283,8 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
     mail_failure =False
     last_time_call_on_idle= None
     ini_file=None
+
+    dict_function_obj= {'instance':{}}
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         gui_event_decorator.__init__(self)
@@ -814,7 +816,18 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         def handle_one_cmd(cmd):
             if cmd.strip()=='':
                 return
+            cmd_string = cmd.strip()
+            lex = shlex.shlex(cmd_string)
+            lex.quotes = '"'
+            lex.whitespace_split = True
+            cmd_list=list(lex)
+            function_obj_name = cmd_list[0]
+            if self.dict_function_obj.has_key(function_obj_name):
+                call_function = self.dict_function_obj[function_obj_name]
+            else:
+                return
             module,class_name, function,args = parse_command_line(cmd)
+
             self.add_cmd_to_history(cmd,  module, None, class_name)
             #args[0]=self.sessions_alive['test_ssh'].session
             if module !='' or class_name!='' or function!='':
@@ -827,19 +840,19 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                         after_sub_args.append('DUT["{}"]'.format(a))
                     else:
                         after_sub_args.append(a)
-                instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,after_sub_args, globals())
-                call_function = None
+                function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,after_sub_args, globals())
+                #call_function = None
 
-                if class_name!="":
-
-                    call_function = getattr(instance_name, function_name)
-                    #(*new_argvs,**new_kwargs)
-                else:
-                    call_function = instance_name#(*new_argvs,**new_kwargs)
+                # if class_name!="":
+                #
+                #     call_function = getattr(instance_name, function_name)
+                #     #(*new_argvs,**new_kwargs)
+                # else:
+                #     call_function = instance_name#(*new_argvs,**new_kwargs)
                 th =threading.Thread(target=call_function, args=new_argvs, kwargs=new_kwargs)
                 th.start()
 
-                self.m_command_box.ShowPosition(len(self.m_command_box.GetString())+1)
+                #self.m_command_box.ShowPosition(len(self.m_command_box.GetString())+1)
                 self.add_cmd_to_history(cmd,  module, str_code, class_name)
 
             else:
@@ -944,6 +957,24 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     @gui_event_decorator.gui_even_handle
     def build_function_tab(self):
         try:
+            instances = self.dict_function_obj['instance'].keys()
+            for inst_name in instances:
+                inst = self.dict_function_obj['instance'][inst_name]
+                print ('instance ref count',inst_name, sys.getrefcount(inst))
+                if 'close' in dir(inst):
+                    inst.close()
+                del inst
+            fun_list = self.dict_function_obj.keys()
+            for fun_name in fun_list:
+                inst = self.dict_function_obj[fun_name]
+                print ('instance ref count',fun_name, sys.getrefcount(inst))
+
+                del inst
+            time.sleep(1)
+            #import gc
+            #gc.collect()
+
+            self.dict_function_obj={'instance':{}}
             src_path = os.path.abspath(self.src_path)
             if not os.path.exists(src_path):
                 src_path= os.path.abspath(os.path.curdir)
@@ -981,24 +1012,33 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
                             if attr_type == types.FunctionType :
                                 new_item  = self.function_page.InsertItem(new_module, new_module, '{}'.format( attr))
-                                item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr),
-                                                             'tip':self.get_description_of_function(attr_obj)})
+                                fun_str = '{}.{}'.format(module_name,attr)
+                                item_info = wx.TreeItemData({'name':fun_str,
+                                                             'tip':self.get_description_of_function(attr_obj),
+
+                                                             })
+                                self.dict_function_obj[fun_str] = attr_obj
                                 self.function_page.SetItemData(new_item, item_info)
                             elif attr_type== types.TypeType:
-                                class_obj = getattr(lmod, attr)
+                                #class_obj = getattr(lmod, attr)
+                                instance = getattr(lmod, attr)()
+                                self.dict_function_obj['instance'][attr]=instance
+
                                 new_class  = self.function_page.InsertItem(new_module, new_module, attr)
                                 item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
                                 self.function_page.SetItemData(new_class, item_info)
-                                for attr_in_class in sorted(dir(class_obj)):
+                                for attr_in_class in sorted(dir(instance)):
                                     if attr_in_class.startswith('__'):
                                         continue
-                                    attr_obj = getattr(class_obj,attr_in_class)
+                                    attr_obj = getattr(instance,attr_in_class)
                                     attr_type =type(attr_obj)
 
                                     if attr_type == types.MethodType :
-                                        item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class),
+                                        fun_str = '{}.{}.{}'.format(module_name,attr,attr_in_class)
+                                        item_info = wx.TreeItemData({'name':fun_str,
                                                                      'tip':self.get_description_of_function(attr_obj)})
                                         new_item  = self.function_page.InsertItem(new_class, new_class, attr_in_class)
+                                        self.dict_function_obj[fun_str] = getattr(instance, attr_in_class)#attr_obj
                                         self.function_page.SetItemData(new_item, item_info)
                     except :
                         pass

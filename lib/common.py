@@ -168,16 +168,16 @@ def call_function_in_module(module_name, class_name, function_name, args , envir
         file, path_name, description = imp.find_module(module_name)
         lmod = imp.load_module(module_name, file, path_name,description)
         if class_name != "":
-            instance_name = getattr(lmod, class_name)()
+            #instance_name = getattr(lmod, class_name)()
             str_code = '{}_instance.{}({})'.format(module_name, function_name, args_string)
         else:
-            instance_name = getattr(lmod, function_name)
+            #instance_name = getattr(lmod, function_name)
             str_code = '{}.{}({})'.format(module_name, function_name, args_string)
 
     except Exception as e:
         msg = "failed to load module {}:{}".format(module_name, e)
         error(msg )
-    return instance_name,function_name, new_argvs,new_kwargs, str_code
+    return function_name, new_argvs,new_kwargs, str_code
 
 WARN_LEVEL = 0
 INFO_LEVEL = 1
