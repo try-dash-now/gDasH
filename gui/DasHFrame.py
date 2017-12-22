@@ -285,6 +285,7 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
     ini_file=None
 
     dict_function_obj= {'instance':{}}
+    dict_function_files = {}
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         gui_event_decorator.__init__(self)
@@ -954,6 +955,16 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         except Exception as e:
             pass
         return fundefstr
+
+    @gui_event_decorator.gui_even_handle
+    def check_whether_function_file_is_updated(self):
+        for module_file in self.dict_function_files.keys():
+            old_modify_time = self.dict_function_files[module_file]
+            current_modify_time = os.path.getmtime(module_file)
+            if current_modify_time ==old_modify_time:
+                continue
+            else:
+                self.build_function_tab()
     @gui_event_decorator.gui_even_handle
     def build_function_tab(self):
         try:
@@ -975,6 +986,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             #gc.collect()
 
             self.dict_function_obj={'instance':{}}
+            self.dict_function_files= {}
             src_path = os.path.abspath(self.src_path)
             if not os.path.exists(src_path):
                 src_path= os.path.abspath(os.path.curdir)
@@ -999,11 +1011,13 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 path_name = '{}'.format(os.path.abspath(self.src_path))
                 module_name = os.path.basename(module_file).split('.')[0]
                 extension = os.path.basename(module_file).split('.')[-1]
+                full_name = '{}/{}'.format(path_name,module_file)
                 if extension.lower() in ['py', 'pyc']:
                     try:
                         new_module = self.function_page.InsertItem(root, root, module_name)
-                        file, path_name, description = imp.find_module(module_name)
-                        lmod = imp.load_module(module_name, file, path_name,description)
+                        module_file, path_name, description = imp.find_module(module_name)
+                        lmod = imp.load_module(module_name, module_file, path_name,description)
+                        self.dict_function_files[full_name] = os.path.getmtime(full_name)
                         for attr in sorted(dir(lmod)):
                             if attr.startswith('__'):
                                 continue
@@ -1963,11 +1977,12 @@ if __name__ == "__main__":
         #print('{} i\'m idle !!!!!!!!!!!!!!!!!!'.format(datetime.now().isoformat()))
     def on_idle(self,event):
         now = datetime.now()
-        max_idle=10
+        max_idle=3
         if (now-self.last_time_call_on_idle).total_seconds()>max_idle:
             self.last_time_call_on_idle=now
             th=threading.Thread(target=self.idle_process, args=[])
             th.start()
+        threading.Thread(target=self.check_whether_function_file_is_updated, args=[]).start()
     @gui_event_decorator.gui_even_handle
     def on_generate_test_report(self,event):
         file_name='{}/dash_report_{}.html'.format(self.log_path, self.timestamp)
