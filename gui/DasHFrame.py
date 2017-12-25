@@ -286,6 +286,7 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
 
     dict_function_obj= {'instance':{}}
     dict_function_files = {}
+    updating_function_page =False
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         gui_event_decorator.__init__(self)
@@ -964,9 +965,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             if current_modify_time ==old_modify_time:
                 continue
             else:
-                self.build_function_tab()
+                if self.updating_function_page is False:
+                    self.build_function_tab()
     @gui_event_decorator.gui_even_handle
     def build_function_tab(self):
+        self.updating_function_page=True
         try:
             instances = self.dict_function_obj['instance'].keys()
             for inst_name in instances:
@@ -990,8 +993,13 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             if not os.path.exists(src_path):
                 src_path= os.path.abspath(os.path.curdir)
             base_name = os.path.basename(src_path)
+            #FIX ISSUE BELOW, rebuild function tree
+            # Traceback (most recent call last):
+            # File "gui\DasHFrame.pyc", line 995, in build_function_tab
+            # File "wx\_controls.pyc", line 5428, in AddRoot
+            # PyAssertionError: C++ assertion "parent.IsOk() || !(HTREEITEM)::SendMessageW((((HWND)GetHWND())), (0x1100 + 10), (WPARAM)(0x0000), (LPARAM)(HTREEITEM)(0))" failed at ..\..\src\msw\treectrl.cpp(1472) in wxTreeCtrl::DoInsertAfter(): can't have more than one root in the tree
 
-
+            self.function_page.DeleteAllItems()
             root =self.function_page.AddRoot(base_name)
             item_info = wx.TreeItemData({'name':src_path})
             self.function_page.SetItemData(root, item_info)
@@ -1060,6 +1068,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             self.function_page.Expand(first_child[0])
         except Exception as e:
             print(traceback.format_exc())
+        self.updating_function_page=False
     def on_LeftDClick_in_Function_tab(self,event):
         event.Skip()
         select_item = self.function_page.GetSelection()
@@ -1981,7 +1990,8 @@ if __name__ == "__main__":
             self.last_time_call_on_idle=now
             th=threading.Thread(target=self.idle_process, args=[])
             th.start()
-        threading.Thread(target=self.check_whether_function_file_is_updated, args=[]).start()
+        if self.updating_function_page is False:
+            threading.Thread(target=self.check_whether_function_file_is_updated, args=[]).start()
     @gui_event_decorator.gui_even_handle
     def on_generate_test_report(self,event):
         file_name='{}/dash_report_{}.html'.format(self.log_path, self.timestamp)

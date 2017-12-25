@@ -367,6 +367,11 @@ class dut(object):
                 cmd,expect,time_out= row
             elif len(row) >3:
                 cmd,expect, time_out, total_try =row[:4]
+            if total_try in ['']:
+                total_try=3
+            if time_out in ['']:
+                time_out =30
+
             self.step(cmd,expect, time_out,total_try)
 
         self.login_steps= []
