@@ -286,7 +286,9 @@ class SessionTab(wx.Panel, dut):
                     self.cmd_window.AppendText('\t')
                     self.on_enter_a_command(event)
                     self.cmd_window.AppendText(cmd_string)
-
+            elif  keycode in [wx.WXK_RETURN]:
+                self.cmd_window.SetInsertionPointEnd()
+                event.Skip()
             elif keycode == wx.PAPER_ENV_INVITE and wx.GetKeyState(wx.WXK_SHIFT):
                 cmd_string = self.cmd_window.GetValue()
                 self.cmd_window.AppendText('?')
@@ -332,7 +334,6 @@ class SessionTab(wx.Panel, dut):
                                     error ('{} closed unexpected\n{}'.format(self.name, error_msg))
                                 self.cmd_window.Clear()#append cmd to cmd_window
                                 self.cmd_window.SetFocus()
-
                     else:
                         event.Skip()
 

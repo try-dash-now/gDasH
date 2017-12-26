@@ -891,6 +891,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         elif keycode == wx.PAPER_ENV_INVITE and wx.GetKeyState(wx.WXK_SHIFT):
             self.m_command_box.AppendText('?')
             self.on_command_enter(event)
+        elif keycode in [wx.WXK_RETURN]:
+            #cmd = self.m_command_box.GetValue()
+            self.m_command_box.SetInsertionPointEnd()
+            #self.m_command_box.SetValue(cmd)
+            event.Skip()
         else:
             event.Skip()
     def on_key_up(self, event):
@@ -906,6 +911,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             self.m_command_box.AppendText(new_command)
         if keycode in [wx.WXK_TAB]:
             pass
+
         else:
             event.Skip()
     def add_cmd_to_history(self, cmd, module_name, str_code, class_name=""):
