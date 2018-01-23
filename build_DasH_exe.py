@@ -263,14 +263,7 @@ except:
     print(traceback.format_exc())
 
 
-import zipfile
-zip_ref = zipfile.ZipFile('./build_packages/build_package.zip', 'r')
-zip_ref.extractall(target_distribute_folder)
-zip_ref.close()
 
-target_distribute_folder = os.path.abspath(os.path.normpath(os.path.expanduser(target_distribute_folder)))
-dash_zipfile = os.path.abspath('{}/../DasH'.format(target_distribute_folder))
-shutil.make_archive(dash_zipfile, 'zip', target_distribute_folder)
 
 #fix numpy and matplotlib can be imported in py2exe distribute, it need to copy all *.dll under numpy/core/*.DLL and *.pyd ... as below listed
 # copy core/*.DLL
@@ -321,3 +314,12 @@ def copy_files_from_src_to_dest(src, dest, filter=None):
 
 for src, dest, filter in dirs_to_copy:
     copy_files_from_src_to_dest(src, dest, filter)
+
+import zipfile
+zip_ref = zipfile.ZipFile('./build_packages/build_package.zip', 'r')
+zip_ref.extractall(target_distribute_folder)
+zip_ref.close()
+
+target_distribute_folder = os.path.abspath(os.path.normpath(os.path.expanduser(target_distribute_folder)))
+dash_zipfile = os.path.abspath('{}/../DasH'.format(target_distribute_folder))
+shutil.make_archive(dash_zipfile, 'zip', target_distribute_folder)
