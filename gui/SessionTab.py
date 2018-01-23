@@ -67,9 +67,24 @@ class SessionTab(wx.Panel, dut):
         self.close_session()
         self.sleep(0.001)
         info('tab {} closed!!!'.format(self.name))
+    def __freeze_output_window(self):
+        if self.output_window.IsFrozen():
+            pass
+        else:
+            self.output_window_last_position =self.output_window.GetScrollRange(wx.VERTICAL)
+            self.output_window.Freeze()
+    def __thaw_output_window(self):
+        self.output_window.SetScrollPos(wx.VERTICAL, self.output_window.GetScrollRange(wx.VERTICAL))
+        if self.output_window.IsFrozen():
+            self.output_window.Thaw()
+        else:
+            pass
 
     def update_output(self):
 
+
+        #if current_pos
+        last = self.output_window.GetLastPosition()
 
         status =True
         ansi_escape = re.compile(r'\x1b[^m]*m*|'+r'\x1b(' \
@@ -92,8 +107,9 @@ class SessionTab(wx.Panel, dut):
             try:
                 status = self.alive #and self.session
 
-                time.sleep(0.05)
+                time.sleep(0.001)
                 response=''
+                print('scroll pos', self.output_window.GetScrollPos(wx.VERTICAL), self.output_window.GetScrollRange(wx.VERTICAL))
                 if self.alive:
                     self.output_lock.acquire()
                     response = self.read_display_buffer()
@@ -106,24 +122,21 @@ class SessionTab(wx.Panel, dut):
 
                     #BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
                 if len(response)!=0:
-                    if False:
-                        whole_text = self.output_window.GetValue()
-                        last_index = len(whole_text)
-                        total_BS_in_response = int(response.count(BACKSPACE))
-                        start_BS = response.find(BACKSPACE)
-                        end_BS = response.rfind(BACKSPACE)+1
-                        start = last_index-total_BS_in_response-1
-                        end = last_index
-                        if total_BS_in_response:
-                            self.output_window.Remove(start ,end)
-                            #wx.CallAfter(self.output_window.Remove,start ,end)
-                            response= response[:start_BS]+response[end_BS:]
-                            #response =''
+
+                    current_pos = self.output_window.GetScrollPos(wx.VERTICAL)
+                    v_scroll_range = self.output_window.GetScrollRange(wx.VERTICAL)
+                    max_gap=512
+                    if v_scroll_range-current_pos>max_gap:#1000
+                        self.__freeze_output_window()
+                    else:
+                        #self.output_window.SetInsertionPoint(current_last)
+                        self.__thaw_output_window()
                     err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
                     wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
 
                     #if re.search('error|\s+err\s+|fail|wrong',response.lower()):
                     last_start = 0
+
                     for m in err_pattern.finditer(response.lower()):
                         #print(m.start(), m.end(), m.group())
 
@@ -148,13 +161,15 @@ class SessionTab(wx.Panel, dut):
                             self.output_window.Remove(m.start(), m.end())
                             whole_text = self.output_window.GetValue()
                             m = re.search('[^\b]\b',whole_text)
+                    if v_scroll_range-current_pos>max_gap:
+                        pass
+                    else:
+                        self.output_window.SetInsertionPoint(self.output_window.GetLastPosition())
+                    self.__thaw_output_window()
 
-                    #wx.CallAfter(self.output_window.AppendText, response)#wx.CallAfter make thread safe!!!!
-                    last = self.output_window.GetLastPosition()
-                    wx.CallAfter(self.output_window.SetInsertionPoint,last)#wx.CallAfter(
-                    wx.CallAfter(self.output_window.ShowPosition,last+len(response)+1)#wx.CallAfter(
             except Exception as e :
                 time.sleep(0.001)
+                error(traceback.format_exc())
                 break
             try:
                 if self.output_lock.locked():
@@ -192,6 +207,7 @@ class SessionTab(wx.Panel, dut):
         #self.Bind(wx.EVT_CLOSE, self.on_close)
         #parent.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSED, self.on_close, parent)
         #self.cmd_window.Bind(wx.EVT_TEXT_ENTER, self.on_enter_a_command)
+        #self.output_window.Bind(wx.EVT_SCROLLWIN  , self.on_scroll_changed)
         self.cmd_window.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.cmd_window.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.cmd_window.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel_cmd_window)
@@ -383,3 +399,6 @@ class SessionTab(wx.Panel, dut):
 #todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
 #todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
 #todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )
+    def on_scroll_changed(self, event):
+        self.__thaw_output_window()
+        event.Skip()
