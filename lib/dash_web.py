@@ -15,7 +15,7 @@ class dash_web(object):
     help_doc= None
     function_supported = None
     response =None
-    def __init__(self, executable_path = None, time_out= 15,):
+    def __init__(self, executable_path = None, time_out= 120,):
         import os
         print os.path.abspath(executable_path)
         print('file location', __file__)
@@ -167,12 +167,14 @@ class dash_web(object):
         self.__update_output_buffer('{} of {}:\n\t{}'.format(attribute, identifier, value))
         return  value
     def xget(self, url):
-        if '{}'.format(url).strip().startswith('http.{}://'):
+        if '{}'.format(url).strip().startswith('http'):
             pass
         else:
             url='http://{}'.format(url.strip())
         self.driver.get(url)
-
+    def xclick(self, identifier , by=None):
+        element =self.xfind(identifier, by)
+        element.click()
 
 
 
