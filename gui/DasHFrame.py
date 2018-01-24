@@ -1991,6 +1991,8 @@ newdocument.close();
     def on_generate_code(self, event):
         self.generate_code('{}/test_code_{}.py'.format(self.suite_path, datetime.now().isoformat().replace(':','-').replace('.','-')))
     def on_right_up_over_tab_in_edit_area(self, event):
+        if self.edit_area.GetCurrentPage().GetPageText()=='*LOG*':
+            return
         x = event.GetEventObject()
         tabID = x.GetId()
         tab = x.FindWindowById(tabID)
