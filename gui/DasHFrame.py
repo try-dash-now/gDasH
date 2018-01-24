@@ -437,9 +437,9 @@ web_port={web_port}
         edit_sizer = wx.BoxSizer()
         edit_sizer.Add(self.edit_area, 1, wx.EXPAND, 1)
         self.m_file_editor.SetSizer(edit_sizer)
-        right_sizer.Add(self.m_file_editor,     8,  wx.ALL|wx.EXPAND, 1)
-        right_sizer.Add(self.m_log,         2,  wx.ALL|wx.EXPAND, 2)
-        right_sizer.Add(self.m_command_box, 0,  wx.ALL|wx.EXPAND, 3)
+        right_sizer.Add(self.m_file_editor,     100,  wx.ALL|wx.EXPAND, 1)
+        #right_sizer.Add(self.m_log,         2,  wx.ALL|wx.EXPAND, 2)
+        right_sizer.Add(self.m_command_box,1,  wx.ALL|wx.EXPAND, 3)
         main_sizer.Add(right_sizer, 8,  wx.EXPAND)
         self.SetSizer(main_sizer)
 
@@ -489,7 +489,7 @@ web_port={web_port}
             self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
             if len(self.dict_test_report):
                 self.mail_test_report("DASH TEST REPORT")
-            for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+            for index in range(1,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
                 closing_page = self.edit_area.GetPage(index)
                 if isinstance(closing_page, (SessionTab)):
                     if closing_page:

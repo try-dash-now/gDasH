@@ -36,7 +36,7 @@ class MainFrame ( wx.Frame ):
 		sizer_right.Add( self.m_file_editor, 6, wx.EXPAND, 5 )
 		
 		self.m_log = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_READONLY |wx.TE_RICH|wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER) )#richtext.RichTextCtrl |wx.WANTS_CHARS
-		sizer_right.Add( self.m_log, 3, wx.ALL|wx.EXPAND, 5 )
+		#sizer_right.Add( self.m_log, 3, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_command_box = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize,  wx.TE_PROCESS_ENTER|wx.VSCROLL|wx.TE_MULTILINE)
 		font1 = self.m_command_box.GetFont()
