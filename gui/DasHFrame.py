@@ -398,10 +398,7 @@ web_port={web_port}
         self.navigator.AddPage(self.function_page, 'FUNCTION')
         self.navigator.AddPage(self.case_suite_page, 'CASE')
 
-
-
-
-        self.edit_area = AuiNotebook(self.m_file_editor, style = wx.aui.AUI_NB_DEFAULT_STYLE)
+        self.edit_area = AuiNotebook(self.m_file_editor, style = bookStyle)#wx.aui.AUI_NB_DEFAULT_STYLE)
         if False:
             new_page = FileEditor(self.edit_area, 'a', type= type)
             self.edit_area.AddPage(new_page, 'test')
@@ -413,8 +410,8 @@ web_port={web_port}
 
         left_sizer = wx.BoxSizer(wx.HORIZONTAL)
         left_sizer.Add(self.m_left_navigator, 1, wx.EXPAND)
-
-
+        self.edit_area.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_active_change_in_edit_area)
+        #self.m_file_editor.Bind(wx.EVT_CLOSE, self.on_close_tab_in_edit_area)
 
         self.case_suite_page.Bind(wx.EVT_LEFT_DCLICK, self.m_case_treeOnLeftDClick)
         #self.case_suite_page.Bind(wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel)
@@ -590,9 +587,13 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
+        if self.edit_area.GetSelection()==0:
+            return
+
         def close_tab():
             global  gSessions
             closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
+            index =self.edit_area.GetPageIndex(closing_page)
             closing_page.on_close()
             if isinstance(closing_page, (SessionTab)):
                 ses_name = closing_page.name
@@ -736,13 +737,20 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     def create_main_log_window(self):
         ses_name ='*LOG*'
         indow_id = self.edit_area.AddPage(self.m_log, ses_name)
-
         index = self.edit_area.GetPageIndex(self.m_log)
         self.edit_area.SetSelection(index)
+        #self.edit_area.Disable(0,False)
 
+
+    def on_active_change_in_edit_area(self, event):
+        if self.edit_area.GetPageText(self.edit_area.GetSelection())=="*LOG*":
+            self.edit_area.SetWindowStyle(wx.aui.AUI_NB_DEFAULT_STYLE&(~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB))
+        else:
+            self.edit_area.SetWindowStyle(wx.aui.AUI_NB_DEFAULT_STYLE)
 
 
     def on_LeftDClick_in_Session_tab(self, event):
+
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
