@@ -60,6 +60,7 @@ class SessionTab(wx.Panel, dut):
     log_path =None
     name = None
     error_pattern =None
+    last_json_file_saving_time=None
     def __del__(self):
         self.on_close()
     def on_close(self):
@@ -223,7 +224,7 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.SetDefaultStyle(wx.TextAttr(font =wx.Font(19, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
         self.cmd_window.SetFocus()
         self.output_window.Bind(wx.EVT_TEXT_URL,self.on_leftD_click_url_in_output)
-
+        self.Bind(wx.EVT_IDLE, self.on_idle)
         f =self.cmd_window.GetFont()
         f.PointSize= self.cmd_window_font_size
         self.cmd_window.SetFont(f)
@@ -234,6 +235,7 @@ class SessionTab(wx.Panel, dut):
         #self.sleep(0.1)
         th = threading.Thread(target=self.open, args= [self.retry_login,60])#, kwargs=attributes)
         th.start()
+        self.last_json_file_saving_time=datetime.now()
         #self.sleep(0.1)
     def on_key_up(self, event):
         keycode = event.KeyCode
@@ -407,4 +409,16 @@ class SessionTab(wx.Panel, dut):
 #todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )
     def on_scroll_changed(self, event):
         self.__thaw_output_window()
+        event.Skip()
+
+    def on_idle(self, event):
+        try:
+            #self.last_cmd_time_stamp
+            max_idle_time = 60
+            now = datetime.now()
+            if (now-self.last_json_file_saving_time).total_seconds()> max_idle_time:
+                self.save_dry_run_json()
+                self.last_json_file_saving_time=now
+        except Exception as e:
+            error(e)
         event.Skip()
