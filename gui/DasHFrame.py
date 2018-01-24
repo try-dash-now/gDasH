@@ -1842,7 +1842,12 @@ newdocument.close();
                     s=str(s)
                     import urlparse
                     req = urlparse.parse_qs(urlparse.unquote(s))
-                    script = '{}/{}'.format(self.suite_path, req['script'][0][7:])
+                    strip_char_length = 6 #for case
+                    if self.path.startswith('/RunSuite'):
+                        strip_char_length = 7
+                    elif self.path.startswith('/RunCase'):
+                        strip_char_length = 6
+                    script = '{}/{}'.format(self.suite_path, req['script'][0][strip_char_length:])#remove the starting string /case/ or /suite/
                     if req.has_key('arg'):
                         arg= req['arg'][0]
                     else:
