@@ -82,11 +82,7 @@ class SessionTab(wx.Panel, dut):
             pass
 
     def update_output(self):
-
-
-        #if current_pos
         last = self.output_window.GetLastPosition()
-
         status =True
         ansi_escape = re.compile(r'\x1b[^m]*m*|'+r'\x1b(' \
              r'(\[\??\d+[hl])|' \
@@ -136,7 +132,6 @@ class SessionTab(wx.Panel, dut):
                     if t_line- c_line>max_gap:#1000
                         self.__freeze_output_window()
                     else:
-                        #self.output_window.SetInsertionPoint(current_last)
                         self.__thaw_output_window()
                     err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
                     wx.CallAfter(self.output_window.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
@@ -171,7 +166,7 @@ class SessionTab(wx.Panel, dut):
                     if t_line -c_line>max_gap:
                         pass
                     else:
-                        self.output_window.SetInsertionPoint(self.output_window.GetLastPosition())
+                        self.output_window.SetScrollPos(wx.VERTICAL, self.output_window.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
                     self.__thaw_output_window()
 
             except Exception as e :
