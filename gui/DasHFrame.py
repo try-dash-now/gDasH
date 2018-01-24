@@ -467,6 +467,7 @@ web_port={web_port}
         self.build_function_tab()
         self.Show(True)
         self.Maximize()
+        self.create_main_log_window()
 
     def on_close(self, event):
         try:
@@ -732,6 +733,15 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         first_child = self.session_page.GetFirstChild(root)
         self.session_page.Expand(first_child[0])
     #@gui_event_decorator.gui_even_handle
+    def create_main_log_window(self):
+        ses_name ='*LOG*'
+        indow_id = self.edit_area.AddPage(self.m_log, ses_name)
+
+        index = self.edit_area.GetPageIndex(self.m_log)
+        self.edit_area.SetSelection(index)
+
+
+
     def on_LeftDClick_in_Session_tab(self, event):
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
         self.session_page.GetItemText(self.session_page.GetSelection())
@@ -741,7 +751,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             counter =1
             original_ses_name = ses_name
             tmp_tabs =[]
-            for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+            for index in range(1,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
                 tab_page = self.edit_area.GetPage(index)
                 #tab_page.name
                 tmp_tabs.append(tab_page.name)
