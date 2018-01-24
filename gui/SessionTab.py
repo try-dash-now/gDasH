@@ -109,7 +109,7 @@ class SessionTab(wx.Panel, dut):
 
                 time.sleep(0.001)
                 response=''
-                print('scroll pos', self.output_window.GetScrollPos(wx.VERTICAL), self.output_window.GetScrollRange(wx.VERTICAL))
+                #print('scroll pos', self.output_window.GetScrollPos(wx.VERTICAL), self.output_window.GetScrollRange(wx.VERTICAL))
                 if self.alive:
                     self.output_lock.acquire()
                     response = self.read_display_buffer()
@@ -125,8 +125,14 @@ class SessionTab(wx.Panel, dut):
 
                     current_pos = self.output_window.GetScrollPos(wx.VERTICAL)
                     v_scroll_range = self.output_window.GetScrollRange(wx.VERTICAL)
-                    max_gap=512
-                    if v_scroll_range-current_pos>max_gap:#1000
+                    char_height = self.output_window.GetCharHeight()
+                    w_client,h_client = self.output_window.GetClientSize()
+                    max_gap=h_client/char_height-1
+                    c_col, c_line = self.output_window.PositionToXY(current_pos)
+                    t_col, t_line = self.output_window.PositionToXY(v_scroll_range)
+
+                    #print('c_line', c_line, current_pos, 't_line', t_line, v_scroll_range)
+                    if t_line- c_line>max_gap:#1000
                         self.__freeze_output_window()
                     else:
                         #self.output_window.SetInsertionPoint(current_last)
@@ -161,7 +167,7 @@ class SessionTab(wx.Panel, dut):
                             self.output_window.Remove(m.start(), m.end())
                             whole_text = self.output_window.GetValue()
                             m = re.search('[^\b]\b',whole_text)
-                    if v_scroll_range-current_pos>max_gap:
+                    if t_line -c_line>max_gap:
                         pass
                     else:
                         self.output_window.SetInsertionPoint(self.output_window.GetLastPosition())
