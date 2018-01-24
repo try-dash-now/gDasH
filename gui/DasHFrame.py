@@ -1597,48 +1597,46 @@ if __name__ == "__main__":
                 content+="<html>\n<title>Directory listing for %s</title>\n" % displaypath
                 content+="<body>\n<h2>Directory listing for %s</h2>\n" % displaypath
                 content+="<hr>\n<ul>\n"
-                content+='''
-                <SCRIPT>
-            function post( id, script, dest )
-                {
-                    element = document.getElementById(id);
-                    value = element.value
-                    params = 'script='+encodeURI(script)+'&arg='+encodeURI(value)
-                    var xmlhttp;
+                content+='''<SCRIPT>
+function post( id, script, dest )
+{
+element = document.getElementById(id);
+value = element.value
+params = 'script='+encodeURI(script)+'&arg='+encodeURI(value)
+var xmlhttp;
 
-                    if (window.XMLHttpRequest)
-                    {// code for IE7+, Firefox, Chrome, Opera, Safari
-                        xmlhttp=new XMLHttpRequest();
-                    }
-                    else
-                    {// code for IE6, IE5
-                        xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
-                    }
+if (window.XMLHttpRequest)
+{// code for IE7+, Firefox, Chrome, Opera, Safari
+xmlhttp=new XMLHttpRequest();
+}
+else
+{// code for IE6, IE5
+xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+}
 
-                    xmlhttp.onreadystatechange=function()
-                    {
-                        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-                        {
-                            alert(xmlhttp.responseText);
-                            newHTML( xmlhttp.responseText);
-                            setTimeout("window.close()",3000);
-                        }
-                    }
-                    xmlhttp.open("POST",dest,true);
-                    xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-                    xmlhttp.send( params );
-                }
-            function newHTML(HTMLstring) {
-                //var checkitem = mygetCheckedItem();
-                //HTMLstring=post( 'manualtest','/cgi-bin/onSUTLIST.py', 'bedname='+encodeURI(checkitem) );
-                var newwindow=window.open();
-                var newdocument=newwindow.document;
-                newdocument.write(HTMLstring);
-                newdocument.close();
-            }
-                </SCRIPT>
-                <table>
-                '''
+xmlhttp.onreadystatechange=function()
+{
+if (xmlhttp.readyState==4 && xmlhttp.status==200)
+{
+alert(xmlhttp.responseText);
+newHTML( xmlhttp.responseText);
+setTimeout("window.close()",3000);
+}
+}
+xmlhttp.open("POST",dest,true);
+xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+xmlhttp.send( params );
+}
+function newHTML(HTMLstring) {
+//var checkitem = mygetCheckedItem();
+//HTMLstring=post( 'manualtest','/cgi-bin/onSUTLIST.py', 'bedname='+encodeURI(checkitem) );
+var newwindow=window.open();
+var newdocument=newwindow.document;
+newdocument.write(HTMLstring);
+newdocument.close();
+}
+</SCRIPT>
+<table>'''
 
                 for name in list:
                     extension = os.path.basename(name).split('.')[-1]
@@ -1663,15 +1661,12 @@ if __name__ == "__main__":
                         related_path+='/'
                     fullfilename =related_path+urllib.quote(linkname)
                     if related_path.startswith('/case') and os.path.isfile(fullname):
-                        input_button = """
-                        <input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on">
-                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunCase')";>"""%(filename,filename,fullfilename)
+                        input_button = """<input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on"/>
+<input name="go" value="Run" type="button" onclick="post('%s','%s', 'RunCase');return false";/>"""%(filename,filename,fullfilename)
                     elif related_path.startswith('/suite') and os.path.isfile(fullname):
-                        input_button = """
-
-                        <input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on">
-                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunSuite')";>
-                        </td></tr>\n"""%(filename,filename,fullfilename)
+                        input_button = """<input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on"/>
+<input name="go" value="Run" type="button" onclick="post('%s','%s', 'RunSuite');return false";/>
+</td></tr>\n"""%(filename,filename,fullfilename)
                     content+='<tr><td><a href="%s">%s</a></td><td>'% (related_path+urllib.quote(linkname), cgi.escape(displayname))+input_button
                 content+="</table></ul>\n<hr>\n</body>\n</html>\n"
 
@@ -1753,6 +1748,11 @@ if __name__ == "__main__":
                     print(path)
                     path = path+ self.path[4:]#replace('/log/','/')
                     encoded = self.show_content_by_path(path, '*')
+                elif self.path.startswith('/report'):
+                    path = os.path.abspath(self.log_path)
+                    print(path)
+                    path = path+ self.path[7:]#replace('/report/','/')
+                    encoded = self.show_content_by_path(path, 'html')
                 else:
                     path = os.path.abspath(root)
                     path = path+ self.path.replace('//','/')
