@@ -124,7 +124,7 @@ class SessionTab(wx.Panel, dut):
                     v_scroll_range = self.output_window.GetScrollRange(wx.VERTICAL)
                     char_height = self.output_window.GetCharHeight()
                     w_client,h_client = self.output_window.GetClientSize()
-                    max_gap=h_client/char_height-1
+                    max_gap=h_client*2/char_height/3
                     c_col, c_line = self.output_window.PositionToXY(current_pos)
                     t_col, t_line = self.output_window.PositionToXY(v_scroll_range)
 
@@ -231,7 +231,9 @@ class SessionTab(wx.Panel, dut):
         th = threading.Thread(target=self.open, args= [self.retry_login,60])#, kwargs=attributes)
         th.start()
         self.last_json_file_saving_time=datetime.now()
-        #self.sleep(0.1)
+
+
+
     def on_key_up(self, event):
         keycode = event.KeyCode
 
@@ -253,6 +255,7 @@ class SessionTab(wx.Panel, dut):
         else:
             event.Skip()
     def on_enter_a_command(self, event):
+        self.__thaw_output_window()
         ctrl = False
         cmd = self.cmd_window.GetRange(0, self.cmd_window.GetLastPosition())
         cmd= cmd.replace('\n', os.linesep)
@@ -402,9 +405,6 @@ class SessionTab(wx.Panel, dut):
 #todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
 #todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
 #todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )
-    def on_scroll_changed(self, event):
-        self.__thaw_output_window()
-        event.Skip()
 
     def on_idle(self, event):
         try:

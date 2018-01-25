@@ -2064,3 +2064,4 @@ newdocument.close();
     #                  ^
     # SyntaxError: invalid syntax
 #todo: start thread for all gui event handlers with decoration, catch all exceptions
+#todo: mark red for all strings who match error patterns in "*LOG*", m_log
