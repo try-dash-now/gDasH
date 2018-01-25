@@ -67,9 +67,25 @@ class RedirectText(object):
             self.log_file = open(name, 'w+')
             self.fileno = self.log_file.fileno
     def write(self,string):
+
+        self.old_stdout.write(string)
         self.write_lock.acquire()
         try:
-            self.old_stdout.write(string)
+            current_pos = self.out.GetScrollPos(wx.VERTICAL)
+            v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
+            char_height = self.out.GetCharHeight()
+            w_client,h_client = self.out.GetClientSize()
+            max_gap=h_client*2/char_height/3
+            c_col, c_line = self.out.PositionToXY(current_pos)
+            t_col, t_line = self.out.PositionToXY(v_scroll_range)
+
+            #string = "{}\ncurrent {}\t total {},max_gap {}, gap {}, range {}\n".format(string, c_line, t_line, max_gap,t_line-c_line, self.out.GetScrollRange(wx.VERTICAL))
+
+            if t_line - c_line>max_gap:
+                self.freeze_main_log_window()
+            else:
+                self.thaw_main_log_window()
+
             err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
             if True:#err_pattern.search(string.lower()):
                 last_start = 0
@@ -78,6 +94,7 @@ class RedirectText(object):
                     self.out.AppendText( string[last_start:m.start()])
                     self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
                     #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    #wx.CallAfter(self.out.AppendText, string[m.start():m.end()])
                     self.out.AppendText( string[m.start():m.end()])
                     last_start= m.end()
                 self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
@@ -88,7 +105,13 @@ class RedirectText(object):
             if self.log_file:
                 self.log_file.write(string)
                 self.log_file.flush()
-        except:
+            if t_line - c_line>max_gap:
+                pass
+            else:
+                self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
+            self.thaw_main_log_window()
+        except Exception as  e:
+            self.old_stdout.write('\n'+error(e))
             pass
         self.write_lock.release()
     def close(self):
@@ -98,6 +121,15 @@ class RedirectText(object):
     def flush(self):
         if self.log_file:
             self.log_file.flush()
+    def freeze_main_log_window(self):
+        if self.out.IsFrozen():
+            pass
+        else:
+            self.out.Freeze()
+    def thaw_main_log_window(self):
+        if self.out.IsFrozen():
+            self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))
+            self.out.Thaw()
 class process_info(object):
     process = None
     pid=None
@@ -818,6 +850,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     def on_command_enter(self, event):
 
         info('called on_command_enter')
+        self.redir.thaw_main_log_window()
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
 
@@ -2004,6 +2037,8 @@ newdocument.close();
             pass
         #print('{} i\'m idle !!!!!!!!!!!!!!!!!!'.format(datetime.now().isoformat()))
     def on_idle(self,event):
+       # print('helllo!{}, {}\n'.format(                self.m_log.PositionToXY(                        self.m_log.GetScrollPos(wx.VERTICAL)                )[1],                self.m_log.PositionToXY(                        self.m_log.GetScrollRange(wx.VERTICAL))[1]        )        )
+
         now = datetime.now()
         max_idle=3
         if (now-self.last_time_call_on_idle).total_seconds()>max_idle:
@@ -2027,6 +2062,7 @@ newdocument.close();
             urlString = self.m_log.GetRange(event.GetURLStart(),event.GetURLEnd())
             webbrowser.open(urlString)
         event.Skip()
+
 
 
 #done: 2017-08-22, 2017-08-19 save main log window to a file
@@ -2053,4 +2089,4 @@ newdocument.close();
     #                  ^
     # SyntaxError: invalid syntax
 #todo: start thread for all gui event handlers with decoration, catch all exceptions
-#todo: mark red for all strings who match error patterns in "*LOG*", m_log
+#done: mark red for all strings who match error patterns in "*LOG*", m_log

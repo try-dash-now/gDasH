@@ -128,7 +128,6 @@ class SessionTab(wx.Panel, dut):
                     c_col, c_line = self.output_window.PositionToXY(current_pos)
                     t_col, t_line = self.output_window.PositionToXY(v_scroll_range)
 
-                    #print('c_line', c_line, current_pos, 't_line', t_line, v_scroll_range)
                     if t_line- c_line>max_gap:#1000
                         self.__freeze_output_window()
                     else:
