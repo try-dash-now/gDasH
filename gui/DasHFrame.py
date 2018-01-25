@@ -70,26 +70,16 @@ class RedirectText(object):
         self.write_lock.acquire()
         try:
             self.old_stdout.write(string)
-            #string = string.replace('\\033\[[0-9\;]+m', '')
-
-            #self.old_stderr.write(string)
             err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
-            #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-
-            if False:#err_pattern.search(string.lower()):
+            if True:#err_pattern.search(string.lower()):
                 last_start = 0
                 for m in err_pattern.finditer(string.lower()):
-                    #print(m.start(), m.end(), m.group())
-
-                    #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                     self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
                     self.out.AppendText( string[last_start:m.start()])
                     self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
                     #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                     self.out.AppendText( string[m.start():m.end()])
                     last_start= m.end()
-
-                #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                 self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
                 self.out.AppendText( string[last_start:])
             else:
@@ -1283,7 +1273,6 @@ if __name__ == "__main__":
                 self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
                 self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
                 info('start process {} :{}'.format(item_name,  p.pid))
-
                 #p.join() # this blocks until the process terminates
                 time.sleep(1)
             except Exception as e :
