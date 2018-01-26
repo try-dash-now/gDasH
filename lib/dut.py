@@ -122,7 +122,7 @@ class dut(object):
         if not_call_open:
             pass
         else:
-            self.open(retry= self.retry_login, interval=60)
+            th.start()#self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         self.is_openning =True
         if self.session and self.session_status:
@@ -383,7 +383,6 @@ class dut(object):
     def close_session(self):
 
         try:
-
             name = self.name
             if self.write_locker:
                 self.write_locker.acquire()
@@ -423,7 +422,7 @@ class dut(object):
                         #os.killpg(self.session.shell.pid, signal.SIGTERM)
                 except Exception as e:
                     try:
-                        error('dut({}): {}'.format(self.name, e))
+                        error('dut({}): {}'.format(name, e))
                         self.session=None
                         self.session_status = False
                         if self.read_locker.locked():
@@ -443,13 +442,14 @@ class dut(object):
 
             try:
                 self.write_locker.release()
-                time.sleep(1)
+                time.sleep(0.1)
             except :
                 pass
             info('session {}:close_session ended!!!'.format(name))
+            info('tab {} closed successfully!!!'.format(name))
         except Exception as e:
-            error(traceback.format_exc())
-
+            #error(traceback.format_exc())
+            info('tab {} closed with error: {}'.format(name, e))
 
     def add_data_to_search_buffer(self, data):
 
@@ -489,6 +489,8 @@ class dut(object):
         self.reading_thread_lock.acquire()
         name = self.name
         error_msg =None
+        if self.type.lower()=='ssh':
+            self.session.start_ssh(self.host, self.port, self.user,self.password)
         while True:#and self.session:
             try:
                 try:

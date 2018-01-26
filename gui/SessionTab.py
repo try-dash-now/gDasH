@@ -65,9 +65,10 @@ class SessionTab(wx.Panel, dut):
         self.on_close()
     def on_close(self):
         self.alive = False
-        self.close_session()
+        threading.Thread(target=self.close_session).start()
+        #self.close_session()
         self.sleep(0.001)
-        info('tab {} closed!!!'.format(self.name))
+
     def __freeze_output_window(self):
         if self.output_window.IsFrozen():
             pass
@@ -118,6 +119,7 @@ class SessionTab(wx.Panel, dut):
                     #response = re.sub(chr(32)+BACKSPACE,'',response)
 
                     #BACKSPACE_pat = '.'+BACKSPACE#+'\[\d+[;]{0,1}\d*m'#+chr(27)+'\[0'
+                    #print(self.name, 'alive!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 if len(response)!=0:
 
                     current_pos = self.output_window.GetScrollPos(wx.VERTICAL)
@@ -169,7 +171,7 @@ class SessionTab(wx.Panel, dut):
                     self.__thaw_output_window()
 
             except Exception as e :
-                time.sleep(0.001)
+                time.sleep(0.05)
                 error(traceback.format_exc())
                 break
             try:
@@ -224,12 +226,14 @@ class SessionTab(wx.Panel, dut):
         self.cmd_window.SetFont(f)
         #self.session  = self
         self.alive =True
+        self.last_json_file_saving_time=datetime.now()
         th =threading.Thread(target=self.update_output)
         th.start()
         #self.sleep(0.1)
-        th = threading.Thread(target=self.open, args= [self.retry_login,60])#, kwargs=attributes)
-        th.start()
-        self.last_json_file_saving_time=datetime.now()
+
+
+        th1 = threading.Thread(target=self.open, args= [self.retry_login,60])#, kwargs=attributes)
+        th1.start()
 
 
 

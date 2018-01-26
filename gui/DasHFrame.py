@@ -56,64 +56,76 @@ class RedirectText(object):
     write_lock = None
     log_file    = None
     error_pattern = None
+    font_point = None
     def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize+2
         self.write_lock = threading.Lock()
         self.error_pattern = re.compile('error|\s+err\s+|fail|wrong|errno')
+        self.font_point =self.out.GetFont().PointSize
         if log_path:
             name = '{}/dash.log'.format(log_path)
             self.log_file = open(name, 'w+')
             self.fileno = self.log_file.fileno
     def write(self,string):
+        def __write(string):
+            #self.write_lock.acquire()
+            try:
+                self.old_stdout.write(string)
+                current_pos = self.out.GetScrollPos(wx.VERTICAL)
+                v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
+                char_height = self.out.GetCharHeight()
+                w_client,h_client = self.out.GetClientSize()
+                max_gap=h_client*2/char_height/3
+                c_col, c_line = self.out.PositionToXY(current_pos)
+                t_col, t_line = self.out.PositionToXY(v_scroll_range)
 
-        self.old_stdout.write(string)
-        self.write_lock.acquire()
-        try:
-            current_pos = self.out.GetScrollPos(wx.VERTICAL)
-            v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
-            char_height = self.out.GetCharHeight()
-            w_client,h_client = self.out.GetClientSize()
-            max_gap=h_client*2/char_height/3
-            c_col, c_line = self.out.PositionToXY(current_pos)
-            t_col, t_line = self.out.PositionToXY(v_scroll_range)
+                #string = "{}\ncurrent {}\t total {},max_gap {}, gap {}, range {}\n".format(string, c_line, t_line, max_gap,t_line-c_line, self.out.GetScrollRange(wx.VERTICAL))
 
-            #string = "{}\ncurrent {}\t total {},max_gap {}, gap {}, range {}\n".format(string, c_line, t_line, max_gap,t_line-c_line, self.out.GetScrollRange(wx.VERTICAL))
+                if t_line - c_line>max_gap:
+                    self.freeze_main_log_window()
+                else:
+                    self.thaw_main_log_window()
 
-            if t_line - c_line>max_gap:
-                self.freeze_main_log_window()
-            else:
+                err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
+                if True:#err_pattern.search(string.lower()):
+                    last_start = 0
+                    for m in err_pattern.finditer(string.lower()):
+                        wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        wx.CallAfter(self.out.AppendText, string[last_start:m.start()])
+
+                        #self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                        #self.out.AppendText( string[last_start:m.start()])
+                        #self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                        wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        wx.CallAfter(self.out.AppendText, string[m.start():m.end()])
+                        #self.out.AppendText( string[m.start():m.end()])
+                        last_start= m.end()
+                    wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    wx.CallAfter(self.out.AppendText, string[last_start:])
+                    #self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                    #self.out.AppendText( string[last_start:])
+                else:
+                    #self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
+                    #wx.CallAfter(self.out.AppendText, string)
+                    #self.out.AppendText(string)
+                    wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    wx.CallAfter(self.out.AppendText, string)
+                if self.log_file:
+                    self.log_file.write(string)
+                    self.log_file.flush()
+                if t_line - c_line>max_gap:
+                    pass
+                else:
+                    self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
                 self.thaw_main_log_window()
-
-            err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
-            if True:#err_pattern.search(string.lower()):
-                last_start = 0
-                for m in err_pattern.finditer(string.lower()):
-                    self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                    self.out.AppendText( string[last_start:m.start()])
-                    self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                    #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    #wx.CallAfter(self.out.AppendText, string[m.start():m.end()])
-                    self.out.AppendText( string[m.start():m.end()])
-                    last_start= m.end()
-                self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                self.out.AppendText( string[last_start:])
-            else:
-                self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                wx.CallAfter(self.out.AppendText, string)
-            if self.log_file:
-                self.log_file.write(string)
-                self.log_file.flush()
-            if t_line - c_line>max_gap:
-                pass
-            else:
-                self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
-            self.thaw_main_log_window()
-        except Exception as  e:
-            self.old_stdout.write('\n'+error(e))
-            pass
-        self.write_lock.release()
+            except Exception as  e:
+                self.old_stdout.write('\n'+error(e))
+            #self.write_lock.release()
+            #time.sleep(0.1)
+        __write(string)
+        #threading.Thread(target=__write, args=[string]).start()
     def close(self):
         if self.log_file:
             self.log_file.flush()
@@ -770,9 +782,9 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         else:
             self.edit_area.SetWindowStyle(wx.aui.AUI_NB_DEFAULT_STYLE)
 
-
+    #@gui_event_decorator.gui_even_handle
     def on_LeftDClick_in_Session_tab(self, event):
-
+        self.session_page.Disable()
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
@@ -811,11 +823,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             log_path='a_fake_log_path_for_auto_script'
             attribute['log_path']=log_path
             self.add_new_session_to_globals(new_page, '{}'.format(attribute))
-            #globals().update({ses_name: new_page.session})
 
-            time.sleep(0.1)
+            #time.sleep(0.1)
             event.Skip()
-
+        time.sleep(0.5)
+        self.session_page.Enable()
     def add_new_session_to_globals(self, new_page, args_str):
         name = new_page.name
         global  DUT
@@ -1116,6 +1128,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         except Exception as e:
             print(traceback.format_exc())
         self.updating_function_page=False
+
     def on_LeftDClick_in_Function_tab(self,event):
         event.Skip()
         select_item = self.function_page.GetSelection()
