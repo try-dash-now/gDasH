@@ -109,7 +109,7 @@ class SessionTab(wx.Panel, dut):
                 response=''
                 #print('scroll pos', self.output_window.GetScrollPos(wx.VERTICAL), self.output_window.GetScrollRange(wx.VERTICAL))
                 if self.alive:
-                    self.output_lock.acquire()
+                    #self.output_lock.acquire()
                     response = self.read_display_buffer()
                     if True:
                         response = ansi_escape.sub('', response)
@@ -167,7 +167,7 @@ class SessionTab(wx.Panel, dut):
                     if t_line -c_line>max_gap:
                         pass
                     else:
-                        self.output_window.SetScrollPos(wx.VERTICAL, self.output_window.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
+                        wx.CallAfter(self.output_window.SetScrollPos,wx.VERTICAL, self.output_window.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
                     self.__thaw_output_window()
 
             except Exception as e :
@@ -175,8 +175,9 @@ class SessionTab(wx.Panel, dut):
                 error(traceback.format_exc())
                 break
             try:
-                if self.output_lock.locked():
-                    self.output_lock.release()
+                pass
+                #if self.output_lock.locked():
+                    #self.output_lock.release()
             except Exception as e:
                 error('{}'.format(e))
             time.sleep(0.5)
