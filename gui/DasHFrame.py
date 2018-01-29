@@ -58,6 +58,7 @@ class RedirectText(object):
     error_pattern = None
     font_point = None
     previous_scroll_pos = 0
+    previous_insert_pos = 0
     def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
@@ -77,28 +78,29 @@ class RedirectText(object):
 
                 err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
 
-                current_pos = self.out.GetScrollPos(wx.VERTICAL)
-                #current_pos = self.out.GetInsertionPoint()
+                current_scroll_pos = self.out.GetScrollPos(wx.VERTICAL)
+                current_insert_pos = self.out.GetInsertionPoint()
                 last_pos = self.out.GetLastPosition()
 
                 v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
-                v_scroll_range = last_pos
+                #v_scroll_range = last_pos
                 char_height = self.out.GetCharHeight()
                 w_client,h_client = self.out.GetClientSize()
                 max_gap=h_client*2/char_height/3
-                c_col, c_line = self.out.PositionToXY(current_pos)
+                c_col, c_line = self.out.PositionToXY(current_scroll_pos)
                 t_col, t_line = self.out.PositionToXY(v_scroll_range)
 
-
-                if t_line- c_line>max_gap:#1000
+                real_gap = t_line- c_line
+                if real_gap>max_gap:#1000
                     self.__freeze_main_log_window()
-                    #self.previous_scroll_pos = current_pos#self.out.GetInsertionPoint()
-                    #self.previous_scroll_pos = current_pos
+                    self.previous_scroll_pos = current_scroll_pos
+                    self.previous_insert_pos = current_insert_pos
                 else:
-                    self.previous_scroll_pos = last_pos
+                    self.previous_scroll_pos = v_scroll_range
+                    self.previous_insert_pos = last_pos
                 #self.out.SetScrollPos(wx.VERTICAL,self.previous_scroll_pos)
 
-                self.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
+                #self.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
                     for m in err_pattern.finditer(string.lower()):
@@ -126,13 +128,17 @@ class RedirectText(object):
                     self.log_file.write(string)
                     self.log_file.flush()
 
-                if t_line- c_line>max_gap:#1000
+                if real_gap>max_gap:#1000
+                    time.sleep(0.01)
                     pass
-                    self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                    #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
                 else:
-                    self.previous_scroll_pos=last_pos+len(string)
-                self.out.SetInsertionPoint(self.previous_scroll_pos)#self.out.GetLastPosition()
+                    self.previous_scroll_pos= v_scroll_range
+                    self.previous_insert_pos = last_pos
+                #self.out.GetLastPosition()
                 self.__thaw_main_log_window()
+                self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                self.out.SetInsertionPoint(self.previous_insert_pos)
             except Exception as  e:
                 self.old_stdout.write('\n'+error(traceback.format_exc()))
             #self.write_lock.release()
@@ -882,8 +888,8 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     def on_command_enter(self, event):
 
         info('called on_command_enter')
-        self.previous_scroll_pos=self.m_log.GetLastPosition()+1
-        self.m_log.SetInsertionPoint(self.previous_scroll_pos)
+        self.redir.previous_scroll_pos=self.m_log.GetLastPosition()+1
+        self.redir.out.SetInsertionPoint(self.redir.previous_scroll_pos)
 
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
@@ -940,6 +946,9 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 handle_one_cmd(cmd)
             except:
                 error(traceback.format_exc())
+        self.redir.previous_scroll_pos=self.redir.out.GetLastPosition()+1
+        self.redir.out.SetInsertionPoint(self.redir.previous_scroll_pos)
+
         event.Skip()
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
@@ -2084,7 +2093,7 @@ newdocument.close();
         max_gap=h_client*2/char_height/3
         c_col, c_line = self.out.PositionToXY(current_pos)
         t_col, t_line = self.out.PositionToXY(v_scroll_range)
-        self.redir.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
+        #self.redir.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
 
         now = datetime.now()
         max_idle=3

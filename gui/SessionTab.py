@@ -194,7 +194,7 @@ class SessionTab(wx.Panel, dut):
         wx.Panel.__init__(self, parent)
         attributes['log_path']= log_path
         attributes['not_call_open']=True
-        dut.__init__(self, name, **attributes)
+
         self.name = name
         self.history_cmd=[]
         self.history_cmd_index = 0
@@ -203,6 +203,7 @@ class SessionTab(wx.Panel, dut):
         self.sequence_queue= seq_queue
         self.output_lock = threading.Lock()
         #wx.stc.StyledTextCtrl #wx.richtext.RichTextCtrl
+        dut.__init__(self, name, **attributes)
         self.output_window = wx.TextCtrl( self, -1, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_AUTO_URL|wx.VSCROLL|wx.TE_RICH|wx.TE_READONLY |wx.TE_MULTILINE&(~wx.TE_PROCESS_ENTER))#0|wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER|wx.TE_READONLY )
         self.cmd_window= wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER|wx.TE_MULTILINE|wx.VSCROLL )
 

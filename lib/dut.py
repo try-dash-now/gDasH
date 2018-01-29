@@ -79,23 +79,8 @@ class dut(object):
 
 
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, **kwarg):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 3, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, **kwarg):
         #expected types are [echo, telnet, ssh, shell, web_brower]
-        self.dry_run_json={}
-        if init_file_name is None:
-            self.type = type
-        else:
-            self.type = 'echo'
-        if 'product' in kwarg:
-            self.product = kwarg['product']
-        self.prompt = prompt
-        self.reading_thread_lock=threading.Lock()
-        if login_step in [None, '']:
-            login_step = None
-        if isinstance(login_step, (basestring)) and os.path.exists(login_step):
-            pass
-        else:
-            login_step =None
         self.retry_login = retry_login
         self.retry_login_interval = retry_login_interval
         self.login_steps = login_step
@@ -115,6 +100,22 @@ class dut(object):
         self.write_locker=  threading.Lock()
         self.read_locker=  threading.Lock()
         self.time_out =time_out
+        self.dry_run_json={}
+        if init_file_name is None:
+            self.type = type
+        else:
+            self.type = 'echo'
+        if 'product' in kwarg:
+            self.product = kwarg['product']
+        self.prompt = prompt
+        self.reading_thread_lock=threading.Lock()
+        if login_step in [None, '']:
+            login_step = None
+        if isinstance(login_step, (basestring)) and os.path.exists(login_step):
+            pass
+        else:
+            login_step =None
+
         th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
         #th.start()
         self.sleep(0.5)
@@ -449,7 +450,7 @@ class dut(object):
             info('tab {} closed successfully!!!'.format(name))
         except Exception as e:
             #error(traceback.format_exc())
-            info('tab {} closed with error: {}'.format(name, e))
+            info('closed with error: {}'.format(e))
 
     def add_data_to_search_buffer(self, data):
 
