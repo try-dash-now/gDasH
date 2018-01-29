@@ -62,10 +62,12 @@ class SessionTab(wx.Panel, dut):
     error_pattern =None
     last_json_file_saving_time=None
     def __del__(self):
+
         self.on_close()
     def on_close(self):
         self.alive = False
-        threading.Thread(target=self.close_session).start()
+        self.close_session()
+        #threading.Thread(target=self.close_session).start()
         #self.close_session()
         self.sleep(0.001)
 

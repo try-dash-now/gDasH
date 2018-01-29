@@ -450,7 +450,7 @@ class dut(object):
             info('tab {} closed successfully!!!'.format(name))
         except Exception as e:
             #error(traceback.format_exc())
-            info('closed with error: {}'.format(e))
+            info('{} closed with error: {}'.format(name, e))
 
     def add_data_to_search_buffer(self, data):
 
