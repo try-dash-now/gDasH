@@ -57,6 +57,7 @@ class RedirectText(object):
     log_file    = None
     error_pattern = None
     font_point = None
+    previous_scroll_pos = 0
     def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
@@ -73,7 +74,31 @@ class RedirectText(object):
             #self.write_lock.acquire()
             try:
                 self.old_stdout.write(string)
+
                 err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
+
+                current_pos = self.out.GetScrollPos(wx.VERTICAL)
+                #current_pos = self.out.GetInsertionPoint()
+                last_pos = self.out.GetLastPosition()
+
+                v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
+                v_scroll_range = last_pos
+                char_height = self.out.GetCharHeight()
+                w_client,h_client = self.out.GetClientSize()
+                max_gap=h_client*2/char_height/3
+                c_col, c_line = self.out.PositionToXY(current_pos)
+                t_col, t_line = self.out.PositionToXY(v_scroll_range)
+
+
+                if t_line- c_line>max_gap:#1000
+                    self.__freeze_main_log_window()
+                    #self.previous_scroll_pos = current_pos#self.out.GetInsertionPoint()
+                    #self.previous_scroll_pos = current_pos
+                else:
+                    self.previous_scroll_pos = last_pos
+                #self.out.SetScrollPos(wx.VERTICAL,self.previous_scroll_pos)
+
+                self.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
                     for m in err_pattern.finditer(string.lower()):
@@ -101,8 +126,15 @@ class RedirectText(object):
                     self.log_file.write(string)
                     self.log_file.flush()
 
+                if t_line- c_line>max_gap:#1000
+                    pass
+                    self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                else:
+                    self.previous_scroll_pos=last_pos+len(string)
+                self.out.SetInsertionPoint(self.previous_scroll_pos)#self.out.GetLastPosition()
+                self.__thaw_main_log_window()
             except Exception as  e:
-                self.old_stdout.write('\n'+error(e))
+                self.old_stdout.write('\n'+error(traceback.format_exc()))
             #self.write_lock.release()
             #time.sleep(0.1)
         __write(string)
@@ -114,16 +146,20 @@ class RedirectText(object):
     def flush(self):
         if self.log_file:
             self.log_file.flush()
-    def freeze_main_log_window(self):
+    def __freeze_main_log_window(self):
         #return
         if self.out.IsFrozen():
             pass
         else:
+            self.output_window_last_position =self.out.GetScrollRange(wx.VERTICAL)
             self.out.Freeze()
-    def thaw_main_log_window(self):
+    def __thaw_main_log_window(self):
+        #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
         if self.out.IsFrozen():
-            self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))
             self.out.Thaw()
+        else:
+            pass
+
 class process_info(object):
     process = None
     pid=None
@@ -303,6 +339,7 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
     dict_function_obj= {'instance':{}}
     dict_function_files = {}
     updating_function_page =False
+    m_log_current_pos = None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
         gui_event_decorator.__init__(self)
@@ -317,7 +354,7 @@ class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
         self.sequence_queue= Queue.Queue()
         #self.sequence_queue.put()
         self.ini_setting    = ConfigParser.ConfigParser()
-
+        self.m_log_current_pos = 0
         if os.path.exists(ini_file):
             self.ini_setting.read(ini_file)
             self.src_path       = os.path.abspath(self.ini_setting.get('dash','src_path'))
@@ -402,6 +439,7 @@ web_port={web_port}
         self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
         self.m_command_box.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.m_command_box.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.m_log.Bind(wx.EVT_TEXT, self.on_m_log_text_changed)
 
         from wx.aui import AuiNotebook
         bookStyle = wx.aui.AUI_NB_DEFAULT_STYLE &(~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
@@ -766,7 +804,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
     #@gui_event_decorator.gui_even_handle
     def on_LeftDClick_in_Session_tab(self, event):
-        self.session_page.Disable()
+        #self.session_page.Disable()
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
@@ -809,7 +847,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             #time.sleep(0.1)
             event.Skip()
         time.sleep(0.5)
-        self.session_page.Enable()
+        #self.session_page.Enable()
     def add_new_session_to_globals(self, new_page, args_str):
         name = new_page.name
         global  DUT
@@ -844,7 +882,9 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     def on_command_enter(self, event):
 
         info('called on_command_enter')
-        self.redir.thaw_main_log_window()
+        self.previous_scroll_pos=self.m_log.GetLastPosition()+1
+        self.m_log.SetInsertionPoint(self.previous_scroll_pos)
+
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
 
@@ -2033,7 +2073,19 @@ newdocument.close();
         #print('{} i\'m idle !!!!!!!!!!!!!!!!!!'.format(datetime.now().isoformat()))
     def on_idle(self,event):
        # print('helllo!{}, {}\n'.format(                self.m_log.PositionToXY(                        self.m_log.GetScrollPos(wx.VERTICAL)                )[1],                self.m_log.PositionToXY(                        self.m_log.GetScrollRange(wx.VERTICAL))[1]        )        )
-        self.freeze_thaw_main_log_window()
+        #self.freeze_thaw_main_log_window()
+        #self.m_log_current_pos-=1
+        #self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
+        self.out = self.redir.out
+        current_pos = self.out.GetScrollPos(wx.VERTICAL)
+        v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
+        char_height = self.out.GetCharHeight()
+        w_client,h_client = self.out.GetClientSize()
+        max_gap=h_client*2/char_height/3
+        c_col, c_line = self.out.PositionToXY(current_pos)
+        t_col, t_line = self.out.PositionToXY(v_scroll_range)
+        self.redir.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
+
         now = datetime.now()
         max_idle=3
         if (now-self.last_time_call_on_idle).total_seconds()>max_idle:
@@ -2042,12 +2094,19 @@ newdocument.close();
             th.start()
         if self.updating_function_page is False:
             threading.Thread(target=self.check_whether_function_file_is_updated, args=[]).start()
+    def on_m_log_text_changed(self, event):
+        event.Skip()
+        #self.freeze_thaw_main_log_window()
+
     def freeze_thaw_main_log_window(self):
-            current_pos = self.m_log.GetScrollPos(wx.VERTICAL)
-            v_scroll_range = self.m_log.GetScrollRange(wx.VERTICAL)
+            c_col, c_line = self.m_log.GetPosition()
+
+            #print('cline', c_line)
+            v_scroll_range = self.m_log.GetLastPosition()#wx.VERTICAL
             char_height = self.m_log.GetCharHeight()
             w_client,h_client = self.m_log.GetClientSize()
             max_gap=h_client/char_height/3
+            current_pos = self.m_log.GetScrollPos(wx.VERTICAL)#self.m_log.XYToPosition(c_col, c_line)
             c_col, c_line = self.m_log.PositionToXY(current_pos)
             t_col, t_line = self.m_log.PositionToXY(v_scroll_range)
 
@@ -2055,21 +2114,27 @@ newdocument.close();
             #todo: when mulit-threads(up-to 7~9 SessionTab opened) are writting to DasHFrame.m_log, the log window was frozen, can't be thawed, if disable .freeze_main_log_window, there is no 'no response' issue
             #so suspect it's freeze issue
             frozen = self.m_log.IsFrozen()
-            if frozen:
-                pass
-                #self.m_log.Thaw()
-                #time.sleep(0.1)#pass#self.m_log.SetScrollPos( wx.VERTICAL, current_pos)
-            elif t_line - c_line>max_gap:
+            if t_line - c_line>max_gap:
                 if not frozen:
+                    self.m_log.SetInsertionPoint(self.m_log_current_pos)
+                    self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
                     self.m_log.Freeze()
-                #else:
-                #    self.m_log.Thaw()#pass#self.m_log.SetScrollPos( wx.VERTICAL, self.m_log.GetScrollRange(wx.VERTICAL))
+                    #self.m_log_current_pos = current_pos#self.m_log.GetScrollPos(wx.VERTICAL)#current_pos
+                    self.m_log.SetInsertionPoint(self.m_log_current_pos)
+                    self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
+                    frozen=True
 
+            else:
+                self.m_log_current_pos= self.m_log.GetScrollRange(wx.VERTICAL)
+                #self.m_log.SetScrollPos(wx.VERTICAL, )
 
             if frozen:
+                self.m_log.SetInsertionPoint(self.m_log_current_pos)
+                self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
+
                 self.m_log.Thaw()
-                time.sleep(0.3)
-                #self.m_log.SetScrollPos( wx.VERTICAL, self.m_log.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
+                #time.sleep(0.1)
+
 
 
 
