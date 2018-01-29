@@ -656,3 +656,5 @@ class dut(object):
             # 	    os.rename('{}/tmp_{}.json'.format(log_path, name), '{}/{}.json'.format(log_path, name))
             # 	WindowsError: [Error 183] Cannot create a file when that file already exists
 
+#todo: no login log in log file
+#

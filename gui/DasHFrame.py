@@ -73,21 +73,6 @@ class RedirectText(object):
             #self.write_lock.acquire()
             try:
                 self.old_stdout.write(string)
-                current_pos = self.out.GetScrollPos(wx.VERTICAL)
-                v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
-                char_height = self.out.GetCharHeight()
-                w_client,h_client = self.out.GetClientSize()
-                max_gap=h_client*2/char_height/3
-                c_col, c_line = self.out.PositionToXY(current_pos)
-                t_col, t_line = self.out.PositionToXY(v_scroll_range)
-
-                #string = "{}\ncurrent {}\t total {},max_gap {}, gap {}, range {}\n".format(string, c_line, t_line, max_gap,t_line-c_line, self.out.GetScrollRange(wx.VERTICAL))
-
-                if t_line - c_line>max_gap:
-                    self.freeze_main_log_window()
-                else:
-                    self.thaw_main_log_window()
-
                 err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
@@ -115,11 +100,7 @@ class RedirectText(object):
                 if self.log_file:
                     self.log_file.write(string)
                     self.log_file.flush()
-                if t_line - c_line>max_gap:
-                    pass
-                else:
-                    self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
-                self.thaw_main_log_window()
+
             except Exception as  e:
                 self.old_stdout.write('\n'+error(e))
             #self.write_lock.release()
@@ -134,6 +115,7 @@ class RedirectText(object):
         if self.log_file:
             self.log_file.flush()
     def freeze_main_log_window(self):
+        #return
         if self.out.IsFrozen():
             pass
         else:
@@ -2051,7 +2033,7 @@ newdocument.close();
         #print('{} i\'m idle !!!!!!!!!!!!!!!!!!'.format(datetime.now().isoformat()))
     def on_idle(self,event):
        # print('helllo!{}, {}\n'.format(                self.m_log.PositionToXY(                        self.m_log.GetScrollPos(wx.VERTICAL)                )[1],                self.m_log.PositionToXY(                        self.m_log.GetScrollRange(wx.VERTICAL))[1]        )        )
-
+        self.freeze_thaw_main_log_window()
         now = datetime.now()
         max_idle=3
         if (now-self.last_time_call_on_idle).total_seconds()>max_idle:
@@ -2060,6 +2042,37 @@ newdocument.close();
             th.start()
         if self.updating_function_page is False:
             threading.Thread(target=self.check_whether_function_file_is_updated, args=[]).start()
+    def freeze_thaw_main_log_window(self):
+            current_pos = self.m_log.GetScrollPos(wx.VERTICAL)
+            v_scroll_range = self.m_log.GetScrollRange(wx.VERTICAL)
+            char_height = self.m_log.GetCharHeight()
+            w_client,h_client = self.m_log.GetClientSize()
+            max_gap=h_client/char_height/3
+            c_col, c_line = self.m_log.PositionToXY(current_pos)
+            t_col, t_line = self.m_log.PositionToXY(v_scroll_range)
+
+            #string = "{}\ncurrent {}\t total {},max_gap {}, gap {}, range {}\n".format(string, c_line, t_line, max_gap,t_line-c_line, self.out.GetScrollRange(wx.VERTICAL))
+            #todo: when mulit-threads(up-to 7~9 SessionTab opened) are writting to DasHFrame.m_log, the log window was frozen, can't be thawed, if disable .freeze_main_log_window, there is no 'no response' issue
+            #so suspect it's freeze issue
+            frozen = self.m_log.IsFrozen()
+            if frozen:
+                pass
+                #self.m_log.Thaw()
+                #time.sleep(0.1)#pass#self.m_log.SetScrollPos( wx.VERTICAL, current_pos)
+            elif t_line - c_line>max_gap:
+                if not frozen:
+                    self.m_log.Freeze()
+                #else:
+                #    self.m_log.Thaw()#pass#self.m_log.SetScrollPos( wx.VERTICAL, self.m_log.GetScrollRange(wx.VERTICAL))
+
+
+            if frozen:
+                self.m_log.Thaw()
+                time.sleep(0.3)
+                #self.m_log.SetScrollPos( wx.VERTICAL, self.m_log.GetScrollRange(wx.VERTICAL))#SetInsertionPoint(self.output_window.GetLastPosition())
+
+
+
     @gui_event_decorator.gui_even_handle
     def on_generate_test_report(self,event):
         file_name='{}/dash_report_{}.html'.format(self.log_path, self.timestamp)
