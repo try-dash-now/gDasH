@@ -144,7 +144,7 @@ class RedirectText(object):
                     self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
                 self.out.SetInsertionPoint(self.previous_insert_pos)
                     #pos =self.out.XYToPosition(xxx[0], xxx[1])
-                self.out.ShowPosition(self.previous_insert_pos)
+                #self.out.ShowPosition(self.previous_insert_pos)
                 self.__thaw_main_log_window()
 
             except Exception as  e:
