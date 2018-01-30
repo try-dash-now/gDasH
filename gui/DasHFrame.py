@@ -76,7 +76,7 @@ class RedirectText(object):
             try:
                 self.old_stdout.write(string)
                 err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
-                self.__freeze_main_log_window()
+
                 current_scroll_pos = self.out.GetScrollPos(wx.VERTICAL)
                 current_insert_pos = self.out.GetInsertionPoint()
                 last_pos = self.out.GetLastPosition()
@@ -84,35 +84,38 @@ class RedirectText(object):
                 v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
                 char_height = self.out.GetCharHeight()
                 w_client,h_client = self.out.GetClientSize()
-                line_in_a_page= h_client/char_height
+                line_in_a_page= h_client/char_height*2/3
                 max_gap=line_in_a_page
 
                 c_col, c_line = self.out.PositionToXY(current_scroll_pos) #current_scroll_pos
-                t_col, t_line = self.out.PositionToXY(last_pos) #v_scroll_range last_pos
+                t_col, t_line = self.out.PositionToXY(v_scroll_range) #v_scroll_range last_pos
 
 
                 x, y = c_col, c_line
                 real_gap = t_line- c_line
                 if real_gap>max_gap:#100
-                    self.previous_insert_pos = current_scroll_pos
+                    self.__freeze_main_log_window()
+                    #self.previous_insert_pos = current_scroll_pos
                     #self.previous_scroll_pos = current_scroll_pos
+                else:
+                    self.__thaw_main_log_window()
                 tmp_msg ='\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line)
                 string+=tmp_msg
                 #self.old_stdout.write()
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
                     for m in err_pattern.finditer(string.lower()):
-                        wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                        wx.CallAfter(self.out.AppendText, string[last_start:m.start()])
-                        wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                        wx.CallAfter(self.out.AppendText, string[m.start():m.end()])
+                        self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        self.out.AppendText(  string[last_start:m.start()])
+                        self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        self.out.AppendText(  string[m.start():m.end()])
                         last_start= m.end()
-                    wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    wx.CallAfter(self.out.AppendText, string[last_start:])
+                    self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    self.out.AppendText( string[last_start:])
 
                 else:
-                    wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    wx.CallAfter(self.out.AppendText, string)
+                    self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    self.out.AppendText( string)
                 if self.log_file:
                     self.log_file.write(string)
                     self.log_file.flush()
@@ -120,14 +123,16 @@ class RedirectText(object):
                 if real_gap>max_gap:#1000
                     #time.sleep(0.01)
                     pass
+                    self.out.SetInsertionPoint( self.out.GetScrollPos(wx.VERTICAL))
                     #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
                     #self.previous_insert_pos = current_scroll_pos
                 else:
-                    self.previous_scroll_pos= self.out.GetScrollRange(wx.VERTICAL)#v_scroll_range
-                    self.previous_insert_pos = last_pos+len(string)
+                    #self.previous_scroll_pos= self.out.GetScrollRange(wx.VERTICAL)#v_scroll_range
+                    #self.previous_insert_pos = last_pos+len(string)
+                    self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))
 
-                self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
-                self.out.SetInsertionPoint( self.previous_insert_pos)                #self.out.ScrollToLine(c_line+line_in_a_page)
+                #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                #self.out.SetInsertionPoint( self.previous_insert_pos)                #self.out.ScrollToLine(c_line+line_in_a_page)
                     #pos =self.out.XYToPosition(xxx[0], xxx[1])
                 #self.out.ShowPosition(self.previous_insert_pos)
                 self.__thaw_main_log_window()
@@ -150,7 +155,7 @@ class RedirectText(object):
         if self.out.IsFrozen():
             pass
         else:
-            self.output_window_last_position =self.out.GetScrollRange(wx.VERTICAL)
+            #self.output_window_last_position =self.out.GetScrollRange(wx.VERTICAL)
             self.out.Freeze()
     def __thaw_main_log_window(self):
         #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
@@ -882,10 +887,10 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
     def on_command_enter(self, event):
 
         info('called on_command_enter')
-        self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
-        self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
-        self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
-        self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.previous_scroll_pos)
+        #self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
+        #self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
+        #self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
+        #self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.previous_scroll_pos)
 
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
@@ -942,10 +947,10 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 handle_one_cmd(cmd)
             except:
                 error(traceback.format_exc())
-        self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
-        self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
-        self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
-        self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.previous_scroll_pos)
+        #self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
+        #self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
+        #self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
+        wx.CallAfter(self.redir.out.SetScrollPos, wx.VERTICAL,self.redir.out.GetScrollRange(wx.VERTICAL))
 
         event.Skip()
     def add_src_path_to_python_path(self, path):
@@ -2093,8 +2098,9 @@ newdocument.close();
             c_col, c_line = self.out.PositionToXY(current_pos)
             t_col, t_line = self.out.PositionToXY(v_scroll_range)
             current_insert = self.out.GetInsertionPoint()
-            tmp_msg ='\n insert {}, current_pos {} current first visible line {} column {} last line {}, colum {}\n'.format(current_insert, current_pos,  c_line, c_col, t_line, t_col)
-            self.redir.old_stdout.write(tmp_msg)
+            if False:
+                tmp_msg ='\n insert {}, current_pos {} current first visible line {} column {} last line {}, colum {}\n'.format(current_insert, current_pos,  c_line, c_col, t_line, t_col)
+                self.redir.old_stdout.write(tmp_msg)
         #self.redir.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
 
         now = datetime.now()
