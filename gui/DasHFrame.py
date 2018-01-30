@@ -83,7 +83,6 @@ class RedirectText(object):
                 last_pos = self.out.GetLastPosition()
 
                 v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
-                #v_scroll_range = last_pos
                 char_height = self.out.GetCharHeight()
                 w_client,h_client = self.out.GetClientSize()
                 line_in_a_page= h_client/char_height
@@ -91,41 +90,30 @@ class RedirectText(object):
 
                 c_col, c_line = self.out.PositionToXY(current_scroll_pos) #current_scroll_pos
                 t_col, t_line = self.out.PositionToXY(v_scroll_range) #v_scroll_range last_pos
+
+
                 x, y = c_col, c_line
                 real_gap = t_line- c_line
                 if real_gap>max_gap:#1000
                     if True:
                         pass #
-                        #self.previous_scroll_pos = current_scroll_pos
-                        #self.previous_insert_pos = self.out.XYToPosition(x, y)#current_scroll_pos#self.out.XYToPosition(c_col, c_line)#v_scroll_range
                 elif False:
                     if True:
                         self.previous_scroll_pos = v_scroll_range
                         self.previous_insert_pos = last_pos
-                #self.out.SetScrollPos(wx.VERTICAL,self.previous_scroll_pos)
-
-                #self.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
+                #self.old_stdout.write('\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line))
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
                     for m in err_pattern.finditer(string.lower()):
                         wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                         wx.CallAfter(self.out.AppendText, string[last_start:m.start()])
-
-                        #self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                        #self.out.AppendText( string[last_start:m.start()])
-                        #self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
                         wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                         wx.CallAfter(self.out.AppendText, string[m.start():m.end()])
-                        #self.out.AppendText( string[m.start():m.end()])
                         last_start= m.end()
                     wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                     wx.CallAfter(self.out.AppendText, string[last_start:])
-                    #self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                    #self.out.AppendText( string[last_start:])
+
                 else:
-                    #self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                    #wx.CallAfter(self.out.AppendText, string)
-                    #self.out.AppendText(string)
                     wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
                     wx.CallAfter(self.out.AppendText, string)
                 if self.log_file:
@@ -136,13 +124,15 @@ class RedirectText(object):
                     #time.sleep(0.01)
                     pass
                     #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                    #self.previous_insert_pos = current_scroll_pos
                 else:
                     self.previous_scroll_pos= self.out.GetScrollRange(wx.VERTICAL)#v_scroll_range
                     self.previous_insert_pos = last_pos+len(string)
                 #self.out.GetLastPosition()
                 if False:
                     self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
-                self.out.SetInsertionPoint(self.previous_insert_pos)
+                wx.CallAfter(self.out.SetInsertionPoint, self.previous_insert_pos)
+                #self.out.ScrollToLine(c_line+line_in_a_page)
                     #pos =self.out.XYToPosition(xxx[0], xxx[1])
                 #self.out.ShowPosition(self.previous_insert_pos)
                 self.__thaw_main_log_window()
