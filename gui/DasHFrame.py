@@ -85,7 +85,7 @@ class RedirectText(object):
                 char_height = self.out.GetCharHeight()
                 w_client,h_client = self.out.GetClientSize()
                 line_in_a_page= h_client/char_height
-                max_gap=line_in_a_page*2/3
+                max_gap=line_in_a_page
 
                 c_col, c_line = self.out.PositionToXY(current_scroll_pos) #current_scroll_pos
                 t_col, t_line = self.out.PositionToXY(last_pos) #v_scroll_range last_pos
@@ -94,8 +94,7 @@ class RedirectText(object):
                 x, y = c_col, c_line
                 real_gap = t_line- c_line
                 if real_gap>max_gap:#100
-                    pass #
-                    #self.previous_insert_pos = current_scroll_pos
+                    self.previous_insert_pos = current_scroll_pos
                     #self.previous_scroll_pos = current_scroll_pos
                 tmp_msg ='\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line)
                 string+=tmp_msg

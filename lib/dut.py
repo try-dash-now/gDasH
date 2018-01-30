@@ -125,6 +125,7 @@ class dut(object):
         else:
             th.start()#self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
+        name = self.name
         self.is_openning =True
         if self.session and self.session_status:
             #self.session_status=False
@@ -153,7 +154,7 @@ class dut(object):
             init_file_name = self.init_file_name
             login_step = self.login_steps
             self.login_done=False
-            name = self.name
+
             type = self.type
             counter = 0
             while counter<retry:
@@ -206,13 +207,16 @@ class dut(object):
         except Exception as e:
             import traceback
             error_msg =traceback.format_exc(e)
+            old_session_status = False #if session has been ended by other threads, otherwise, overwrite it by next code
             try:
-                error('failed to open {}'.format(self.name), e, error_msg)
+                old_session_status=self.session_status
+                error('failed to open {}'.format(name), e, error_msg)
                 self.session_status =False
             except:
                 pass
             self.is_openning=False
-            raise e
+            if old_session_status:
+                raise e
         self.is_openning=False
 
 
@@ -537,7 +541,7 @@ class dut(object):
         except Exception as e:
             pass
             alive =False
-        print('end dut session')
+        print('end dut ({}) session'.format(name))
     def write(self, cmd='', ctrl=False, add_newline=True):
         resp = ''
         self.add_new_command_to_dry_run_json(cmd, ctrl)
