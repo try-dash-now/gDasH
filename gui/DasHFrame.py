@@ -891,7 +891,8 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         #self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
         #self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
         #self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.previous_scroll_pos)
-
+        self.redir.out.SetInsertionPoint(self.redir.out.GetLastPosition())
+        self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.out.GetScrollRange(wx.VERTICAL))
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
 
@@ -949,8 +950,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 error(traceback.format_exc())
         #self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
         #self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
-        #self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
-        self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.out.GetScrollRange(wx.VERTICAL))
+
 
         event.Skip()
     def add_src_path_to_python_path(self, path):
