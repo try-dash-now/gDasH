@@ -84,7 +84,7 @@ class dut(object):
         self.retry_login = retry_login
         self.retry_login_interval = retry_login_interval
         self.login_steps = login_step
-        self.session_type = self.type
+        self.session_type = type
         self.name = name
         self.host= host
         self.port = port
@@ -385,6 +385,7 @@ class dut(object):
 
         try:
             name = self.name
+
             if self.write_locker:
                 self.write_locker.acquire()
 
@@ -522,7 +523,7 @@ class dut(object):
                         new_line = self.new_line
                     self.write(new_line)
                 data = self.read()
-                time.sleep(0.1)
+                time.sleep(0.01)
             except  Exception as e:
                 alive =False
                 error_msg= traceback.format_exc()
@@ -530,13 +531,7 @@ class dut(object):
                     error(traceback.format_exc())
                     self.session_status =False
 
-        try:
-            self.close_session()
-            info('session {}: read_data Closed!!!'.format(name))
-        except Exception as e:
-            alive =False
-            error(e)
-            self.session=None
+
         try:
             self.reading_thread_lock.release()
         except Exception as e:
@@ -654,7 +649,10 @@ class dut(object):
                 os.remove( '{}/{}.json'.format(log_path, name))
             os.rename('{}/tmp_{}.json'.format(log_path, name), '{}/{}.json'.format(log_path, name))
         except Exception as e:
-            error(name, format_exc())
+            try:
+                error(name, format_exc())
+            except :
+                pass
 
 #fixed WindowsError: [Error 183] Cannot create a file when that file already exists
             # dut.py:604	save_dry_run_json:Traceback (most recent call last):

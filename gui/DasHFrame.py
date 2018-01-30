@@ -75,7 +75,6 @@ class RedirectText(object):
             #self.write_lock.acquire()
             try:
                 self.old_stdout.write(string)
-
                 err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
                 self.__freeze_main_log_window()
                 current_scroll_pos = self.out.GetScrollPos(wx.VERTICAL)
@@ -89,16 +88,18 @@ class RedirectText(object):
                 max_gap=line_in_a_page*2/3
 
                 c_col, c_line = self.out.PositionToXY(current_scroll_pos) #current_scroll_pos
-                t_col, t_line = self.out.PositionToXY(v_scroll_range) #v_scroll_range last_pos
+                t_col, t_line = self.out.PositionToXY(last_pos) #v_scroll_range last_pos
 
 
                 x, y = c_col, c_line
                 real_gap = t_line- c_line
                 if real_gap>max_gap:#100
                     pass #
-                    self.previous_insert_pos = self.out.XYToPosition(0, current_scroll_pos+line_in_a_page+1)
-                    self.previous_scroll_pos = current_scroll_pos
-                #self.old_stdout.write('\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line))
+                    #self.previous_insert_pos = current_scroll_pos
+                    #self.previous_scroll_pos = current_scroll_pos
+                tmp_msg ='\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line)
+                string+=tmp_msg
+                #self.old_stdout.write()
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
                     for m in err_pattern.finditer(string.lower()):
@@ -2083,14 +2084,18 @@ newdocument.close();
         #self.freeze_thaw_main_log_window()
         #self.m_log_current_pos-=1
         #self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
-        self.out = self.redir.out
-        current_pos = self.out.GetScrollPos(wx.VERTICAL)
-        v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
-        char_height = self.out.GetCharHeight()
-        w_client,h_client = self.out.GetClientSize()
-        max_gap=h_client*2/char_height/3
-        c_col, c_line = self.out.PositionToXY(current_pos)
-        t_col, t_line = self.out.PositionToXY(v_scroll_range)
+        if True:
+            self.out = self.redir.out
+            current_pos = self.out.GetScrollPos(wx.VERTICAL)
+            v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
+            char_height = self.out.GetCharHeight()
+            w_client,h_client = self.out.GetClientSize()
+            max_gap=h_client*2/char_height/3
+            c_col, c_line = self.out.PositionToXY(current_pos)
+            t_col, t_line = self.out.PositionToXY(v_scroll_range)
+            current_insert = self.out.GetInsertionPoint()
+            tmp_msg ='\n insert {}, current_pos {} current first visible line {} column {} last line {}, colum {}\n'.format(current_insert, current_pos,  c_line, c_col, t_line, t_col)
+            self.redir.old_stdout.write(tmp_msg)
         #self.redir.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
 
         now = datetime.now()
