@@ -524,10 +524,9 @@ class dut(object):
                 data = self.read()
                 time.sleep(0.1)
             except  Exception as e:
-
+                alive =False
                 error_msg= traceback.format_exc()
                 if str(e) in ['error: Socket is closed']:
-                    alive =False
                     error(traceback.format_exc())
                     self.session_status =False
 
@@ -535,9 +534,9 @@ class dut(object):
             self.close_session()
             info('session {}: read_data Closed!!!'.format(name))
         except Exception as e:
+            alive =False
             error(e)
             self.session=None
-            alive =False
         try:
             self.reading_thread_lock.release()
         except Exception as e:
