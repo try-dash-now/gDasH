@@ -99,8 +99,8 @@ class RedirectText(object):
                     #self.previous_scroll_pos = current_scroll_pos
                 else:
                     self.__thaw_main_log_window()
-                tmp_msg ='\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line)
-                string+=tmp_msg
+                #tmp_msg ='\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line)
+                #string+=tmp_msg
                 #self.old_stdout.write()
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
@@ -950,7 +950,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         #self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
         #self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
         #self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
-        wx.CallAfter(self.redir.out.SetScrollPos, wx.VERTICAL,self.redir.out.GetScrollRange(wx.VERTICAL))
+        self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.out.GetScrollRange(wx.VERTICAL))
 
         event.Skip()
     def add_src_path_to_python_path(self, path):
