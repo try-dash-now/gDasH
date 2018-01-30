@@ -94,13 +94,10 @@ class RedirectText(object):
 
                 x, y = c_col, c_line
                 real_gap = t_line- c_line
-                if real_gap>max_gap:#1000
-                    if True:
-                        pass #
-                elif False:
-                    if True:
-                        self.previous_scroll_pos = v_scroll_range
-                        self.previous_insert_pos = last_pos
+                if real_gap>max_gap:#100
+                    pass #
+                    self.previous_insert_pos = self.out.XYToPosition(0, current_scroll_pos+line_in_a_page+1)
+                    self.previous_scroll_pos = current_scroll_pos
                 #self.old_stdout.write('\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line))
                 if True:#err_pattern.search(string.lower()):
                     last_start = 0
@@ -128,11 +125,9 @@ class RedirectText(object):
                 else:
                     self.previous_scroll_pos= self.out.GetScrollRange(wx.VERTICAL)#v_scroll_range
                     self.previous_insert_pos = last_pos+len(string)
-                #self.out.GetLastPosition()
-                if False:
-                    self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
-                wx.CallAfter(self.out.SetInsertionPoint, self.previous_insert_pos)
-                #self.out.ScrollToLine(c_line+line_in_a_page)
+
+                self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                self.out.SetInsertionPoint( self.previous_insert_pos)                #self.out.ScrollToLine(c_line+line_in_a_page)
                     #pos =self.out.XYToPosition(xxx[0], xxx[1])
                 #self.out.ShowPosition(self.previous_insert_pos)
                 self.__thaw_main_log_window()

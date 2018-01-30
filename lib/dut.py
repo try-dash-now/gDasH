@@ -492,15 +492,17 @@ class dut(object):
         error_msg =None
         if self.type.lower()=='ssh':
             self.session.start_ssh(self.host, self.port, self.user,self.password)
-        while True:#and self.session:
+        alive =True
+        while alive:#and self.session:
             try:
                 try:
                     if self.session_status :
                         pass
                     else:
+                        alive =False
                         break
                 except Exception as e:
-
+                    alive =False
                     error_msg= traceback.format_exc()
                     error(e)
                     break
@@ -522,21 +524,25 @@ class dut(object):
                 data = self.read()
                 time.sleep(0.1)
             except  Exception as e:
-                #
+
                 error_msg= traceback.format_exc()
                 if str(e) in ['error: Socket is closed']:
+                    alive =False
                     error(traceback.format_exc())
                     self.session_status =False
+
         try:
             self.close_session()
             info('session {}: read_data Closed!!!'.format(name))
         except Exception as e:
             error(e)
             self.session=None
+            alive =False
         try:
             self.reading_thread_lock.release()
         except Exception as e:
             pass
+            alive =False
         print('end dut session')
     def write(self, cmd='', ctrl=False, add_newline=True):
         resp = ''
