@@ -188,6 +188,7 @@ class FileEditor(wx.Panel):
     case_suite_node =None
     full_file_name = None
     file_instance = None
+    name =''
     def on_close(self):
         if self.full_file_name:
             data = self.editor.GetValue()
@@ -198,6 +199,7 @@ class FileEditor(wx.Panel):
         #done 2017-9-12: handle close tab in edit_area
     def __init__(self, parent, title='pageOne', type ='grid', file_name = None):
         wx.Panel.__init__(self, parent)
+        self.name = title
         self.parent = parent
         self.type = type
         self.full_file_name = file_name
