@@ -126,6 +126,8 @@ class dut(object):
             th.start()#self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
         name = self.name
+        if self.is_openning:
+            return
         self.is_openning =True
         if self.session and self.session_status:
             #self.session_status=False
@@ -168,6 +170,7 @@ class dut(object):
                     elif type.lower() =='ssh':
                         from SSH import SSH
                         self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
+                        self.session.start_ssh(self.host, self.port, self.user,self.password)
                     elif type.lower() in ['telnet']:
                         from TELNET import  TELNET
                         self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
@@ -184,6 +187,8 @@ class dut(object):
                     elif  isinstance(login_step, basestring):
                         if login_step.strip().lower() in ['none',None, "''", '""']:
                             self.login_steps=[]
+
+
                     th =threading.Thread(target=self.read_data)
                     th.start()
                     self.sleep(0.5)
@@ -498,8 +503,7 @@ class dut(object):
         self.reading_thread_lock.acquire()
         name = self.name
         error_msg =None
-        if self.type.lower()=='ssh':
-            self.session.start_ssh(self.host, self.port, self.user,self.password)
+
         alive =True
         while alive:#and self.session:
             try:
