@@ -354,14 +354,17 @@ class dut(object):
         login_steps =[]
         if type(self.login_steps)==type([]):
             login_steps = self.login_steps #login_steps = self.login_steps
+
+
         elif login_step_file !=None :
             time.sleep(0.001)
             import csv
-            with open(login_step_file, 'rb') as csvfile:
-                self.login_steps = csv.reader(csvfile, delimiter=',', quotechar='|')
-                for row in self.login_steps:
-                    login_steps.append(row)
-                self.login_steps = login_steps
+            if os.path.exists(login_step_file): #fixed if login_step_file is '' an empty string
+                with open(login_step_file, 'rb') as csvfile:
+                    self.login_steps = csv.reader(csvfile, delimiter=',', quotechar='|')
+                    for row in self.login_steps:
+                        login_steps.append(row)
+                    self.login_steps = login_steps
         for row in login_steps:
             cmd,expect, time_out, total_try ='3', '.*',30,1
             if len(row)==1:
