@@ -635,12 +635,13 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                         if report_all_cases:
                             report+=record+'\n'
                             self.mailed_case_pids.append(pi)
-                        elif  pi not in self.mailed_case_pids:
-                            report+=record+'\n'
-                            self.mailed_case_pids.append(pi)
-
                         else:
-                            pass
+                            print('{}\n'.format(record))
+                            if  pi not in self.mailed_case_pids:
+                                report+=record+'\n'
+                                self.mailed_case_pids.append(pi)
+                            else:
+                                pass #
             from lib.common import array2htmltable
             report_in_html_string = array2htmltable(report_in_list)
             f.write(report_in_html_string)
@@ -1384,6 +1385,7 @@ if __name__ == "__main__":
                 p, case_log_path = self.run_script(case_name_with_args)
         self.check_case_running_status_lock.release()
         if changed:
+            self.generate_report(filename='{}/dash_report_{}.html'.format(self.log_path, self.timestamp),report_all_cases= False)
             #test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
             self.mail_test_report('DasH Test Report-updating')
 
@@ -2198,5 +2200,6 @@ newdocument.close();
     #     GetFunArgs(35b)
     #                  ^
     # SyntaxError: invalid syntax
-#todo: start thread for all gui event handlers with decoration, catch all exceptions
+#canceled: start thread for all gui event handlers with decoration, catch all exceptions, ###no need to do that
 #done: mark red for all strings who match error patterns in "*LOG*", m_log
+#fix: generate test report right after case completed (failed or passed)
