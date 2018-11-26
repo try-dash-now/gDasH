@@ -24,6 +24,7 @@ __doc__ = '''
 it's GUI of DasH aka Do as Human
 created 2017-05-06 by Sean Yu
 '''
+import webbrowser
 from datetime import datetime
 import wx.grid as gridlib
 import traceback
@@ -55,51 +56,93 @@ class RedirectText(object):
     write_lock = None
     log_file    = None
     error_pattern = None
+    font_point = None
+    previous_scroll_pos = 0
+    previous_insert_pos = 0
     def __init__(self,aWxTextCtrl, log_path=None):
         self.old_stderr , self.old_stdout=sys.stderr , sys.stdout
         self.out=aWxTextCtrl
         self.font_point_size = self.out.GetFont().PointSize+2
         self.write_lock = threading.Lock()
         self.error_pattern = re.compile('error|\s+err\s+|fail|wrong|errno')
+        self.font_point =self.out.GetFont().PointSize
         if log_path:
             name = '{}/dash.log'.format(log_path)
             self.log_file = open(name, 'w+')
             self.fileno = self.log_file.fileno
     def write(self,string):
-        self.write_lock.acquire()
-        try:
-            self.old_stdout.write(string)
-            #string = string.replace('\\033\[[0-9\;]+m', '')
+        def __write(string):
+            #self.write_lock.acquire()
+            try:
+                self.old_stdout.write(string)
+                err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
 
-            #self.old_stderr.write(string)
-            err_pattern = self.error_pattern#re.compile('error|\s+err\s+|fail|wrong')
-            #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                current_scroll_pos = self.out.GetScrollPos(wx.VERTICAL)
+                current_insert_pos = self.out.GetInsertionPoint()
+                last_pos = self.out.GetLastPosition()
 
-            if False:#err_pattern.search(string.lower()):
-                last_start = 0
-                for m in err_pattern.finditer(string.lower()):
-                    #print(m.start(), m.end(), m.group())
+                v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
+                char_height = self.out.GetCharHeight()
+                w_client,h_client = self.out.GetClientSize()
+                line_in_a_page= h_client/char_height*2/3
+                max_gap=line_in_a_page
 
-                    #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                    self.out.AppendText( string[last_start:m.start()])
-                    self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                    #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                    self.out.AppendText( string[m.start():m.end()])
-                    last_start= m.end()
+                c_col, c_line = self.out.PositionToXY(current_scroll_pos) #current_scroll_pos
+                t_col, t_line = self.out.PositionToXY(v_scroll_range) #v_scroll_range last_pos
 
-                #wx.CallAfter(self.out.SetDefaultStyle,wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
-                self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                self.out.AppendText( string[last_start:])
-            else:
-                self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point_size, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))#wx.CallAfter(
-                wx.CallAfter(self.out.AppendText, string)
-            if self.log_file:
-                self.log_file.write(string)
-                self.log_file.flush()
-        except:
-            pass
-        self.write_lock.release()
+
+                x, y = c_col, c_line
+                real_gap = t_line- c_line
+                if real_gap>max_gap:#100
+                    self.__freeze_main_log_window()
+                    #self.previous_insert_pos = current_scroll_pos
+                    #self.previous_scroll_pos = current_scroll_pos
+                else:
+                    self.__thaw_main_log_window()
+                #tmp_msg ='\n!!!!! current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_scroll_pos, v_scroll_range, t_line, c_line, t_line -c_line)
+                #string+=tmp_msg
+                #self.old_stdout.write()
+                if True:#err_pattern.search(string.lower()):
+                    last_start = 0
+                    for m in err_pattern.finditer(string.lower()):
+                        self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        self.out.AppendText(  string[last_start:m.start()])
+                        self.out.SetDefaultStyle(wx.TextAttr(wx.RED,  wx.YELLOW,font =wx.Font(self.font_point+2, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                        self.out.AppendText(  string[m.start():m.end()])
+                        last_start= m.end()
+                    self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    self.out.AppendText( string[last_start:])
+
+                else:
+                    self.out.SetDefaultStyle(wx.TextAttr(wx.GREEN,  wx.BLACK,font =wx.Font(self.font_point, family = wx.DEFAULT, style = wx.NORMAL, weight = wx.NORMAL, faceName = 'Consolas')))
+                    self.out.AppendText( string)
+                if self.log_file:
+                    self.log_file.write(string)
+                    self.log_file.flush()
+
+                if real_gap>max_gap:#1000
+                    #time.sleep(0.01)
+                    pass
+                    self.out.SetInsertionPoint( self.out.GetScrollPos(wx.VERTICAL))
+                    #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                    #self.previous_insert_pos = current_scroll_pos
+                else:
+                    #self.previous_scroll_pos= self.out.GetScrollRange(wx.VERTICAL)#v_scroll_range
+                    #self.previous_insert_pos = last_pos+len(string)
+                    self.out.SetScrollPos(wx.VERTICAL, self.out.GetScrollRange(wx.VERTICAL))
+
+                #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+                #self.out.SetInsertionPoint( self.previous_insert_pos)                #self.out.ScrollToLine(c_line+line_in_a_page)
+                    #pos =self.out.XYToPosition(xxx[0], xxx[1])
+                #self.out.ShowPosition(self.previous_insert_pos)
+                self.__thaw_main_log_window()
+
+            except Exception as  e:
+                self.old_stdout.write('\n'+error(traceback.format_exc()))
+            #self.write_lock.release()
+            #time.sleep(0.1)
+        __write(string)
+        #threading.Thread(target=__write, args=[string]).start()
     def close(self):
         if self.log_file:
             self.log_file.flush()
@@ -107,6 +150,20 @@ class RedirectText(object):
     def flush(self):
         if self.log_file:
             self.log_file.flush()
+    def __freeze_main_log_window(self):
+        #return
+        if self.out.IsFrozen():
+            pass
+        else:
+            #self.output_window_last_position =self.out.GetScrollRange(wx.VERTICAL)
+            self.out.Freeze()
+    def __thaw_main_log_window(self):
+        #self.out.SetScrollPos(wx.VERTICAL, self.previous_scroll_pos)
+        if self.out.IsFrozen():
+            self.out.Thaw()
+        else:
+            pass
+
 class process_info(object):
     process = None
     pid=None
@@ -131,6 +188,7 @@ class FileEditor(wx.Panel):
     case_suite_node =None
     full_file_name = None
     file_instance = None
+    name =''
     def on_close(self):
         if self.full_file_name:
             data = self.editor.GetValue()
@@ -141,6 +199,7 @@ class FileEditor(wx.Panel):
         #done 2017-9-12: handle close tab in edit_area
     def __init__(self, parent, title='pageOne', type ='grid', file_name = None):
         wx.Panel.__init__(self, parent)
+        self.name = title
         self.parent = parent
         self.type = type
         self.full_file_name = file_name
@@ -205,7 +264,45 @@ class FileEditor(wx.Panel):
             self.Refresh()
         #wx.StaticText(self, -1, "THIS IS A PAGE OBJECT", (20,20))
 #DONE: DasHFrame should handle CLOSE event when closing the app, call on_close_tab_in_edit_area for all opened sessions and files
-class DasHFrame(MainFrame):#wx.Frame
+from functools import wraps
+import pprint
+def gui_event_thread_handler( func):
+
+
+    @wraps(func)
+    def inner(func, *args, **kwargs):
+        ret =None
+        try:
+            ret  = func(*args, **kwargs)
+            #th = threading.Thread(target=func,args= args, kwargs=kwargs)
+            #th.start()
+        except:
+            error(traceback.format_exc())
+        return  ret
+    return inner
+
+
+class gui_event_decorator():
+
+    def __init__(self):
+        pass
+    @classmethod
+    def gui_even_handle(self, func):
+        def inner(*args, **kwargs):
+            ret =None
+            try:
+                #print('decorator!!!')
+                #ret  = func(*args, **kwargs)
+                th = threading.Thread(target=func,args= args, kwargs=kwargs)
+                th.start()
+                #print('decorator####')
+            except:
+                print(traceback.format_exc())
+            return  ret
+        return inner
+
+
+class DasHFrame(MainFrame, gui_event_decorator):#wx.Frame
     ini_setting = None
         #m_left_navigator =None
     redir = None
@@ -243,8 +340,15 @@ class DasHFrame(MainFrame):#wx.Frame
 
     mail_failure =False
     last_time_call_on_idle= None
+    ini_file=None
+
+    dict_function_obj= {'instance':{}}
+    dict_function_files = {}
+    updating_function_page =False
+    m_log_current_pos = None
     def __init__(self,parent=None, ini_file = './gDasH.ini'):
         #wx.Frame.__init__(self, None, title="DasH")
+        gui_event_decorator.__init__(self)
         self.timestamp= datetime.now().isoformat('-').replace(':','-')
         self.case_list= []
         self.case_queue = Queue.Queue()
@@ -256,6 +360,7 @@ class DasHFrame(MainFrame):#wx.Frame
         self.sequence_queue= Queue.Queue()
         #self.sequence_queue.put()
         self.ini_setting    = ConfigParser.ConfigParser()
+        self.m_log_current_pos = 0
         if os.path.exists(ini_file):
             self.ini_setting.read(ini_file)
             self.src_path       = os.path.abspath(self.ini_setting.get('dash','src_path'))
@@ -270,8 +375,8 @@ class DasHFrame(MainFrame):#wx.Frame
             self.mail_password  =self.ini_setting.get('dash', 'mail_password')
             self.web_port       =int(self.ini_setting.get('dash', 'web_port'))
         else:
-            with open(ini_file, 'w') as ini_file:
-                ini_file.write('''[dash]
+            with open(ini_file, 'w') as tmp_ini_file:
+                tmp_ini_file.write('''[dash]
 test_suite_path = ../test_suite/
 log_path= {log_path}
 lib_path = {lib_path}
@@ -297,7 +402,9 @@ web_port={web_port}
                     mail_read_url = self.mail_read_url,
                     mail_password = self.mail_password,
                     web_port = self.web_port))
-
+                tmp_ini_file.flush()
+        #self.ini_setting.read(ini_file)
+        self.ini_file = ini_file
         from  lib.common import create_case_folder, create_dir
         sys.argv.append('-l')
         sys.argv.append('{}'.format(self.log_path))
@@ -321,13 +428,14 @@ web_port={web_port}
         fileMenu = wx.Menu()
         #open_test_suite = fileMenu.Append(wx.NewId(), "Open TestSuite", "Open a Test Suite")
         #open_test_case = fileMenu.Append(wx.NewId(), "Open TestCase", "Open a Test Case")
+        generate_test_report = fileMenu.Append(wx.NewId(), "Generate Test Report", "Generate Test Report")
         generate_code = fileMenu.Append(wx.NewId(), "Generate Python Code", "Generate Python Code")
         mail_test_report = fileMenu.Append(wx.NewId(), "Mail Test Report", "Mail Test Report")
         get_case_queue = fileMenu.Append(wx.NewId(), "Get Case Queue", "Get Case Queue") #done
         clear_case_queue = fileMenu.Append(wx.NewId(), "Clear Case Queue", "Clear Case Queue")
         kill_running_case = fileMenu.Append(wx.NewId(), "Kill Running Case(s)", "Kill Running Case(s)")
-        self.m_menubar_main.Append(fileMenu, "&Open")
-
+        self.m_menubar_main.Append(fileMenu, "&Operations")
+        self.Bind(wx.EVT_MENU,self.on_generate_test_report ,generate_test_report)
         self.Bind(wx.EVT_MENU,self.on_generate_code ,generate_code)
         self.Bind(wx.EVT_MENU,self.on_mail_test_report ,mail_test_report)
         self.Bind(wx.EVT_MENU,self.get_case_queue ,get_case_queue)
@@ -337,6 +445,7 @@ web_port={web_port}
         self.m_command_box.Bind(wx.EVT_TEXT_ENTER, self.on_command_enter)
         self.m_command_box.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.m_command_box.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.m_log.Bind(wx.EVT_TEXT, self.on_m_log_text_changed)
 
         from wx.aui import AuiNotebook
         bookStyle = wx.aui.AUI_NB_DEFAULT_STYLE &(~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
@@ -349,10 +458,7 @@ web_port={web_port}
         self.navigator.AddPage(self.function_page, 'FUNCTION')
         self.navigator.AddPage(self.case_suite_page, 'CASE')
 
-
-
-
-        self.edit_area = AuiNotebook(self.m_file_editor, style = wx.aui.AUI_NB_DEFAULT_STYLE)
+        self.edit_area = AuiNotebook(self.m_file_editor, style = bookStyle)#wx.aui.AUI_NB_DEFAULT_STYLE)
         if False:
             new_page = FileEditor(self.edit_area, 'a', type= type)
             self.edit_area.AddPage(new_page, 'test')
@@ -364,8 +470,8 @@ web_port={web_port}
 
         left_sizer = wx.BoxSizer(wx.HORIZONTAL)
         left_sizer.Add(self.m_left_navigator, 1, wx.EXPAND)
-
-
+        self.edit_area.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_active_change_in_edit_area)
+        #self.m_file_editor.Bind(wx.EVT_CLOSE, self.on_close_tab_in_edit_area)
 
         self.case_suite_page.Bind(wx.EVT_LEFT_DCLICK, self.m_case_treeOnLeftDClick)
         #self.case_suite_page.Bind(wx.EVT_MOUSEWHEEL, self.case_tree_OnMouseWheel)
@@ -388,14 +494,12 @@ web_port={web_port}
         edit_sizer = wx.BoxSizer()
         edit_sizer.Add(self.edit_area, 1, wx.EXPAND, 1)
         self.m_file_editor.SetSizer(edit_sizer)
-        right_sizer.Add(self.m_file_editor,     6,  wx.ALL|wx.EXPAND, 1)
-        right_sizer.Add(self.m_log,         3,  wx.ALL|wx.EXPAND, 2)
-        right_sizer.Add(self.m_command_box, 0,  wx.ALL|wx.EXPAND, 3)
+        right_sizer.Add(self.m_file_editor,     100,  wx.ALL|wx.EXPAND, 1)
+        #right_sizer.Add(self.m_log,         2,  wx.ALL|wx.EXPAND, 2)
+        right_sizer.Add(self.m_command_box,1,  wx.ALL|wx.EXPAND, 3)
         main_sizer.Add(right_sizer, 8,  wx.EXPAND)
         self.SetSizer(main_sizer)
-        self.build_session_tab()
-        self.build_suite_tree()
-        self.build_function_tab()
+
 
         ico = wx.Icon('./gui/dash.bmp', wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
@@ -410,12 +514,17 @@ web_port={web_port}
         self.case_suite_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.session_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.function_page.Bind(wx.EVT_MOTION, self.OnMouseMotion)
-
+        #wx.html.EVT_HTML_LINK_CLICKED wx.EVT_TEXT_URL,  wx.EVT_TEXT_URL,
+        self.m_log.Bind(wx.EVT_TEXT_URL, self.on_leftD_click_url_in_m_log)
         self.Bind(wx.EVT_IDLE, self.on_idle)
         self.last_time_call_on_idle = datetime.now()
 
+        self.build_session_tab()
+        self.build_suite_tree()
+        self.build_function_tab()
         self.Show(True)
         self.Maximize()
+        self.create_main_log_window()
 
     def on_close(self, event):
         try:
@@ -437,13 +546,14 @@ web_port={web_port}
             self.generate_code(file_name='{}/test_script.py'.format(self.suite_path))
             if len(self.dict_test_report):
                 self.mail_test_report("DASH TEST REPORT")
-            for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+            for index in range(1,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
                 closing_page = self.edit_area.GetPage(index)
                 if isinstance(closing_page, (SessionTab)):
                     if closing_page:
                         name = closing_page.name
                         self.tabs_in_edit_area.pop(self.tabs_in_edit_area.index(name))
                 try:
+                    closing_page.Disable()
                     closing_page.on_close()
                 except:
                     pass
@@ -471,8 +581,8 @@ web_port={web_port}
                         'case_name','log']]
         report = '''Test Report
 RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Name,\tLog\n'''
-        if len(self.dict_test_report):
-            with open(filename, 'w') as f:
+        with open(filename, 'w') as f:
+            if len(self.dict_test_report):
                 #f.write(report)
                 for pi in sorted(self.dict_test_report, key = lambda x: self.dict_test_report[x][1]):
                     case_name, start_time, end_time, duration, return_code ,proc, log_path =self.dict_test_report[pi][:7]
@@ -525,24 +635,27 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                         if report_all_cases:
                             report+=record+'\n'
                             self.mailed_case_pids.append(pi)
-                        elif  pi not in self.mailed_case_pids:
-                            report+=record+'\n'
-                            self.mailed_case_pids.append(pi)
-
                         else:
-                            pass
-                from lib.common import array2htmltable
-                report_in_html_string = array2htmltable(report_in_list)
-                f.write(report_in_html_string)
-
-
+                            print('{}\n'.format(record))
+                            if  pi not in self.mailed_case_pids:
+                                report+=record+'\n'
+                                self.mailed_case_pids.append(pi)
+                            else:
+                                pass #
+            from lib.common import array2htmltable
+            report_in_html_string = array2htmltable(report_in_list)
+            f.write(report_in_html_string)
         return report
 
     def on_close_tab_in_edit_area(self, event):
         #self.edit_area.GetPage(self.edit_area.GetSelection()).on_close()
+        if self.edit_area.GetSelection()==0:
+            return
+
         def close_tab():
             global  gSessions
             closing_page = self.edit_area.GetPage(self.edit_area.GetSelection())
+            index =self.edit_area.GetPageIndex(closing_page)
             closing_page.on_close()
             if isinstance(closing_page, (SessionTab)):
                 ses_name = closing_page.name
@@ -578,7 +691,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 self.case_suite_page.SetItemHasChildren(new_item)
                 #self.m_case_tree.ItemHasChildren()
                 #self.m_case_tree.InsertItem(new_item,new_item,'')
-
+    @gui_event_decorator.gui_even_handle
     def build_suite_tree(self):
         suite_path = self.suite_path #os.path.abspath(self.ini_setting.get('dash','test_suite_path'))
         if not os.path.exists(suite_path):
@@ -629,10 +742,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                     self.add_item_to_subfolder_in_tree(ht_item)
         except Exception as e:
             pass
+    @gui_event_decorator.gui_even_handle
     def build_session_tab(self):
         if self.session_page.RootItem:
             self.session_pagef.DeleteAllItems()
-
+        self.ini_setting.read(self.ini_file)
         session_path = os.path.abspath(self.ini_setting.get('dash','session_path'))
         self.session_path= session_path
         if not os.path.exists(session_path):
@@ -681,9 +795,24 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         self.session_page.Expand(root)
         first_child = self.session_page.GetFirstChild(root)
         self.session_page.Expand(first_child[0])
+    #@gui_event_decorator.gui_even_handle
+    def create_main_log_window(self):
+        ses_name ='*LOG*'
+        indow_id = self.edit_area.AddPage(self.m_log, ses_name)
+        index = self.edit_area.GetPageIndex(self.m_log)
+        self.edit_area.SetSelection(index)
+        #self.edit_area.Disable(0,False)
+
+
+    def on_active_change_in_edit_area(self, event):
+        if self.edit_area.GetPageText(self.edit_area.GetSelection())=="*LOG*":
+            self.edit_area.SetWindowStyle(wx.aui.AUI_NB_DEFAULT_STYLE&(~wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB))
+        else:
+            self.edit_area.SetWindowStyle(wx.aui.AUI_NB_DEFAULT_STYLE)
+
+    #@gui_event_decorator.gui_even_handle
     def on_LeftDClick_in_Session_tab(self, event):
-
-
+        #self.session_page.Disable()
         ses_name = self.session_page.GetItemText(self.session_page.GetSelection())
         self.session_page.GetItemText(self.session_page.GetSelection())
         session_attribute = self.session_page.GetItemData(self.session_page.GetSelection())
@@ -692,7 +821,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             counter =1
             original_ses_name = ses_name
             tmp_tabs =[]
-            for index in range(0,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
+            for index in range(1,self.edit_area.GetPageCount()): #len(self.tabs_in_edit_area)):
                 tab_page = self.edit_area.GetPage(index)
                 #tab_page.name
                 tmp_tabs.append(tab_page.name)
@@ -722,11 +851,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             log_path='a_fake_log_path_for_auto_script'
             attribute['log_path']=log_path
             self.add_new_session_to_globals(new_page, '{}'.format(attribute))
-            #globals().update({ses_name: new_page.session})
 
-            time.sleep(0.1)
+            #time.sleep(0.1)
             event.Skip()
-
+        time.sleep(0.5)
+        #self.session_page.Enable()
     def add_new_session_to_globals(self, new_page, args_str):
         name = new_page.name
         global  DUT
@@ -757,44 +886,76 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             DUT[name]= new_page
             self.add_cmd_to_sequence_queue('DUT["{}"] = dut.dut(name= "{}", **{})'.format(new_page.name,new_page.name,args_str.replace("'a_fake_log_path_for_auto_script'",'log_path').replace("'not_call_open': True,", "'not_call_open': False,") ), 'dut')
             #session  = dut(name, **attributes)
-
+    @gui_event_decorator.gui_even_handle
     def on_command_enter(self, event):
 
         info('called on_command_enter')
+        #self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
+        #self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
+        #self.redir.out.SetInsertionPoint(self.redir.previous_insert_pos)
+        #self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.previous_scroll_pos)
+        self.redir.out.SetInsertionPoint(self.redir.out.GetLastPosition())
+        self.redir.out.SetScrollPos(wx.VERTICAL,self.redir.out.GetScrollRange(wx.VERTICAL))
         cmd = self.m_command_box.GetValue()
         self.m_command_box.Clear()
-        if cmd.strip()=='':
-            return
 
-
-        module,class_name, function,args = parse_command_line(cmd)
-        self.add_cmd_to_history(cmd,  module, None, class_name)
-
-        #args[0]=self.sessions_alive['test_ssh'].session
-        if module !='' or class_name!='' or function!='':
-            after_sub_args=[]
-            for i in range(len(args)):
-                a = args[i]
-                if a in globals():
-                    after_sub_args.append(a)
-                elif a in DUT:
-                    after_sub_args.append('DUT["{}"]'.format(a))
-                else:
-                    after_sub_args.append(a)
-            instance_name, function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,after_sub_args, globals())
-            call_function = None
-
-            if class_name!="":
-
-                call_function = getattr(instance_name, function_name)
-                #(*new_argvs,**new_kwargs)
+        cmd = cmd.strip()
+        cmds = cmd.replace('\r\n', '\n').split('\n')
+        def handle_one_cmd(cmd):
+            if cmd.strip()=='':
+                return
+            cmd_string = cmd.strip()
+            lex = shlex.shlex(cmd_string)
+            lex.quotes = '"'
+            lex.whitespace_split = True
+            cmd_list=list(lex)
+            function_obj_name = cmd_list[0]
+            if self.dict_function_obj.has_key(function_obj_name):
+                call_function = self.dict_function_obj[function_obj_name]
             else:
-                call_function = instance_name#(*new_argvs,**new_kwargs)
-            th =threading.Thread(target=call_function, args=new_argvs, kwargs=new_kwargs)
-            th.start()
-            self.add_cmd_to_history(cmd,  module, str_code, class_name)
-        else:
-            error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
+                return
+            module,class_name, function,args = parse_command_line(cmd)
+
+            self.add_cmd_to_history(cmd,  module, None, class_name)
+            #args[0]=self.sessions_alive['test_ssh'].session
+            if module !='' or class_name!='' or function!='':
+                after_sub_args=[]
+                for i in range(len(args)):
+                    a = args[i]
+                    if a in globals():
+                        after_sub_args.append(a)
+                    elif a in DUT:
+                        after_sub_args.append('DUT["{}"]'.format(a))
+                    else:
+                        after_sub_args.append(a)
+                function_name, new_argvs, new_kwargs, str_code = call_function_in_module(module,class_name,function,after_sub_args, globals())
+                #call_function = None
+
+                # if class_name!="":
+                #
+                #     call_function = getattr(instance_name, function_name)
+                #     #(*new_argvs,**new_kwargs)
+                # else:
+                #     call_function = instance_name#(*new_argvs,**new_kwargs)
+                th =threading.Thread(target=call_function, args=new_argvs, kwargs=new_kwargs)
+                th.start()
+
+                #self.m_command_box.ShowPosition(len(self.m_command_box.GetString())+1)
+                self.add_cmd_to_history(cmd,  module, str_code, class_name)
+
+            else:
+                error('"{}" is NOT a valid call in format:\n\tmodule.class.function call or \n\tmodule.function'.format(cmd))
+
+        for cmd in cmds:
+            try:
+                handle_one_cmd(cmd)
+            except:
+                error(traceback.format_exc())
+        #self.redir.previous_scroll_pos=self.m_log.GetScrollRange(wx.VERTICAL)
+        #self.redir.provious_insert_pos = self.m_log.GetLastPosition()+1
+
+
+        event.Skip()
     def add_src_path_to_python_path(self, path):
         paths = path.split(';')
 
@@ -820,6 +981,11 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         elif keycode == wx.PAPER_ENV_INVITE and wx.GetKeyState(wx.WXK_SHIFT):
             self.m_command_box.AppendText('?')
             self.on_command_enter(event)
+        elif keycode in [wx.WXK_RETURN]:
+            #cmd = self.m_command_box.GetValue()
+            self.m_command_box.SetInsertionPointEnd()
+            #self.m_command_box.SetValue(cmd)
+            event.Skip()
         else:
             event.Skip()
     def on_key_up(self, event):
@@ -835,6 +1001,7 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             self.m_command_box.AppendText(new_command)
         if keycode in [wx.WXK_TAB]:
             pass
+
         else:
             event.Skip()
     def add_cmd_to_history(self, cmd, module_name, str_code, class_name=""):
@@ -885,14 +1052,50 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
         except Exception as e:
             pass
         return fundefstr
+
+    @gui_event_decorator.gui_even_handle
+    def check_whether_function_file_is_updated(self):
+        for module_file in self.dict_function_files.keys():
+            old_modify_time = self.dict_function_files[module_file]
+            current_modify_time = os.path.getmtime(module_file)
+            if current_modify_time ==old_modify_time:
+                continue
+            else:
+                if self.updating_function_page is False:
+                    self.build_function_tab()
+    @gui_event_decorator.gui_even_handle
     def build_function_tab(self):
+        self.updating_function_page=True
         try:
+            instances = self.dict_function_obj['instance'].keys()
+            for inst_name in instances:
+                inst = self.dict_function_obj['instance'][inst_name]
+                #print ('instance ref count',inst_name, sys.getrefcount(inst))
+                if 'close' in dir(inst):
+                    inst.close()
+                del inst
+            fun_list = self.dict_function_obj.keys()
+            for fun_name in fun_list:
+                inst = self.dict_function_obj[fun_name]
+                #print ('instance ref count',fun_name, sys.getrefcount(inst))
+                del inst
+            time.sleep(1)
+            #import gc
+            #gc.collect()
+
+            self.dict_function_obj={'instance':{}}
+            self.dict_function_files= {}
             src_path = os.path.abspath(self.src_path)
             if not os.path.exists(src_path):
                 src_path= os.path.abspath(os.path.curdir)
             base_name = os.path.basename(src_path)
+            #FIX ISSUE BELOW, rebuild function tree
+            # Traceback (most recent call last):
+            # File "gui\DasHFrame.pyc", line 995, in build_function_tab
+            # File "wx\_controls.pyc", line 5428, in AddRoot
+            # PyAssertionError: C++ assertion "parent.IsOk() || !(HTREEITEM)::SendMessageW((((HWND)GetHWND())), (0x1100 + 10), (WPARAM)(0x0000), (LPARAM)(HTREEITEM)(0))" failed at ..\..\src\msw\treectrl.cpp(1472) in wxTreeCtrl::DoInsertAfter(): can't have more than one root in the tree
 
-
+            self.function_page.DeleteAllItems()
             root =self.function_page.AddRoot(base_name)
             item_info = wx.TreeItemData({'name':src_path})
             self.function_page.SetItemData(root, item_info)
@@ -911,11 +1114,13 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
                 path_name = '{}'.format(os.path.abspath(self.src_path))
                 module_name = os.path.basename(module_file).split('.')[0]
                 extension = os.path.basename(module_file).split('.')[-1]
+                full_name = '{}/{}'.format(path_name,module_file)
                 if extension.lower() in ['py', 'pyc']:
                     try:
                         new_module = self.function_page.InsertItem(root, root, module_name)
-                        file, path_name, description = imp.find_module(module_name)
-                        lmod = imp.load_module(module_name, file, path_name,description)
+                        module_file, path_name, description = imp.find_module(module_name)
+                        lmod = imp.load_module(module_name, module_file, path_name,description)
+                        self.dict_function_files[full_name] = os.path.getmtime(full_name)
                         for attr in sorted(dir(lmod)):
                             if attr.startswith('__'):
                                 continue
@@ -924,24 +1129,33 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
 
                             if attr_type == types.FunctionType :
                                 new_item  = self.function_page.InsertItem(new_module, new_module, '{}'.format( attr))
-                                item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr),
-                                                             'tip':self.get_description_of_function(attr_obj)})
+                                fun_str = '{}.{}'.format(module_name,attr)
+                                item_info = wx.TreeItemData({'name':fun_str,
+                                                             'tip':self.get_description_of_function(attr_obj),
+
+                                                             })
+                                self.dict_function_obj[fun_str] = attr_obj
                                 self.function_page.SetItemData(new_item, item_info)
                             elif attr_type== types.TypeType:
-                                class_obj = getattr(lmod, attr)
+                                #class_obj = getattr(lmod, attr)
+                                instance = getattr(lmod, attr)()
+                                self.dict_function_obj['instance'][attr]=instance
+
                                 new_class  = self.function_page.InsertItem(new_module, new_module, attr)
                                 item_info = wx.TreeItemData({'name':'{}.{}'.format(module_name,attr)})
                                 self.function_page.SetItemData(new_class, item_info)
-                                for attr_in_class in sorted(dir(class_obj)):
+                                for attr_in_class in sorted(dir(instance)):
                                     if attr_in_class.startswith('__'):
                                         continue
-                                    attr_obj = getattr(class_obj,attr_in_class)
+                                    attr_obj = getattr(instance,attr_in_class)
                                     attr_type =type(attr_obj)
 
                                     if attr_type == types.MethodType :
-                                        item_info = wx.TreeItemData({'name':'{}.{}.{}'.format(module_name,attr,attr_in_class),
+                                        fun_str = '{}.{}.{}'.format(module_name,attr,attr_in_class)
+                                        item_info = wx.TreeItemData({'name':fun_str,
                                                                      'tip':self.get_description_of_function(attr_obj)})
                                         new_item  = self.function_page.InsertItem(new_class, new_class, attr_in_class)
+                                        self.dict_function_obj[fun_str] = getattr(instance, attr_in_class)#attr_obj
                                         self.function_page.SetItemData(new_item, item_info)
                     except :
                         pass
@@ -950,6 +1164,8 @@ RESULT,\tStart_Time,\tEnd_Time,\tPID,\tDuration(s),\tDuration(D:H:M:S)\tCase_Nam
             self.function_page.Expand(first_child[0])
         except Exception as e:
             print(traceback.format_exc())
+        self.updating_function_page=False
+
     def on_LeftDClick_in_Function_tab(self,event):
         event.Skip()
         select_item = self.function_page.GetSelection()
@@ -1140,7 +1356,6 @@ if __name__ == "__main__":
                 self.case_suite_page.GetItemData(hit_item).Data['PROCESS']=p
                 self.case_suite_page.GetItemData(hit_item).Data['FULL_NAME']= item_name
                 info('start process {} :{}'.format(item_name,  p.pid))
-
                 #p.join() # this blocks until the process terminates
                 time.sleep(1)
             except Exception as e :
@@ -1170,6 +1385,7 @@ if __name__ == "__main__":
                 p, case_log_path = self.run_script(case_name_with_args)
         self.check_case_running_status_lock.release()
         if changed:
+            self.generate_report(filename='{}/dash_report_{}.html'.format(self.log_path, self.timestamp),report_all_cases= False)
             #test_report = self.generate_report(filename='{}/dash_report.txt'.format(self.log_path))
             self.mail_test_report('DasH Test Report-updating')
 
@@ -1472,48 +1688,46 @@ if __name__ == "__main__":
                 content+="<html>\n<title>Directory listing for %s</title>\n" % displaypath
                 content+="<body>\n<h2>Directory listing for %s</h2>\n" % displaypath
                 content+="<hr>\n<ul>\n"
-                content+='''
-                <SCRIPT>
-            function post( id, script, dest )
-                {
-                    element = document.getElementById(id);
-                    value = element.value
-                    params = 'script='+encodeURI(script)+'&arg='+encodeURI(value)
-                    var xmlhttp;
+                content+='''<SCRIPT>
+function post( id, script, dest )
+{
+element = document.getElementById(id);
+value = element.value
+params = 'script='+encodeURI(script)+'&arg='+encodeURI(value)
+var xmlhttp;
 
-                    if (window.XMLHttpRequest)
-                    {// code for IE7+, Firefox, Chrome, Opera, Safari
-                        xmlhttp=new XMLHttpRequest();
-                    }
-                    else
-                    {// code for IE6, IE5
-                        xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
-                    }
+if (window.XMLHttpRequest)
+{// code for IE7+, Firefox, Chrome, Opera, Safari
+xmlhttp=new XMLHttpRequest();
+}
+else
+{// code for IE6, IE5
+xmlhttp=new ActiveXObject('Microsoft.XMLHTTP');
+}
 
-                    xmlhttp.onreadystatechange=function()
-                    {
-                        if (xmlhttp.readyState==4 && xmlhttp.status==200)
-                        {
-                            alert(xmlhttp.responseText);
-                            newHTML( xmlhttp.responseText);
-                            setTimeout("window.close()",3000);
-                        }
-                    }
-                    xmlhttp.open("POST",dest,true);
-                    xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-                    xmlhttp.send( params );
-                }
-            function newHTML(HTMLstring) {
-                //var checkitem = mygetCheckedItem();
-                //HTMLstring=post( 'manualtest','/cgi-bin/onSUTLIST.py', 'bedname='+encodeURI(checkitem) );
-                var newwindow=window.open();
-                var newdocument=newwindow.document;
-                newdocument.write(HTMLstring);
-                newdocument.close();
-            }
-                </SCRIPT>
-                <table>
-                '''
+xmlhttp.onreadystatechange=function()
+{
+if (xmlhttp.readyState==4 && xmlhttp.status==200)
+{
+alert(xmlhttp.responseText);
+newHTML( xmlhttp.responseText);
+setTimeout("window.close()",3000);
+}
+}
+xmlhttp.open("POST",dest,true);
+xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+xmlhttp.send( params );
+}
+function newHTML(HTMLstring) {
+//var checkitem = mygetCheckedItem();
+//HTMLstring=post( 'manualtest','/cgi-bin/onSUTLIST.py', 'bedname='+encodeURI(checkitem) );
+var newwindow=window.open();
+var newdocument=newwindow.document;
+newdocument.write(HTMLstring);
+newdocument.close();
+}
+</SCRIPT>
+<table>'''
 
                 for name in list:
                     extension = os.path.basename(name).split('.')[-1]
@@ -1538,15 +1752,12 @@ if __name__ == "__main__":
                         related_path+='/'
                     fullfilename =related_path+urllib.quote(linkname)
                     if related_path.startswith('/case') and os.path.isfile(fullname):
-                        input_button = """
-                        <input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on">
-                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunCase')";>"""%(filename,filename,fullfilename)
+                        input_button = """<input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on"/>
+<input name="go" value="Run" type="button" onclick="post('%s','%s', 'RunCase');return false";/>"""%(filename,filename,fullfilename)
                     elif related_path.startswith('/suite') and os.path.isfile(fullname):
-                        input_button = """
-
-                        <input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on">
-                        <input name="go" value="Run" type="button" onClick="post('%s','%s', 'RunSuite')";>
-                        </td></tr>\n"""%(filename,filename,fullfilename)
+                        input_button = """<input id=%s name="ARGS" style="width:200"  type="text" value="" rows="1"   autocomplete="on"/>
+<input name="go" value="Run" type="button" onclick="post('%s','%s', 'RunSuite');return false";/>
+</td></tr>\n"""%(filename,filename,fullfilename)
                     content+='<tr><td><a href="%s">%s</a></td><td>'% (related_path+urllib.quote(linkname), cgi.escape(displayname))+input_button
                 content+="</table></ul>\n<hr>\n</body>\n</html>\n"
 
@@ -1628,6 +1839,11 @@ if __name__ == "__main__":
                     print(path)
                     path = path+ self.path[4:]#replace('/log/','/')
                     encoded = self.show_content_by_path(path, '*')
+                elif self.path.startswith('/report'):
+                    path = os.path.abspath(self.log_path)
+                    print(path)
+                    path = path+ self.path[7:]#replace('/report/','/')
+                    encoded = self.show_content_by_path(path, 'html')
                 else:
                     path = os.path.abspath(root)
                     path = path+ self.path.replace('//','/')
@@ -1717,7 +1933,12 @@ if __name__ == "__main__":
                     s=str(s)
                     import urlparse
                     req = urlparse.parse_qs(urlparse.unquote(s))
-                    script = '{}/{}'.format(self.suite_path, req['script'][0][7:])
+                    strip_char_length = 6 #for case
+                    if self.path.startswith('/RunSuite'):
+                        strip_char_length = 7
+                    elif self.path.startswith('/RunCase'):
+                        strip_char_length = 6
+                    script = '{}/{}'.format(self.suite_path, req['script'][0][strip_char_length:])#remove the starting string /case/ or /suite/
                     if req.has_key('arg'):
                         arg= req['arg'][0]
                     else:
@@ -1812,6 +2033,7 @@ if __name__ == "__main__":
         else:
             self.case_queue.put(line)
         return info('adding case to queue: {}'.format(line))
+
     def OnMouseMotion(self, evt):
         try:
             active_page = self.navigator.GetCurrentPage()
@@ -1838,9 +2060,12 @@ if __name__ == "__main__":
     def on_keyboard_key_down(self,event):
 
         event.Skip()
+    @gui_event_decorator.gui_even_handle
     def on_generate_code(self, event):
         self.generate_code('{}/test_code_{}.py'.format(self.suite_path, datetime.now().isoformat().replace(':','-').replace('.','-')))
     def on_right_up_over_tab_in_edit_area(self, event):
+        if self.edit_area.GetPageText(self.edit_area.GetSelection())=="*LOG*":
+            return
         x = event.GetEventObject()
         tabID = x.GetId()
         tab = x.FindWindowById(tabID)
@@ -1863,12 +2088,95 @@ if __name__ == "__main__":
             pass
         #print('{} i\'m idle !!!!!!!!!!!!!!!!!!'.format(datetime.now().isoformat()))
     def on_idle(self,event):
+       # print('helllo!{}, {}\n'.format(                self.m_log.PositionToXY(                        self.m_log.GetScrollPos(wx.VERTICAL)                )[1],                self.m_log.PositionToXY(                        self.m_log.GetScrollRange(wx.VERTICAL))[1]        )        )
+        #self.freeze_thaw_main_log_window()
+        #self.m_log_current_pos-=1
+        #self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
+        if True:
+            self.out = self.redir.out
+            current_pos = self.out.GetScrollPos(wx.VERTICAL)
+            v_scroll_range = self.out.GetScrollRange(wx.VERTICAL)
+            char_height = self.out.GetCharHeight()
+            w_client,h_client = self.out.GetClientSize()
+            max_gap=h_client*2/char_height/3
+            c_col, c_line = self.out.PositionToXY(current_pos)
+            t_col, t_line = self.out.PositionToXY(v_scroll_range)
+            current_insert = self.out.GetInsertionPoint()
+            if False:
+                tmp_msg ='\n insert {}, current_pos {} current first visible line {} column {} last line {}, colum {}\n'.format(current_insert, current_pos,  c_line, c_col, t_line, t_col)
+                self.redir.old_stdout.write(tmp_msg)
+        #self.redir.old_stdout.write('current {}, range {}, t_line {}, c_line {}, gap {}\n'.format(current_pos, v_scroll_range, t_line, c_line, t_line -c_line))
+
         now = datetime.now()
-        max_idle=10
+        max_idle=3
         if (now-self.last_time_call_on_idle).total_seconds()>max_idle:
             self.last_time_call_on_idle=now
             th=threading.Thread(target=self.idle_process, args=[])
             th.start()
+        if self.updating_function_page is False:
+            threading.Thread(target=self.check_whether_function_file_is_updated, args=[]).start()
+    def on_m_log_text_changed(self, event):
+        event.Skip()
+        #self.freeze_thaw_main_log_window()
+
+    def freeze_thaw_main_log_window(self):
+            c_col, c_line = self.m_log.GetPosition()
+
+            #print('cline', c_line)
+            v_scroll_range = self.m_log.GetLastPosition()#wx.VERTICAL
+            char_height = self.m_log.GetCharHeight()
+            w_client,h_client = self.m_log.GetClientSize()
+            max_gap=h_client/char_height/3
+            current_pos = self.m_log.GetScrollPos(wx.VERTICAL)#self.m_log.XYToPosition(c_col, c_line)
+            c_col, c_line = self.m_log.PositionToXY(current_pos)
+            t_col, t_line = self.m_log.PositionToXY(v_scroll_range)
+
+            #string = "{}\ncurrent {}\t total {},max_gap {}, gap {}, range {}\n".format(string, c_line, t_line, max_gap,t_line-c_line, self.out.GetScrollRange(wx.VERTICAL))
+            #todo: when mulit-threads(up-to 7~9 SessionTab opened) are writting to DasHFrame.m_log, the log window was frozen, can't be thawed, if disable .freeze_main_log_window, there is no 'no response' issue
+            #so suspect it's freeze issue
+            frozen = self.m_log.IsFrozen()
+            if t_line - c_line>max_gap:
+                if not frozen:
+                    self.m_log.SetInsertionPoint(self.m_log_current_pos)
+                    self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
+                    self.m_log.Freeze()
+                    #self.m_log_current_pos = current_pos#self.m_log.GetScrollPos(wx.VERTICAL)#current_pos
+                    self.m_log.SetInsertionPoint(self.m_log_current_pos)
+                    self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
+                    frozen=True
+
+            else:
+                self.m_log_current_pos= self.m_log.GetScrollRange(wx.VERTICAL)
+                #self.m_log.SetScrollPos(wx.VERTICAL, )
+
+            if frozen:
+                self.m_log.SetInsertionPoint(self.m_log_current_pos)
+                self.m_log.SetScrollPos(wx.VERTICAL, self.m_log_current_pos)
+
+                self.m_log.Thaw()
+                #time.sleep(0.1)
+
+
+
+
+    @gui_event_decorator.gui_even_handle
+    def on_generate_test_report(self,event):
+        file_name='{}/dash_report_{}.html'.format(self.log_path, self.timestamp)
+        report = self.generate_report(filename=file_name)#'{}/dash_report_{}.html'.format(self.log_path, self.timestamp))
+        report = 'http://{}:{}/log/{}\n{}'.format(self.web_host, self.web_port, file_name.replace(self.log_path, ''),report)
+        print(report)
+    @gui_event_decorator.gui_even_handle
+    def on_leftD_click_url_in_m_log(self, event):
+
+        #print(urlString)
+        mouseEvent = event.GetMouseEvent()
+        if mouseEvent.LeftDClick():
+            urlString = self.m_log.GetRange(event.GetURLStart(),event.GetURLEnd())
+            webbrowser.open(urlString)
+        event.Skip()
+
+
+
 #done: 2017-08-22, 2017-08-19 save main log window to a file
 #done: 2017-08-19 add timestamps to log message
 #done: 2017-08-22, 2017-08-19 mail to someone
@@ -1892,3 +2200,6 @@ if __name__ == "__main__":
     #     GetFunArgs(35b)
     #                  ^
     # SyntaxError: invalid syntax
+#canceled: start thread for all gui event handlers with decoration, catch all exceptions, ###no need to do that
+#done: mark red for all strings who match error patterns in "*LOG*", m_log
+#fix: generate test report right after case completed (failed or passed)

@@ -37,28 +37,32 @@ paramiko.SSHClient()
 #C:/Python27/Lib/site-packages/paramiko-1.16.0-py2.7.egg!/paramiko/__init__.py
 
 import shutil
-folder = '../DasH'
+target_distribute_folder = '../DasH'
 
 for op in sys.argv:
 
     indexOfd = op.find('-d')
     if indexOfd !=-1:
-        folder = sys.argv[sys.argv.index(op)+1]
+        target_distribute_folder = sys.argv[sys.argv.index(op) + 1]
         break
-folder =os.path.abspath(folder)
-create_dir(folder)
-targetDir = os.sep.join([folder, './tmp'])
+target_distribute_folder =os.path.abspath(target_distribute_folder)
+create_dir(target_distribute_folder)
+targetDir = os.sep.join([target_distribute_folder, './tmp'])
 excludedFolder =['sessions',
                  'src',
                  'lib',
                  ]
-if not os.path.exists(folder):
-    os.mkdir(folder)
+if not os.path.exists(target_distribute_folder):
+    os.mkdir(target_distribute_folder)
 else:
-    shutil.rmtree(folder)
+    shutil.rmtree(target_distribute_folder, ignore_errors=True)
     import time
     time.sleep(1)
-    os.mkdir(folder)
+    try:
+        os.mkdir(target_distribute_folder)
+    except:
+        import traceback
+        print(traceback.format_exc())
 
 class tcltk(Tkinter.Tk):
     def __init__(self):
@@ -192,7 +196,7 @@ RequiredDataFailes = [
 #done 2017-10-14 2017-10-11 need copy all files under ./src, web.py missed
 #done 2017-10-14 ./lib/ 2017-10-11 need find a better place for chromedriver.exe
 
-def copy_dir(dir_path, copy_py=False):
+def get_file_list_in_dir(dir_path, copy_py=False):
     #dir_path = 'test'
     base_dir = os.path.join('.', dir_path)
     for (dirpath, dirnames, files) in os.walk(base_dir):
@@ -223,11 +227,10 @@ try:
                      './LICENSE.TXT',
                    # './gDasH.ini',
                     ( 'gui',[ './gui/dash.bmp']),
-
-                    ('gui/html', [f for f in copy_dir('./gui/html')]),#copy web related files to ./gui/html
-                    ( 'sessions',[ f for f in copy_dir('./sessions')]),
-                    ('selenium/webdriver/remote', [ f for f in copy_dir(r'C:\\Python27\Lib\site-packages\selenium\webdriver\remote', True)]),
-                    ('src', [ f for f in copy_dir('./src', True)]),
+                    ('gui/html', [f for f in get_file_list_in_dir('./gui/html')]),#copy web related files to ./gui/html
+                    ( 'sessions',[f for f in get_file_list_in_dir('./sessions')]),
+                    ('selenium/webdriver/remote', [f for f in get_file_list_in_dir(r'C:\\Python27\Lib\site-packages\selenium\webdriver\remote', True)]),
+                    ('src', [f for f in get_file_list_in_dir('./src', True)]),
                     ('lib', ['./lib/chromedriver.exe'])# copy chromedriver.exe to lib
 
                        #('dut', [ f for f in copy_dir('../dut')]),
@@ -260,11 +263,63 @@ except:
     print(traceback.format_exc())
 
 
+
+
+#fix numpy and matplotlib can be imported in py2exe distribute, it need to copy all *.dll under numpy/core/*.DLL and *.pyd ... as below listed
+# copy core/*.DLL
+# copy core/umath.pyd
+# copy fft/*.pyd
+# copy linalg/*.pyd
+# copy random/*.pyd
+# copy mpl-data to malplotlib
+# copy backends to malplotlib
+# copy C:\workspace\DasH\matplotlib/backend_managers.py
+
+numpy_path_src = 'C:/Python27/Lib/site-packages/numpy'
+numpy_path_dst = '{}/numpy'.format(target_distribute_folder)
+matplotlib_path_src = 'C:/Python27/Lib/site-packages/matplotlib'
+matplotlib_path_dst = '{}/matplotlib'.format(target_distribute_folder)
+dirs_to_copy= [
+    #source folder                                   , target folder,                                                   filter
+
+    [r'{}/core'.format(numpy_path_src),              '{}/core'.format(numpy_path_dst),                               'DLL'],
+    [r'{}/core'.format(numpy_path_src),             '{}/core'.format(numpy_path_dst),                               'pyd'],
+    [r'{}/fft'.format(numpy_path_src),               '{}/fft'.format(numpy_path_dst),                                'pyd'],
+    [r'{}/linalg'.format(numpy_path_src),            '{}/linalg'.format(numpy_path_dst),                             'pyd'],
+    [r'{}/random'.format(numpy_path_src),           '{}/random'.format(numpy_path_dst),                             'pyd'],
+    #matplotlib
+    ['{}/'.format(matplotlib_path_src),             '{}/'.format(matplotlib_path_dst),                                'pyd'],
+    ['{}/mpl-data'.format(matplotlib_path_src),     '{}/mpl-data'.format(matplotlib_path_dst),                      '*'],
+    ['{}/'.format(matplotlib_path_src),                '{}/'.format(matplotlib_path_dst),                                'py'],
+    ['{}/backends'.format(matplotlib_path_src),     '{}/backends'.format(matplotlib_path_dst),                       'py'],
+    ['{}/backends'.format(matplotlib_path_src),     '{}/backends'.format(matplotlib_path_dst),                       'pyd'],
+    ['{}/backends/qt_editor'.format(matplotlib_path_src),     '{}/backends/qt_editor'.format(matplotlib_path_dst),                       '*'],
+    ['{}/backends/web_backend'.format(matplotlib_path_src),     '{}/backends/web_backend'.format(matplotlib_path_dst),                       '*'],
+]
+def copy_files_from_src_to_dest(src, dest, filter=None):
+    FILTER ='.{}'.format(filter.lower())
+    if FILTER in [None, '.', '.*', '']:
+        #FILTER in ['.dll', '.pyd']:
+        shutil.copytree(src, dest)
+    else:
+        print('copying {}/*.{} ->{}'.format(src, FILTER, dest))
+        file_list = os.listdir(src)
+        for src_path in  file_list:
+            print('!!! copying {} from {}'.format(src_path, src))
+            if os.path.splitext(src_path)[1].lower() in [FILTER] :
+                shutil.copy2('{}/{}'.format(src,src_path), dest)
+
+
+
+
+for src, dest, filter in dirs_to_copy:
+    copy_files_from_src_to_dest(src, dest, filter)
+
 import zipfile
 zip_ref = zipfile.ZipFile('./build_packages/build_package.zip', 'r')
-zip_ref.extractall(folder)
+zip_ref.extractall(target_distribute_folder)
 zip_ref.close()
 
-folder = os.path.abspath(os.path.normpath(os.path.expanduser(folder)))
-dash_zipfile = os.path.abspath('{}/../DasH'.format(folder))
-shutil.make_archive(dash_zipfile, 'zip', folder)
+target_distribute_folder = os.path.abspath(os.path.normpath(os.path.expanduser(target_distribute_folder)))
+dash_zipfile = os.path.abspath('{}/../DasH'.format(target_distribute_folder))
+shutil.make_archive(dash_zipfile, 'zip', target_distribute_folder)

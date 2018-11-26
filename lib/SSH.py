@@ -49,24 +49,26 @@ class SSH(object):
                 self.client=None
         self.client = ssh.SSHClient()
         #ssh.util.log_to_file(self.logfile.name+'.ssh')
+    def start_ssh(self, host, port, user, password):
         self.client.set_missing_host_key_policy(ssh.WarningPolicy())
         self.client.load_system_host_keys()
         self.client.connect(host, int(port), user, password)
         self.chan = self.client.invoke_shell()
     def read(self):
-        resp = self.chan.recv(1024*4)
+        resp = self.chan.recv(1024)#
         if resp ==None:
             resp =''
         return resp
     def write(self, data,ctrl=False):
         #fixed failed to send ctrl+c to ssh session
-        if ctrl:
-            ascii = ord(data[0]) & 0x1f
-            ch = chr(ascii)
-            data = ch
-            self.chan.send(ch)
-            self.chan.send('\r\n')
-        else:
-            self.chan.send('{}'.format(data))
-        #self.chan.send(os.linesep)
+        if self.chan:
+            if ctrl:
+                ascii = ord(data[0]) & 0x1f
+                ch = chr(ascii)
+                data = ch
+                self.chan.send(ch)
+                self.chan.send('\r\n')
+            else:
+                self.chan.send('{}'.format(data))
+            #self.chan.send(os.linesep)
         return  ''

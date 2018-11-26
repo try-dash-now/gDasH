@@ -47,7 +47,7 @@ class shell(object):
                                       universal_newlines=True,
                                       shell= True,
                                       stdout=subprocess.PIPE,
-                                      stdin=subprocess.PIPE,
+                                      stdin=subprocess.PIPE,#, #None
                                       stderr=subprocess.PIPE,
                                       creationflags=creationflags,#CREATE_NEW_PROCESS_GROUP
                                       bufsize = 1
@@ -64,14 +64,27 @@ class shell(object):
         stdin = self.shell.stdin
         if ctrl:
             if cmd[0] in ['c', 'C']:
+                ascii = ord(cmd[0]) & 0x1f
+                ch = chr(ascii)
+                stdin.write(ch)
                 import signal
                 s=None
                 if os.name =='nt':
                     pgroupid = self.shell.pid
+
                     for s in [ signal.CTRL_C_EVENT, signal.CTRL_BREAK_EVENT, signal.SIGINT]:
                         s = signal.CTRL_BREAK_EVENT#CTRL_C_EVENT
                         #self.shell.send_signal(s)
-                        os.kill(self.shell.pid, s)
+                        try:
+                            self.shell.send_signal(s)
+                        except:
+                            import traceback
+                            print(traceback.format_exc())
+                        try:
+                            os.kill(self.shell.pid, s)
+                        except:
+                            import traceback
+                            print(traceback.format_exc())
                     #todo 2017-10-10 can't stop "ping localhost -t" with ctrl+c, it's disabled by windows for non-console process
             else:
                 ascii = ord(cmd[0]) & 0x1f

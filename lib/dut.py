@@ -75,30 +75,16 @@ class dut(object):
     last_write=None
     time_out=15.0
     product = None
+    is_openning =False
 
 
 
-    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 10, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, **kwarg):
+    def __init__(self, name='session' ,type='telnet', host='127.0.0.1', port=23, user_name=None, password=None,login_step=None, log_path = '../log', new_line= os.linesep, new_line_during_login='\n', init_file_name=None, retry_login= 3, retry_login_interval=60,prompt='>', not_call_open=False, time_out=15, **kwarg):
         #expected types are [echo, telnet, ssh, shell, web_brower]
-        self.dry_run_json={}
-        if init_file_name is None:
-            self.type = type
-        else:
-            self.type = 'echo'
-        if 'product' in kwarg:
-            self.product = kwarg['product']
-        self.prompt = prompt
-        self.reading_thread_lock=threading.Lock()
-        if login_step in [None, '']:
-            login_step = None
-        if isinstance(login_step, (basestring)) and os.path.exists(login_step):
-            pass
-        else:
-            login_step =None
         self.retry_login = retry_login
         self.retry_login_interval = retry_login_interval
         self.login_steps = login_step
-        self.session_type = self.type
+        self.session_type = type
         self.name = name
         self.host= host
         self.port = port
@@ -114,6 +100,22 @@ class dut(object):
         self.write_locker=  threading.Lock()
         self.read_locker=  threading.Lock()
         self.time_out =time_out
+        self.dry_run_json={}
+        if init_file_name is None:
+            self.type = type
+        else:
+            self.type = 'echo'
+        if 'product' in kwarg:
+            self.product = kwarg['product']
+        self.prompt = prompt
+        self.reading_thread_lock=threading.Lock()
+        if login_step in [None, '']:
+            login_step = None
+        if isinstance(login_step, (basestring)) and os.path.exists(login_step):
+            pass
+        else:
+            login_step =None
+
         th = threading.Thread(target=self.open, kwargs={'retry': self.retry_login, 'interval': 60})
         #th.start()
         self.sleep(0.5)
@@ -121,8 +123,12 @@ class dut(object):
         if not_call_open:
             pass
         else:
-            self.open(retry= self.retry_login, interval=60)
+            th.start()#self.open(retry= self.retry_login, interval=60)
     def open(self, retry =10, interval= 60):
+        name = self.name
+        if self.is_openning:
+            return
+        self.is_openning =True
         if self.session and self.session_status:
             #self.session_status=False
             self.close_session()
@@ -150,7 +156,7 @@ class dut(object):
             init_file_name = self.init_file_name
             login_step = self.login_steps
             self.login_done=False
-            name = self.name
+
             type = self.type
             counter = 0
             while counter<retry:
@@ -164,6 +170,7 @@ class dut(object):
                     elif type.lower() =='ssh':
                         from SSH import SSH
                         self.session = SSH(host = self.host, port =self.port, user = self.user, password = self.password)
+                        self.session.start_ssh(self.host, self.port, self.user,self.password)
                     elif type.lower() in ['telnet']:
                         from TELNET import  TELNET
                         self.session = TELNET(host = self.host, port =self.port, login_step=login_step)
@@ -180,6 +187,8 @@ class dut(object):
                     elif  isinstance(login_step, basestring):
                         if login_step.strip().lower() in ['none',None, "''", '""']:
                             self.login_steps=[]
+
+
                     th =threading.Thread(target=self.read_data)
                     th.start()
                     self.sleep(0.5)
@@ -196,7 +205,6 @@ class dut(object):
                         info('failed to login {}\n\t{}'.format(self.name, format_exc()), retry= retry, counter = counter, interval = interval)
                         self.sleep(interval)
                     else:
-
                         e.message +=format_exc()
                         error(e.message)
                         raise e
@@ -204,11 +212,17 @@ class dut(object):
         except Exception as e:
             import traceback
             error_msg =traceback.format_exc(e)
+            old_session_status = False #if session has been ended by other threads, otherwise, overwrite it by next code
             try:
-                error('failed to open {}'.format(self.name), e, error_msg)
+                old_session_status=self.session_status
+                error('failed to open {}'.format(name), e, error_msg)
                 self.session_status =False
             except:
                 pass
+            self.is_openning=False
+            if old_session_status:
+                raise e
+        self.is_openning=False
 
 
     def step(self,command, expect='.*', time_out=30, total_try =3, ctrl=False, not_want_to_find=False,no_wait = False, flags = re.DOTALL|re.I|re.M):
@@ -345,13 +359,17 @@ class dut(object):
         login_steps =[]
         if type(self.login_steps)==type([]):
             login_steps = self.login_steps #login_steps = self.login_steps
+
+
         elif login_step_file !=None :
             time.sleep(0.001)
             import csv
-            with open(login_step_file, 'rb') as csvfile:
-                self.login_steps = csv.reader(csvfile, delimiter=',', quotechar='|')
-                for row in self.login_steps:
-                    login_steps.append(row)
+            if os.path.exists(login_step_file): #fixed if login_step_file is '' an empty string
+                with open(login_step_file, 'rb') as csvfile:
+                    self.login_steps = csv.reader(csvfile, delimiter=',', quotechar='|')
+                    for row in self.login_steps:
+                        login_steps.append(row)
+                    self.login_steps = login_steps
         for row in login_steps:
             cmd,expect, time_out, total_try ='3', '.*',30,1
             if len(row)==1:
@@ -362,6 +380,11 @@ class dut(object):
                 cmd,expect,time_out= row
             elif len(row) >3:
                 cmd,expect, time_out, total_try =row[:4]
+            if total_try in ['']:
+                total_try=3
+            if time_out in ['']:
+                time_out =30
+
             self.step(cmd,expect, time_out,total_try)
 
         self.login_steps= []
@@ -373,8 +396,8 @@ class dut(object):
     def close_session(self):
 
         try:
-
             name = self.name
+
             if self.write_locker:
                 self.write_locker.acquire()
 
@@ -413,7 +436,7 @@ class dut(object):
                         #os.killpg(self.session.shell.pid, signal.SIGTERM)
                 except Exception as e:
                     try:
-                        error('dut({}): {}'.format(self.name, e))
+                        error('dut({}): {}'.format(name, e))
                         self.session=None
                         self.session_status = False
                         if self.read_locker.locked():
@@ -433,13 +456,14 @@ class dut(object):
 
             try:
                 self.write_locker.release()
-                time.sleep(1)
+                time.sleep(0.1)
             except :
                 pass
             info('session {}:close_session ended!!!'.format(name))
+            info('tab {} closed successfully!!!'.format(name))
         except Exception as e:
-            error(traceback.format_exc())
-
+            #error(traceback.format_exc())
+            info('{} closed with error: {}'.format(name, e))
 
     def add_data_to_search_buffer(self, data):
 
@@ -479,15 +503,18 @@ class dut(object):
         self.reading_thread_lock.acquire()
         name = self.name
         error_msg =None
-        while True:#and self.session:
+
+        alive =True
+        while alive:#and self.session:
             try:
                 try:
                     if self.session_status :
                         pass
                     else:
+                        alive =False
                         break
                 except Exception as e:
-
+                    alive =False
                     error_msg= traceback.format_exc()
                     error(e)
                     break
@@ -507,24 +534,21 @@ class dut(object):
                         new_line = self.new_line
                     self.write(new_line)
                 data = self.read()
-                time.sleep(0.1)
+                time.sleep(0.01)
             except  Exception as e:
-                #
+                alive =False
                 error_msg= traceback.format_exc()
                 if str(e) in ['error: Socket is closed']:
                     error(traceback.format_exc())
                     self.session_status =False
-        try:
-            self.close_session()
-            info('session {}: read_data Closed!!!'.format(name))
-        except Exception as e:
-            error(e)
-            self.session=None
+
+
         try:
             self.reading_thread_lock.release()
         except Exception as e:
             pass
-        print('end dut session')
+            alive =False
+        print('end dut ({}) session'.format(name))
     def write(self, cmd='', ctrl=False, add_newline=True):
         resp = ''
         self.add_new_command_to_dry_run_json(cmd, ctrl)
@@ -548,7 +572,8 @@ class dut(object):
 
                 except Exception as e :
                     error(traceback.format_exc())
-                    self.session_status =False
+                    if self.is_openning is not True:
+                        self.session_status =False
             #self.add_data_to_search_buffer('{cmd}{new_line}'.format(cmd=cmd, new_line=new_line))
             self.last_cmd_time_stamp = datetime.datetime.now()
             self.write_locker.release()
@@ -635,7 +660,10 @@ class dut(object):
                 os.remove( '{}/{}.json'.format(log_path, name))
             os.rename('{}/tmp_{}.json'.format(log_path, name), '{}/{}.json'.format(log_path, name))
         except Exception as e:
-            error(name, format_exc())
+            try:
+                error(name, format_exc())
+            except :
+                pass
 
 #fixed WindowsError: [Error 183] Cannot create a file when that file already exists
             # dut.py:604	save_dry_run_json:Traceback (most recent call last):
@@ -643,3 +671,5 @@ class dut(object):
             # 	    os.rename('{}/tmp_{}.json'.format(log_path, name), '{}/{}.json'.format(log_path, name))
             # 	WindowsError: [Error 183] Cannot create a file when that file already exists
 
+#todo: no login log in log file
+#
