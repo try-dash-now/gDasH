@@ -273,6 +273,7 @@ class SessionTab(wx.Panel, dut):
             self.history_cmd.append(cmd)
             self.history_cmd_index= len(self.history_cmd)
     def on_key_down(self, event):
+                   
         try:
             keycode = event.KeyCode
             if keycode ==wx.WXK_TAB:
@@ -287,14 +288,14 @@ class SessionTab(wx.Panel, dut):
                 self.cmd_window.AppendText('?')
                 self.on_enter_a_command(event)
                 self.cmd_window.AppendText(cmd_string)
-            elif keycode == ord('C')  and event.controlDown:
+            elif keycode == ord('C')  and event.m_controlDown:
                 data = self.cmd_window.GetStringSelection()
                 if len(data)==0:
                     self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
                     self.write(chr(keycode), ctrl=True, add_newline = False)
 
 
-            elif keycode == ord('V')  and event.controlDown:
+            elif keycode == ord('V')  and event.m_controlDown:
                 #self.sequence_queue.put(["TC.step(DUT['{}'], '{}', ctrl=True)".format(self.name,chr(keycode).encode(errors= 'ignore')),  datetime.now()])#
                 #self.write(chr(keycode), ctrl=True)
                 if not wx.TheClipboard.IsOpened():  # may crash, otherwise
@@ -331,7 +332,7 @@ class SessionTab(wx.Panel, dut):
                     else:
                         event.Skip()
 
-            elif keycode >= ord('A')  and keycode <= ord('Z') and event.controlDown:
+            elif keycode >= ord('A')  and keycode <= ord('Z') and event.m_controlDown:
                 info('ctrl+{}'.format(chr(keycode)))
                 #done 2017-10-13 2017-10-12 if selected is not empty, ctrl+c should be copy, not send control code to session
                 #done 2017-10-13 2017-10-12 if clipboard is not empty, ctrl+v should be paste not send control code to session
@@ -346,7 +347,7 @@ class SessionTab(wx.Panel, dut):
     def OnMouseWheel_cmd_window(self,event):
         min_font_size = 5
         interval_step = 2
-        if event.ControlDown():
+        if event.m_controlDown():
             pass
         else:
             return
