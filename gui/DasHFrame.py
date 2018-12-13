@@ -1326,11 +1326,13 @@ if __name__ == "__main__":
         sys.argv= [script_name]+script_args
         case_log_path = create_case_folder(self.log_path )#self.log_path #create_case_folder()
         sys.argv= old_sys_argv
+
+
         try:
             if os.path.exists('script_runner.exe'):
                 execute = 'script_runner.exe'
                 cmd = [execute,script_name ]+script_args + ['-l','{}'.format(case_log_path)]
-                #p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
+            #p=subprocess.Popen(cmd, creationflags = subprocess.CREATE_NEW_CONSOLE)
             else:
                 cmd = [sys.executable,'./script_runner.py', script_name ]+script_args+ ['-l','{}'.format(case_log_path)]
 
@@ -2203,3 +2205,4 @@ newdocument.close();
 #canceled: start thread for all gui event handlers with decoration, catch all exceptions, ###no need to do that
 #done: mark red for all strings who match error patterns in "*LOG*", m_log
 #fix: generate test report right after case completed (failed or passed)
+#todo: change session json file format to "cmd\toutput_string"
