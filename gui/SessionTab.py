@@ -67,9 +67,8 @@ class SessionTab(wx.Panel, dut):
     def on_close(self):
         self.alive = False
         self.close_session()
-        #threading.Thread(target=self.close_session).start()
-        #self.close_session()
         self.sleep(0.001)
+        info('tab {} closed!!!'.format(self.name))
 
     def __freeze_output_window(self):
         if self.output_window.IsFrozen():
@@ -369,6 +368,7 @@ class SessionTab(wx.Panel, dut):
                                     error ('{} closed unexpected\n{}'.format(self.name, error_msg))
                                 self.cmd_window.Clear()#append cmd to cmd_window
                                 self.cmd_window.SetFocus()
+
                     else:
                         event.Skip()
 
@@ -415,9 +415,7 @@ class SessionTab(wx.Panel, dut):
             self.on_enter_a_command(event)
         else:
             event.Skip()
-#todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
-#todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
-#todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )
+
 
     def on_idle(self, event):
         try:
@@ -430,3 +428,6 @@ class SessionTab(wx.Panel, dut):
         except Exception as e:
             error(e)
         event.Skip()
+#todo EVT_TEXT_CUT   =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_CUT )
+#todo EVT_TEXT_COPY  =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_COPY )
+#todo EVT_TEXT_PASTE =  wx.PyEventBinder( wxEVT_COMMAND_TEXT_PASTE )

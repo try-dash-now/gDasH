@@ -1,4 +1,5 @@
 #pip install
+paramiko
 requests
 numpy
 matplotlib

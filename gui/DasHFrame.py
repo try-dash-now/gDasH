@@ -481,7 +481,7 @@ web_port={web_port}
         self.function_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_function_tab)
         self.case_suite_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_case_tab)
         self.session_page.Bind(wx.EVT_RIGHT_DOWN, self.on_right_down_in_session_tab)
-        self.edit_area.Bind(wx.aui.EVT__AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_right_up_over_tab_in_edit_area)
+        self.edit_area.Bind(wx.aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.on_right_up_over_tab_in_edit_area)
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         #main_sizer = wx.GridSizer( 1, 2, 0, 0 )
         nav_sizer = wx.BoxSizer()
